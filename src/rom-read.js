@@ -1,4 +1,9 @@
-import { decodeCharByte } from "./rom-utils";
+import {
+  LZ77,
+  decodeCharByte
+} from "./rom-utils";
+
+import { OFFSETS as OFS } from "./offsets";
 
 export const I8 = Int8Array.BYTES_PER_ELEMENT;
 export const I16 = Int16Array.BYTES_PER_ELEMENT;
@@ -94,4 +99,50 @@ export function readBinaryString(buffer, offset, length) {
     data[ii] = String.fromCharCode(char);
   };
   return data.join("");
+};
+
+export function readPalette(buffer, offset, uncmp = false) {
+  let colors = [];
+  let palette = uncmp ? readBytes(buffer, offset, 0xfff) : LZ77(buffer, offset);
+  for (let ii = 0; ii < palette.length; ++ii) {
+    let value = palette[ii] | (palette[++ii] << 8);
+    let r = ( value & 0x1F ) << 3;
+    let g = ( value & 0x3E0 ) >> 2;
+    let b = ( value & 0x7C00 ) >> 7;
+    colors[ii / 2 | 0] = { r, g, b };
+  };
+  return colors;
+};
+
+export function readPixels(buffer, offset, palette, width, height, uncmp = false) {
+  let index = 0;
+  let TILE_SIZE = 8;
+  let pixels = new ImageData(width, height);
+  let size = (width / TILE_SIZE) * (height / TILE_SIZE) | 0;
+  let data = uncmp ? readBytes(buffer, offset, 0xfff) : LZ77(buffer, offset);
+  for (let ii = 0; ii < size; ++ii) {
+    let xx = (ii % (width / TILE_SIZE)) | 0;
+    let yy = (ii / (width / TILE_SIZE)) | 0;
+    for (let jj = 0; jj < TILE_SIZE * TILE_SIZE; ++jj) {
+      let px = (jj % (TILE_SIZE)) | 0;
+      let py = (jj / (TILE_SIZE)) | 0;
+      let depth = 4;
+      let pix = (index / (TILE_SIZE / depth)) | 0;
+      let pixel = data[pix];
+      if ((index & 1) === 0) pixel &= 0x0F;
+      else pixel = (pixel & 0xF0) >> depth;
+      if (pixel > 0) {
+        let r = palette[pixel].r;
+        let g = palette[pixel].g;
+        let b = palette[pixel].b;
+        let idx = (((py + (yy * TILE_SIZE)) * width + (px + (xx * TILE_SIZE))) | 0) * 4;
+        pixels.data[idx + 0] = r;
+        pixels.data[idx + 1] = g;
+        pixels.data[idx + 2] = b;
+        pixels.data[idx + 3] = 0xff;
+      }
+      index++;
+    };
+  };
+  return pixels;
 };

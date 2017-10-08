@@ -1,8 +1,16 @@
-import { assert } from "./utils";
+import {
+  assert
+} from "./utils";
 
-import { readByte } from "./rom-read";
+import {
+  readByte,
+  readChar,
+  readString
+} from "./rom-read";
 
-import { OFFSETS as OFS } from "./offsets";
+import {
+  OFFSETS as OFS
+} from "./offsets";
 
 export function LZ77(source, offset) {
   assert(source[offset] === OFS.LZ77_10);
@@ -40,9 +48,22 @@ export function LZ77(source, offset) {
       d = ((d << 1) & 0xFF);
     }
   };
-
 };
 
+export function searchString(buffer, string) {
+  let offset = 0x0;
+  while (offset < buffer.length) {
+    for (let ii = 0; ii < string.length; ++ii) {
+      let char = readChar(buffer, offset + ii);
+      if (char !== string[ii]) break;
+      if (ii + 1 >= string.length) {
+        return offset;
+      }
+    };
+    offset++;
+  };
+  return -1;
+};
 
 export function decodeCharByte(byte) {
   switch (byte) {

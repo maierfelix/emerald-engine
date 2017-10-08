@@ -16,3 +16,12 @@ export function readBinaryFile(path) {
     .then(res => resolve(new Uint8Array(res)));
   });
 };
+
+export function createCanvasBuffer(width, height) {
+  let canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  let ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  return { ctx, canvas };
+};
