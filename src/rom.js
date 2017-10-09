@@ -23,6 +23,7 @@ import {
 
 import {
   LZ77,
+  toHex,
   searchString
 } from "./rom-utils";
 
@@ -74,6 +75,10 @@ export default class Rom {
     for (let ii = 1; ii < OFS.ITEM_COUNT; ++ii) {
       let item = this.getItemImageById(ii);
       document.body.appendChild(item.canvas);
+    };
+    for (let ii = 0; ii < OFS.OVERWORLD_COUNT; ++ii) {
+      let sprite = this.getOverworldImgById(ii, 0);
+      document.body.appendChild(sprite.canvas);
     };*/
   }
   generateTables() {
@@ -133,7 +138,6 @@ export default class Rom {
       connections.push(conn);
     };
     let originalSize = pNumConnections * 12;
-    console.log(pNumConnections, pData, connections);
 
     // # HEADER SPRITES
     offset = pSprites &0x1FFFFFF;
@@ -161,7 +165,6 @@ export default class Rom {
     let secondarySize = borderWidth + 0xA0;
 
     // # MAP TILE DATA
-    console.log(mapWidth, mapHeight);
 
     let tiles = [];
     let size = mapWidth * mapHeight;
@@ -173,7 +176,19 @@ export default class Rom {
       //console.log(tile & 0x3ff, (tile & 0xfc00) >> 10);
       tiles.push((tile & 0xfc00) >> 10);
     };
-
+    let str = "";
+    for (let yy = 0; yy < mapHeight; ++yy) {
+      for (let xx = 0; xx < mapWidth; ++xx) {
+        let index = yy * mapWidth + xx;
+        let tile = tiles[index] === 1 ? "1" : "0";
+        if (tile.length <= 1) tile = "0" + tile;
+        if (xx <= 0) str += " ";
+        str += tile;
+      };
+      str += "\n";
+    };
+    console.log(mapWidth, mapHeight, pNumConnections, connections);
+    console.log(str);
   }
   getPkmnString() {
     let buffer = this.buffer;
@@ -190,6 +205,40 @@ export default class Rom {
       canvas: ctx.canvas,
       data: new Uint8Array(pixels.data)
     };
+  }
+  getOverworldImgById(id, frame) {
+    let buffer = this.buffer;
+    let offset = (OFS.OVERWORLD_BANK + (id * 36));
+    offset += 4; // skip ffff
+    let paletteNum = readByte(buffer, offset - 2); offset += 0x1;
+    offset += 0x3; // unknown
+    let width = readByte(buffer, offset); offset += 0x1;
+    offset += 0x1; // unknown
+    let height = readByte(buffer, offset); offset += 0x1;
+    offset += 0x1; // unknown
+    offset += 0x1; // unknown
+    offset += 0x3; // unknown
+    offset += 0x4; // unknown ptr
+    offset += 0x4; // unknown ptr
+    offset += 0x4; // unknown ptr
+    let spritePtr = readPointer(buffer, offset); offset += 0x4;
+    offset += 0x4; // unknown ptr
+
+    let dataSize = (width * height) / 2;
+    let spriteHeader2Ptr = readPointer(buffer, spritePtr) + (dataSize * frame);
+
+    // get palette, weird stuff
+    let palettePtr = 0;
+    for (let ii = 0; ii < OFS.OVERWORLD_PAL_COUNT; ++ii) {
+      let index = OFS.OVERWORLD_PAL_HEADERS + (ii * 8);
+      if (readByte(buffer, index + 4) === paletteNum) {
+        palettePtr = readLong(buffer, index) - 0x8000000;
+      }
+    };
+
+    let pixels = readPointer(buffer, spritePtr);
+    let palette = palettePtr;
+    return this.getImage(pixels, palette, 0, 0, width, height, true);
   }
   getPkmnFrontImgById(id) {
     let buffer = this.buffer;

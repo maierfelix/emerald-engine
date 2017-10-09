@@ -50,6 +50,10 @@ export function LZ77(source, offset) {
   };
 };
 
+export function toHex(n) {
+  return "0x" + (n).toString(16).toUpperCase();
+};
+
 export function searchString(buffer, string) {
   let offset = 0x0;
   while (offset < buffer.length) {
