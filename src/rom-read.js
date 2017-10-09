@@ -9,6 +9,11 @@ export const I8 = Int8Array.BYTES_PER_ELEMENT;
 export const I16 = Int16Array.BYTES_PER_ELEMENT;
 export const I32 = Int32Array.BYTES_PER_ELEMENT;
 export const PTR = Int32Array.BYTES_PER_ELEMENT;
+export const LONG = Int32Array.BYTES_PER_ELEMENT;
+
+export function intToPointer(value) {
+  return value & 0x1FFFFFF;
+};
 
 export function readByte(buffer, offset) {
   return (
@@ -18,17 +23,17 @@ export function readByte(buffer, offset) {
 
 export function readShort(buffer, offset) {
   return (
-    (buffer[offset] << 0) |
-    (buffer[offset + 1] << 8)
+    ((buffer[offset] & 0xff) << 0) |
+    ((buffer[offset + 1] & 0xff) << 8)
   );
 };
 
 export function readInt(buffer, offset) {
   return (
-    (buffer[offset + 0] << 0)  |
-    (buffer[offset + 1] << 8)  |
-    (buffer[offset + 2] << 16) |
-    (buffer[offset + 3] << 24)
+    ((buffer[offset + 0] & 0xff) << 0)  |
+    ((buffer[offset + 1] & 0xff) << 8)  |
+    ((buffer[offset + 2] & 0xff) << 16) |
+    ((buffer[offset + 3] & 0xff) << 24)
   );
 };
 
@@ -46,6 +51,16 @@ export function readPointerAsInt(buffer, offset) {
 
 export function readChar(buffer, offset) {
   return decodeCharByte(readByte(buffer, offset));
+};
+
+export function readWord(buffer, offset) {
+  let bytes = readBytes(buffer, offset, 2);
+  return (bytes[1] << 8) + (bytes[0]);
+};
+
+export function readLong(buffer, offset) {
+  let ptr = readInt(buffer, offset);
+  return ptr | 0;
 };
 
 export function readBytes(buffer, offset, length) {
