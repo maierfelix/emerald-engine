@@ -58,6 +58,12 @@ export function readWord(buffer, offset) {
   return (bytes[1] << 8) + (bytes[0]);
 };
 
+export function readHWord(buffer, offset) {
+  let low = buffer[offset + 0];
+  let high = buffer[offset + 1];
+  return ((high << 8) | low);
+};
+
 export function readLong(buffer, offset) {
   let ptr = readInt(buffer, offset);
   return ptr | 0;
@@ -96,13 +102,14 @@ export function readPointers(buffer, offset, length) {
   return ptrs;
 };
 
-export function readString(buffer, offset) {
+export function readString(buffer, offset, max) {
   let ii = 0;
   let chars = [];
   let char = readChar(buffer, offset);
   while (char !== "|end|") {
     chars.push(char);
     char = readChar(buffer, offset + (++ii));
+    if (ii > max) break;
   };
   return chars.join("");
 };
@@ -121,12 +128,17 @@ export function readPalette(buffer, offset, uncmp = false) {
   let palette = uncmp ? readBytes(buffer, offset, 0xfff) : LZ77(buffer, offset);
   for (let ii = 0; ii < palette.length; ++ii) {
     let value = palette[ii] | (palette[++ii] << 8);
-    let r = ( value & 0x1F ) << 3;
-    let g = ( value & 0x3E0 ) >> 2;
-    let b = ( value & 0x7C00 ) >> 7;
-    colors[ii / 2 | 0] = { r, g, b };
+    let color = decodePalette(value);
+    colors[ii / 2 | 0] = color;
   };
   return colors;
+};
+
+export function decodePalette(palette) {
+  let r = ( palette & 0x1F ) << 3;
+  let g = ( palette & 0x3E0 ) >> 2;
+  let b = ( palette & 0x7C00 ) >> 7;
+  return { r, g, b };
 };
 
 export function readPixels(buffer, offset, palette, width, height, uncmp = false) {
