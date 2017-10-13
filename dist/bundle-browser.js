@@ -6,9 +6,143 @@ var OFFSETS = {
   GAME_CODE: 0xAC,
   GAME_NAME: 0xA0,
   GAME_MAKER: 0xB0,
-  PKMN_NAMES: 0x245EE0,
-  PKMN_FRONT_IMG: 0x2350AC,
-  PKMN_NORMAL_PAL: 0x23730C
+  ATTACK_COUNT: 354,
+  ATTACK_NAMES: 0x31977C,
+  ITEM_IMG: 0x614410,
+  ITEM_DATA: 0x5839A0,
+  ITEM_COUNT: 377,
+  BERRY_DATA: 0x57FC94,
+  BERRY_COUNT: 43,
+  PKMN_COUNT: 412,
+  PKMN_NAMES: 0x3185C8,
+  PKMN_BACK_IMG: 0x3028B8,
+  PKMN_FRONT_IMG: 0x301418,
+  PKMN_NORMAL_PAL: 0x303678,
+  PKMN_BACK_ANIM: 0x60A8C8,
+  PKMN_FRONT_ANIM: 0x30A18C,
+  ICON_POINTER_TBL: 0x57BCA8,
+  ICON_PAL_TABLE: 0x57C388,
+  ICON_PALS: 0xDDE1F8,
+  OVERWORLD_COUNT: 244,
+  OVERWORLD_BANK: 0x509954,
+  OVERWORLD_PAL_COUNT: 35,
+  OVERWORLD_PAL_HEADERS: 0x50BBC8,
+  OVERWORLD_FRAME_LIMITS: [
+    17,8,26,11,4,6,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,9,0,2,2,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,0,0,0,0,0,0,3,
+    8,8,8,3,0,8,17,8,26,11,4,0,
+    8,8,0,8,8,8,17,8,26,11,4,17,
+    8,26,11,4,8,8,8,0,0,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,11,11,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,0,0,8,8,8,8,8,8,0,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,17,17,8,8,8,0,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8
+  ],
+  PKMN_STRING: 0x1dc8b9,
+  CRY_TABLE: 0x69DCF4,
+  CRY_TABLE2: 0x69EF24,
+  CRY_CONVERSION_TABLE: 0x31F61C,
+  MAIN_TS_PAL_COUNT: 7,
+  MAIN_TS_BLOCKS: 0x200,
+  MAIN_TS_SIZE: 0x280,
+  MAIN_TS_HEIGHT: 0x140,
+  LOCAL_TS_BLOCKS: 0xFE,
+  LOCAL_TS_SIZE: 0x140,
+  LOCAL_TS_HEIGHT: 0xC0,
+  MAP_LABEL_DATA: 0x5A1480,
+  TILESET_ANIMATIONS: [
+    0x84F8738 ],
+  MAP_CONNECTION: {
+    NULL: 0,
+    DOWN: 1,
+    UP: 2,
+    LEFT: 3,
+    RIGHT: 4,
+    DIVE: 5,
+    EMERGE: 6
+  },
+  MAP_BANK_ORIGIN: 0x84AA4,
+  MAP_BANK_POINTERS: [
+    0x485D60,
+    0x485E44,
+    0x485E58,
+    0x485E6C,
+    0x485E84,
+    0x485EA0,
+    0x485EC0,
+    0x485EE4,
+    0x485F00,
+    0x485F1C,
+    0x485F54,
+    0x485F74,
+    0x485FB8,
+    0x485FE0,
+    0x48603C,
+    0x486070,
+    0x4860AC,
+    0x4860E8,
+    0x4860F0,
+    0x4860F8,
+    0x486100,
+    0x48610C,
+    0x486110,
+    0x486114,
+    0x486118,
+    0x4862C8,
+    0x4863BC,
+    0x486520,
+    0x486528,
+    0x48652C,
+    0x486560,
+    0x486564,
+    0x486568,
+    0x486574
+  ],
+  MAPS_IN_BANK: [
+    56,
+    4,
+    4,
+    5,
+    6,
+    7,
+    8,
+    6,
+    6,
+    13,
+    7,
+    16,
+    9,
+    22,
+    12,
+    14,
+    14,
+    1,
+    1,
+    1,
+    2,
+    0,
+    0,
+    0,
+    107,
+    60,
+    88,
+    1,
+    0,
+    12,
+    0,
+    0,
+    2,
+    0
+  ]
 };
 
 var IS_NODE = typeof window === "undefined";
@@ -28,6 +162,23 @@ function readBinaryFile(path) {
     .then(function (resp) { return resp.arrayBuffer(); })
     .then(function (res) { return resolve(new Uint8Array(res)); });
   });
+}
+
+function createCanvasBuffer(width, height) {
+  var canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  var ctx = canvas.getContext("2d");
+  setImageSmoothing(ctx, false);
+  return { ctx: ctx, canvas: canvas };
+}
+
+function setImageSmoothing(ctx, state) {
+  ctx.imageSmoothingEnabled = state;
+  ctx.webkitImageSmoothingEnabled = state;
+  ctx.mozImageSmoothingEnabled = state;
+  ctx.msImageSmoothingEnabled = state;
+  ctx.oImageSmoothingEnabled = state;
 }
 
 function LZ77(source, offset) {
@@ -66,8 +217,12 @@ function LZ77(source, offset) {
       d = ((d << 1) & 0xFF);
     }
   }
-
 }
+
+function toHex(n) {
+  return "0x" + (n).toString(16).toUpperCase();
+}
+
 
 
 function decodeCharByte(byte) {
@@ -238,10 +393,32 @@ function decodeCharByte(byte) {
   return "";
 }
 
+function getMaxFrame(index) {
+  return OFFSETS.OVERWORLD_FRAME_LIMITS[index];
+}
+
+function isFrameMirrorable(frame) {
+  switch (frame) {
+    case 2:
+    case 7:
+    case 8:
+    case 11:
+    case 16:
+    case 17:
+    return true;
+  }
+  return false;
+}
+
 var I8 = Int8Array.BYTES_PER_ELEMENT;
 
 
 
+
+
+function intToPointer(value) {
+  return value & 0x1FFFFFF;
+}
 
 function readByte(buffer, offset) {
   return (
@@ -249,14 +426,19 @@ function readByte(buffer, offset) {
   );
 }
 
-
+function readShort(buffer, offset) {
+  return (
+    ((buffer[offset] & 0xff) << 0) |
+    ((buffer[offset + 1] & 0xff) << 8)
+  );
+}
 
 function readInt(buffer, offset) {
   return (
-    (buffer[offset + 0] << 0)  |
-    (buffer[offset + 1] << 8)  |
-    (buffer[offset + 2] << 16) |
-    (buffer[offset + 3] << 24)
+    ((buffer[offset + 0] & 0xff) << 0)  |
+    ((buffer[offset + 1] & 0xff) << 8)  |
+    ((buffer[offset + 2] & 0xff) << 16) |
+    ((buffer[offset + 3] & 0xff) << 24)
   );
 }
 
@@ -266,14 +448,22 @@ function readPointer(buffer, offset) {
   );
 }
 
-function readPointerAsInt(buffer, offset) {
-  return (
-    readPointer(buffer, offset) | 0
-  );
-}
+
 
 function readChar(buffer, offset) {
   return decodeCharByte(readByte(buffer, offset));
+}
+
+function readWord(buffer, offset) {
+  var bytes = readBytes(buffer, offset, 2);
+  return (bytes[1] << 8) + (bytes[0]);
+}
+
+
+
+function readLong(buffer, offset) {
+  var ptr = readInt(buffer, offset);
+  return ptr | 0;
 }
 
 function readBytes(buffer, offset, length) {
@@ -290,13 +480,14 @@ function readBytes(buffer, offset, length) {
 
 
 
-function readString(buffer, offset) {
+function readString(buffer, offset, max) {
   var ii = 0;
   var chars = [];
   var char = readChar(buffer, offset);
   while (char !== "|end|") {
     chars.push(char);
     char = readChar(buffer, offset + (++ii));
+    if (ii > max) { break; }
   }
   return chars.join("");
 }
@@ -310,126 +501,1097 @@ function readBinaryString(buffer, offset, length) {
   return data.join("");
 }
 
-var Rom = function Rom(buffer) {
+function readPalette(buffer, offset, uncmp) {
+  if ( uncmp === void 0 ) uncmp = false;
+
+  var colors = [];
+  var palette = uncmp ? readBytes(buffer, offset, 0xfff) : LZ77(buffer, offset);
+  for (var ii = 0; ii < palette.length; ++ii) {
+    var value = palette[ii] | (palette[++ii] << 8);
+    var color = decodePalette(value);
+    colors[ii / 2 | 0] = color;
+  }
+  return colors;
+}
+
+function decodePalette(palette) {
+  var r = ( palette & 0x1F ) << 3;
+  var g = ( palette & 0x3E0 ) >> 2;
+  var b = ( palette & 0x7C00 ) >> 7;
+  return { r: r, g: g, b: b };
+}
+
+function readPixels(buffer, offset, palette, width, height, uncmp) {
+  if ( uncmp === void 0 ) uncmp = false;
+
+  var index = 0;
+  var TILE_SIZE = 8;
+  var pixels = new ImageData(width, height);
+  var size = (width / TILE_SIZE) * (height / TILE_SIZE) | 0;
+  var data = uncmp ? readBytes(buffer, offset, 0xfff) : LZ77(buffer, offset);
+  for (var ii = 0; ii < size; ++ii) {
+    var xx = (ii % (width / TILE_SIZE)) | 0;
+    var yy = (ii / (width / TILE_SIZE)) | 0;
+    for (var jj = 0; jj < TILE_SIZE * TILE_SIZE; ++jj) {
+      var px = (jj % (TILE_SIZE)) | 0;
+      var py = (jj / (TILE_SIZE)) | 0;
+      var depth = 4;
+      var pix = (index / (TILE_SIZE / depth)) | 0;
+      var pixel = data[pix];
+      if ((index & 1) === 0) { pixel &= 0x0F; }
+      else { pixel = (pixel & 0xF0) >> depth; }
+      if (pixel > 0) {
+        var r = palette[pixel].r;
+        var g = palette[pixel].g;
+        var b = palette[pixel].b;
+        var idx = (((py + (yy * TILE_SIZE)) * width + (px + (xx * TILE_SIZE))) | 0) * 4;
+        pixels.data[idx + 0] = r;
+        pixels.data[idx + 1] = g;
+        pixels.data[idx + 2] = b;
+        pixels.data[idx + 3] = 0xff;
+      }
+      index++;
+    }
+  }
+  return pixels;
+}
+
+var Rom = function Rom(buffer, opt) {
+  var this$1 = this;
+  if ( opt === void 0 ) opt = {};
+
+  this.options = opt;
   this.buffer = buffer;
   this.code = null;
   this.name = null;
   this.maker = null;
   this.names = {
-    pkmn: {},
+    pkmn: "",
+    pkmns: {},
     items: {},
     attacks: {}
   };
-  this.init();
+  this.graphics = {
+    items: {},
+    berries: {},
+    pkmns: {
+      back: {},
+      front: {},
+      icon: {}
+    },
+    overworlds: {}
+  };
+  this.maps = {};
+  this.bankPointers = [];
+  this.mapInBanksCount = [];
+  return new Promise(function (resolve) {
+    this$1.init().then(function () { return resolve(this$1); });
+  });
 };
-Rom.prototype.init = function init () {
+Rom.prototype.init = function init (resolve) {
+    var this$1 = this;
+
   var buffer = this.buffer;
   this.code = readBinaryString(buffer, OFFSETS.GAME_CODE, 4);
   this.name = readBinaryString(buffer, OFFSETS.GAME_NAME, 4);
   this.maker = readBinaryString(buffer, OFFSETS.GAME_MAKER, 2);
-  this.generatePkmnNameTable();
-  this.getPkmnFrontImgById(1);
-  this.getPkmnFrontImgById(2);
-  this.getPkmnFrontImgById(3);
-  this.getPkmnFrontImgById(4);
-  this.getPkmnFrontImgById(5);
-  this.getPkmnFrontImgById(6);
-  this.getPkmnFrontImgById(151);
-  this.test();
+  assert(this.code === "BPEE"); // emerald rom
+  return new Promise(function (resolve) {
+    this$1.generateTables().then(resolve);
+  });
+  /*for (let ii = 1; ii < OFS.PKMN_COUNT; ++ii) {
+    let pkmn = ii;
+    let bisa_front = this.getPkmnFrontImgById(pkmn);
+    let bisa_back = this.getPkmnBackImgById(pkmn);
+    let bisa_front_anim = this.getPkmnFrontAnimationImgById(pkmn);
+    let bisa_icon = this.getPkmnIconImgById(pkmn);
+    document.body.appendChild(bisa_front.canvas);
+    document.body.appendChild(bisa_front_anim.canvas);
+    document.body.appendChild(bisa_back.canvas);
+    document.body.appendChild(bisa_icon.canvas);
+  };
+  for (let ii = 1; ii < OFS.ITEM_COUNT; ++ii) {
+    let item = this.getItemImageById(ii);
+    document.body.appendChild(item.canvas);
+  };
+  for (let ii = 0; ii < OFS.OVERWORLD_COUNT; ++ii) {
+    let sprite = this.getOverworldImgById(ii, 0);
+    document.body.appendChild(sprite.canvas);
+  };*/
+};
+Rom.prototype.generateTables = function generateTables () {
+    var this$1 = this;
+
+  var tasks = [];
+  tasks.push(this.generatePkmnString, "Generating Pkmn String...");
+  tasks.push(this.generateItemNameTable, "Generating Item Name Table...");
+  tasks.push(this.generatePkmnNameTable, "Generating Pkmn Name Table...");
+  tasks.push(this.generateAttackNameTable, "Generating Attack Name Table...");
+  tasks.push(this.generatePkmnGraphicTable, "Generating Pkmn Graphic Table...");
+  tasks.push(this.generateItemGraphicTable, "Generating Item Graphic Table...");
+  tasks.push(this.generateBerryGraphicTable, "Generating Berry Graphic Table...");
+  tasks.push(this.generateOverworldGraphicTable, "Generating Overworld Graphic Table...");
+  tasks.push(this.generateMaps, "Generating World Map...");
+  tasks.push(function () {}, "Finished!");
+  return new Promise(function (resolve) {
+    var self = this$1;
+    (function nextTask() {
+      if (!tasks.length) { return; }
+      var task = tasks.shift();
+      var desc = tasks.shift();
+      self.options.debug(desc);
+      setTimeout(function () {
+        task.call(self, []);
+        !tasks.length ? resolve() : nextTask();
+      });
+    })();
+  });
+};
+Rom.prototype.generateMaps = function generateMaps () {
+    var this$1 = this;
+
+  for (var ii = 0; ii < OFFSETS.MAP_BANK_POINTERS.length; ++ii) {
+    this$1.mapInBanksCount[ii] = OFFSETS.MAPS_IN_BANK[ii];
+    this$1.bankPointers[ii] = OFFSETS.MAP_BANK_POINTERS[ii];
+  }
+  this.loadWorldMap(0, 9);
+  this.loadWorldMap(0, 18);
+};
+Rom.prototype.fetchMap = function fetchMap (bBank, bMap) {
+  var id = bBank + ":" + bMap;
+  return (
+    this.maps[id] ||
+    (this.maps[id] = this.generateMap(bBank, bMap))
+  );
+};
+Rom.prototype.loadWorldMap = function loadWorldMap (bBank, bMap, resolve) {
+    var this$1 = this;
+
+  var map = this.fetchMap(bBank, bMap);
+  if (map.loaded) { return; }
+  map.loaded = true;
+  map.connections.map(function (con) {
+    var conMap = this$1.fetchMap(con.bBank, con.bMap);
+    switch (con.lType) {
+      case OFFSETS.MAP_CONNECTION.LEFT:
+        conMap.x = map.x - conMap.width;
+        conMap.y = map.y + con.lOffset;
+      break;
+      case OFFSETS.MAP_CONNECTION.UP:
+        conMap.x = map.x + con.lOffset;
+        conMap.y = map.y - conMap.height;
+      break;
+      case OFFSETS.MAP_CONNECTION.RIGHT:
+        conMap.x = map.x + map.width;
+        conMap.y = map.y + con.lOffset;
+      break;
+      case OFFSETS.MAP_CONNECTION.DOWN:
+        conMap.x = map.x + con.lOffset;
+        conMap.y = map.y + map.height;
+      break;
+    }
+    this$1.loadWorldMap(con.bBank, con.bMap, resolve);
+  });
+};
+Rom.prototype.generateMap = function generateMap (bank, map) {
+    var this$1 = this;
+
+  var buffer = this.buffer;
+  var bankOffset = this.bankPointers[bank] + map * 4;
+  var mapHeaderPointer = readPointer(buffer, bankOffset);
+  var offset = mapHeaderPointer;
+
+  // # HEADER
+  var pMap = readPointer(buffer, offset); offset += 0x4;
+  var pSprites = readPointer(buffer, offset); offset += 0x4;
+  var pScript = readPointer(buffer, offset); offset += 0x4;
+  var pConnect = readPointer(buffer, offset); offset += 0x4;
+  var hSong = readWord(buffer, offset); offset += 0x2;
+  var hMap = readWord(buffer, offset); offset += 0x2;
+
+  var bLabelID = readByte(buffer, offset); offset += 0x1;
+  var bFlash = readByte(buffer, offset); offset += 0x1;
+  var bWeather = readByte(buffer, offset); offset += 0x1;
+  var bType = readByte(buffer, offset); offset += 0x1;
+  var bUnused1 = readByte(buffer, offset); offset += 0x1;
+  var bUnused2 = readByte(buffer, offset); offset += 0x1;
+  var bLabelToggle = readByte(buffer, offset); offset += 0x1;
+  var bUnused3 = readByte(buffer, offset); offset += 0x1;
+  var hdrSize = offset - mapHeaderPointer - 0x8000000;
+
+  // # CONNECTION
+  offset = intToPointer(pConnect);
+  var pNumConnections = readPointer(buffer, offset); offset += 0x4;
+  var pData = readPointer(buffer, offset); offset += 0x4;
+
+  var connections = [];
+  for (var ii = 0; ii < pNumConnections; ++ii) {
+    offset = intToPointer(pData) + (ii * 0xc);
+    var conn = {};
+    conn.lType = readPointer(buffer, offset); offset += 0x4;
+    conn.lOffset = readLong(buffer, offset); offset += 0x4;
+    conn.bBank = readByte(buffer, offset); offset += 0x1;
+    conn.bMap = readByte(buffer, offset); offset += 0x1;
+    conn.wFiller = readWord(buffer, offset); offset += 0x2;
+    connections.push(conn);
+  }
+  var originalSize = pNumConnections * 12;
+
+  offset = pSprites &0x1FFFFFF;
+  // # TILESET DATA
+  var bNumNPC = readByte(buffer, offset); offset += 0x1;
+  var bNumExits = readByte(buffer, offset); offset += 0x1;
+  var bNumTraps = readByte(buffer, offset); offset += 0x1;
+  var bNumSigns = readByte(buffer, offset); offset += 0x1;
+  var pNPC = readPointer(buffer, offset); offset += 0x4;
+  var pExits = readPointer(buffer, offset); offset += 0x4;
+  var pTraps = readPointer(buffer, offset); offset += 0x4;
+  var pSigns = readPointer(buffer, offset); offset += 0x4;
+
+  // TODO: SpritesNPC etc...
+
+  // # MAP DATA
+  offset = pMap;
+  var mapWidth = readPointer(buffer, offset); offset += 0x4;
+  var mapHeight = readPointer(buffer, offset); offset += 0x4;
+  var borderTilePtr = readPointer(buffer, offset); offset += 0x4;
+  var mapTilesPtr = readPointer(buffer, offset); offset += 0x4;
+  var pMajorTileset = readPointer(buffer, offset); offset += 0x4;
+  var pMinorTileset = readPointer(buffer, offset); offset += 0x4;
+  var borderWidth = 2; offset += 0x1;
+  var borderHeight = 2; offset += 0x1;
+  var secondarySize = borderWidth + 0xA0;
+
+  var labelOffset = OFFSETS.MAP_LABEL_DATA + (bLabelID * 8);
+  var pMapLabel = readPointer(buffer, labelOffset);
+  var mapName = readString(buffer, pMapLabel);
+
+  console.log(("Loading " + mapName + " [" + mapWidth + "x" + mapHeight + "], [" + (connections.length) + "] at " + (toHex(pMap))));
+
+  // # MAP DATA
+  var tiles = [];
+  var size = mapWidth * mapHeight;
+  for (var ii$1 = 0; ii$1 < size; ++ii$1) {
+    var xx = (ii$1 % mapWidth) | 0;
+    var yy = (ii$1 / mapWidth) | 0;
+    var index = (yy * mapWidth + xx) | 0;
+    var tile = readWord(buffer, intToPointer(mapTilesPtr) + index * 2);
+    tiles.push([tile & 0x3ff, (tile & 0xfc00) >> 10]);
+  }
+
+  // # MAP TILESETS [PRIMARY, SECONDARY]
+  var majorTileset = this.readTilesetHeader(pMajorTileset);
+  var minorTileset = this.readTilesetHeader(pMinorTileset);
+
+  var mainPalCount = OFFSETS.MAIN_TS_PAL_COUNT;
+  var mainHeight = OFFSETS.MAIN_TS_HEIGHT;
+  var localHeight = OFFSETS.LOCAL_TS_HEIGHT;
+  var mainSize = OFFSETS.MAIN_TS_SIZE;
+  var localSize = OFFSETS.LOCAL_TS_SIZE;
+  var mainBlocks = OFFSETS.MAIN_TS_BLOCKS;
+  var localBlocks = OFFSETS.LOCAL_TS_SIZE;
+
+  // # RENDER MAP TILESETS [PRIMARY, SECONDARY]
+  var tileset = null;
+  (function () {
+
+    var offset = 0;
+    var tileSize = 16;
+    var width = mapWidth * tileSize;
+    var height = mapHeight * tileSize;
+
+    var majorPalettes = 96;
+
+    var ctx = createCanvasBuffer(128, 2560).ctx;
+    var tilesetImg = ctx.canvas;
+
+    var paldata = [];
+
+    // # READ PALETTE
+
+    offset = minorTileset.palettePtr;
+    for (var ii = 0; ii < 208; ++ii) {
+      var palette = readShort(buffer, offset); offset += 0x2;
+      paldata[ii] = palette;
+    }
+
+    offset = majorTileset.palettePtr;
+    for (var ii$1 = 0; ii$1 < 96; ++ii$1) {
+      var palette$1 = readShort(buffer, offset); offset += 0x2;
+      paldata[ii$1] = palette$1;
+    }
+
+    this$1.paletteHook(paldata);
+
+    // # READ TILESET
+    var blockLimits = [512, 512];
+    var tilesetSize = [0x4000, 0x5000];
+    var tilesetImageOffsets = [ majorTileset.tilesetImgPtr, minorTileset.tilesetImgPtr ];
+
+    function decode(data) {
+      var out = [];
+      for (var ii = 0; ii < data.length; ++ii) {
+        out.push((data[ii] % 0x10) & 0x7f);
+        out.push((data[ii] / 0x10) & 0x7f);
+      }
+      return out;
+    }
+
+    var tiles = [];
+    for (var ii$2 = 0; ii$2 < 2; ++ii$2) {
+      offset = tilesetImageOffsets[ii$2];
+      var bytes = readBytes(buffer, offset, tilesetSize[ii$2]);
+      var data = decode(LZ77(bytes, 0));
+      for (var jj = 0; jj < data.length; ++jj) { tiles.push(data[jj]); }
+      if (ii$2 === 0 && tiles.length < 0x8000) {
+        for (var ii$3 = 0; ii$3 < 640; ii$3++) { tiles.push(0x0); }
+      }
+    }
+
+    // TILE ANIMATIONS
+    //console.log(readBytes(buffer, readPointer(buffer, 0x84F8738), 256));
+    offset = 0x5059F8;
+    var anim = readPointer(buffer, offset);
+    console.log(readBytes(buffer, anim, 96));
+    /*console.log(readBytes(buffer, offset, 256));
+    console.log(readBytes(buffer, offset + 16, 256));
+    console.log(readBytes(buffer, readPointer(buffer, offset + 16), 256));
+    console.log("---------------------");
+*/
+    // STRUCTURE:
+    /*
+      .2byte 0xFFFF @ tiles tag
+      .2byte 0x1005 @ palette tag
+      .4byte gFieldObjectBaseOam_16x16
+      .4byte gFieldEffectObjectImageAnimTable_TallGrass
+      .4byte gFieldEffectObjectPicTable_TallGrass
+      .4byte gDummySpriteAffineAnimTable
+      .4byte unc_grass_normal
+    */
+
+    // # DECODE PALETTES
+    var palettes = [];
+    for (var ii$4 = 0; ii$4 < 256; ++ii$4) {
+      palettes[ii$4] = decodePalette(paldata[ii$4]);
+    }
+
+    // # DRAW TILESET
+    var tilesetBlockDataOffset = [ majorTileset.blocksPtr, minorTileset.blocksPtr ];
+    var x = 0; var y = 0;
+    var posX = [0, 8, 0, 8];
+    var posY = [0, 0, 8, 8];
+
+    var cw = ctx.canvas.width; var ch = ctx.canvas.height;
+    var imgData = new ImageData(cw, ch);
+    var pixels = imgData.data;
+    for (var ts = 0; ts < 2; ++ts) {
+      offset = tilesetBlockDataOffset[ts];
+      for (var ii$5 = 0; ii$5 < blockLimits[ts]; ++ii$5) {
+        for (var ly = 0; ly < 2; ++ly) { // 2, bg, fg
+          for (var tt = 0; tt < 4; ++tt) { // 4 tile based
+            var tile = readShort(buffer, offset); offset += 0x2;
+            var tileIndex = tile & 0x3FF;
+            var flipX = ((tile & 0x400) >> 10) === 1;
+            var flipY = ((tile & 0x800) >> 11) === 1;
+            var palIndex = (tile & 0xF000) >> 12;
+            var tileSeeker = tileIndex * 64;
+            if (tileSeeker + 64 > tiles.length) { continue; }
+            var dx = x * tileSize + posX[tt];
+            var dy = y * tileSize + posY[tt];
+            var xx = 0; var yy = 0;
+            for (var px = 0; px < 64; ++px) {
+              var pixel = tiles[tileSeeker + px];
+              if (pixel > 0) {
+                var color = palettes[pixel + (palIndex * 16)];
+                var ddx = (dx + (flipX ? (-xx + 7) : xx));
+                var ddy = (dy + (flipY ? (-yy + 7) : yy));
+                var index = 4 * (ddy * cw + ddx);
+                pixels[index + 0] = color.r;
+                pixels[index + 1] = color.g;
+                pixels[index + 2] = color.b;
+                pixels[index + 3] = 0xff;
+              }
+              xx++; if (xx == 8) { xx = 0; yy++; }
+            }
+          }
+        }
+        if ((++x) == 8) { x = 0; y++; }
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+    //document.body.appendChild(ctx.canvas);
+    tileset = ctx;
+  })();
+
+  var tileSize = 16;
+
+  // # BORDER DATA
+  var bw = borderWidth;
+  var bh = borderHeight;
+  var border = createCanvasBuffer(bw * tileSize, bh * tileSize);
+  offset = borderTilePtr;
+  for (var ii$2 = 0; ii$2 < bw * bh; ++ii$2) {
+    var xx$1 = (ii$2 % bw) | 0;
+    var yy$1 = (ii$2 / bw) | 0;
+    var value = readShort(buffer, offset + ii$2 * 2);
+    var tile$1 = value & 0x3ff;
+    var srcX = (tile$1 % 8) * tileSize;
+    var srcY = ((tile$1 / 8) | 0) * tileSize;
+    var destX = xx$1 * tileSize;
+    var destY = yy$1 * tileSize;
+    border.ctx.drawImage(
+      tileset.canvas,
+      srcX, srcY,
+      tileSize, tileSize,
+      destX, destY,
+      tileSize, tileSize
+    );
+  }
+
+  var ctx = createCanvasBuffer(mapWidth * tileSize, mapHeight * tileSize).ctx;
+  // # RENDER MAP
+  offset = mapTilesPtr;
+  for (var ii$3 = 0; ii$3 < mapWidth * mapHeight; ++ii$3) {
+    var xx$2 = (ii$3 % mapWidth) | 0;
+    var yy$2 = (ii$3 / mapWidth) | 0;
+    var value$1 = readShort(buffer, offset + ii$3 * 2);
+    var tile$2 = value$1 & 0x3FF;
+    var attr = value$1 >> 10;
+    ctx.drawImage(
+      tileset.canvas,
+      (tile$2 % 8) * tileSize, (((tile$2 / 8) | 0) * tileSize),
+      tileSize, tileSize,
+      xx$2 * tileSize, (yy$2 * tileSize),
+      tileSize, tileSize
+    );
+    /*if (attr === 1) {
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = "red";
+      ctx.fillRect(xx * tileSize, yy * tileSize, 16, 16);
+      ctx.globalAlpha = 1.0;
+    }*/
+  }
+
+  return {
+    id: map,
+    bank: bank,
+    border: border.ctx,
+    name: mapName,
+    width: mapWidth,
+    height: mapHeight,
+    texture: ctx,
+    connections: connections,
+    loaded: false, // anti recursion
+    x: 0, y: 0
+  };
+
+};
+Rom.prototype.paletteHook = function paletteHook (palettes) {
+  for (var ii = 0; ii < 256; ii++) {
+    var r = (0x1E & palettes[ii]) | 0;
+    var b = ((0x1E << 0x5) & palettes[ii]) | 0;
+    var g = ((0x1E << 0xA) & palettes[ii]) | 0;
+    //palettes[ii] = (r | b | g) & 0xff;
+  }
+};
+Rom.prototype.readTilesetHeader = function readTilesetHeader (offset) {
+  var buffer = this.buffer;
+  var object = {};
+  object.compressed = readByte(buffer, offset); offset += 0x1;
+  object.primary = readByte(buffer, offset); offset += 0x1;
+  offset += 2; // unknown
+  object.tilesetImgPtr = readPointer(buffer, offset); offset += 0x4;
+  object.palettePtr = readPointer(buffer, offset); offset += 0x4;
+  object.blocksPtr = readPointer(buffer, offset); offset += 0x4;
+  object.animPtr = readPointer(buffer, offset); offset += 0x4;
+  object.behavePtr = readPointer(buffer, offset); offset += 0x4;
+  object.blockCount = object.compressed ? OFFSETS.MAIN_TS_BLOCKS : OFFSETS.LOCAL_TS_BLOCKS;
+  return object;
+};
+Rom.prototype.getPkmnString = function getPkmnString () {
+  var buffer = this.buffer;
+  var string = readString(buffer, OFFSETS.PKMN_STRING);
+  return string.substring(0, 7);
+};
+Rom.prototype.getImage = function getImage (s, p, x, y, w, h, compressed) {
+    if ( compressed === void 0 ) compressed = false;
+
+  var buffer = this.buffer;
+  var ctx = createCanvasBuffer(w + x, h + y).ctx;
+  var palette = readPalette(buffer, p, !!compressed);
+  var pixels = readPixels(buffer, s, palette, w, h, !!compressed);
+  ctx.putImageData(pixels, x, y);
+  return {
+    canvas: ctx.canvas,
+    data: new Uint8Array(pixels.data)
+  };
+};
+Rom.prototype.getOverworldImgById = function getOverworldImgById (id, frame) {
+  var buffer = this.buffer;
+  var offset = (OFFSETS.OVERWORLD_BANK + (id * 36));
+  offset += 4; // skip ffff
+  var paletteNum = readByte(buffer, offset - 2); offset += 0x1;
+  offset += 0x3; // unknown
+  var width = readByte(buffer, offset); offset += 0x1;
+  offset += 0x1; // unknown
+  var height = readByte(buffer, offset); offset += 0x1;
+  offset += 0x1; // unknown
+  offset += 0x1; // unknown
+  offset += 0x3; // unknown
+  offset += 0x4; // unknown ptr
+  offset += 0x4; // unknown ptr
+  offset += 0x4; // unknown ptr
+  var spritePtr = readPointer(buffer, offset); offset += 0x4;
+  offset += 0x4; // unknown ptr
+
+  // get palette, weird stuff
+  var palettePtr = 0;
+  for (var ii = 0; ii < OFFSETS.OVERWORLD_PAL_COUNT; ++ii) {
+    var index = OFFSETS.OVERWORLD_PAL_HEADERS + (ii * 8);
+    if (readByte(buffer, index + 4) === paletteNum) {
+      palettePtr = readLong(buffer, index) - 0x8000000;
+    }
+  }
+
+  var pixels = readPointer(buffer, spritePtr + (8 * frame));
+  var palette = palettePtr;
+  return this.getImage(pixels, palette, 0, 0, width, height, true);
+};
+Rom.prototype.getPkmnFrontImgById = function getPkmnFrontImgById (id) {
+  var buffer = this.buffer;
+  var pixels = readPointer(buffer, OFFSETS.PKMN_FRONT_IMG + id * 8);
+  var palette = readPointer(buffer, OFFSETS.PKMN_NORMAL_PAL + id * 8);
+  return this.getImage(pixels, palette, 0, 0, 64, 64);
+};
+Rom.prototype.getPkmnBackImgById = function getPkmnBackImgById (id) {
+  var buffer = this.buffer;
+  var pixels = readPointer(buffer, OFFSETS.PKMN_BACK_IMG + id * 8);
+  var palette = readPointer(buffer, OFFSETS.PKMN_NORMAL_PAL + id * 8);
+  return this.getImage(pixels, palette, 0, 0, 64, 64);
+};
+Rom.prototype.getPkmnFrontAnimationImgById = function getPkmnFrontAnimationImgById (id) {
+  var buffer = this.buffer;
+  var pixels = readPointer(buffer, OFFSETS.PKMN_FRONT_ANIM + id * 8);
+  var palette = readPointer(buffer, OFFSETS.PKMN_NORMAL_PAL + id * 8);
+  return this.getImage(pixels, palette, 0, -64, 64, 128);
+};
+Rom.prototype.getPkmnIconImgById = function getPkmnIconImgById (id) {
+  var buffer = this.buffer;
+  var pixels = readPointer(buffer, OFFSETS.ICON_POINTER_TBL + (id * 4));
+  var poffset = OFFSETS.ICON_PALS + (readByte(buffer, OFFSETS.ICON_PAL_TABLE + id) * 32);
+  return this.getImage(pixels, poffset, 0, 0, 32, 64, true);
+};
+Rom.prototype.getItemImageById = function getItemImageById (id) {
+  var buffer = this.buffer;
+  if (id === 139) {
+    //console.log(readPointer(buffer, OFS.ITEM_IMG + id * 8), toHex(readPointer(buffer, OFS.ITEM_IMG + id * 8)));
+  }
+  var pixels = readPointer(buffer, OFFSETS.ITEM_IMG + id * 8);
+  var palette = readPointer(buffer, OFFSETS.ITEM_IMG + (id * 8) + 4);
+  return this.getImage(pixels, palette, 0, 0, 24, 24);
+};
+Rom.prototype.getItemNameById = function getItemNameById (id) {
+  var buffer = this.buffer;
+  var offset = OFFSETS.ITEM_DATA + id * 44;
+  return readString(buffer, offset);
+};
+Rom.prototype.getAttackNameById = function getAttackNameById (id) {
+  var buffer = this.buffer;
+  var offset = OFFSETS.ATTACK_NAMES + id * 13;
+  return readString(buffer, offset);
 };
 Rom.prototype.getPkmnNameById = function getPkmnNameById (id) {
   var offset = id * 11;
   var buffer = this.buffer;
   return readString(buffer, OFFSETS.PKMN_NAMES + offset)
 };
-Rom.prototype.getPkmnFrontImgById = function getPkmnFrontImgById (id) {
+Rom.prototype.getPkmnCryById = function getPkmnCryById (id) {
   var buffer = this.buffer;
-   // img
-  var soffset = OFFSETS.PKMN_FRONT_IMG + id * 8;
-  var sptr = readPointer(buffer, soffset);
-  var sbytes = readBytes(buffer, sptr, 0xfff);
-  var pixels = LZ77(buffer, sptr);
-  var ww = 64; var hh = 64;
-
-  var canvas = document.createElement("canvas");
-  canvas.width = ww;
-  canvas.height = hh;
-  var ctx = canvas.getContext("2d");
-
-  var index = 0;
-  var TILE_SIZE = 8;
-  // loop through rows of tiles
-  for (var yTile = 0; yTile < (ww / TILE_SIZE); yTile++) {
-    // loop through columns of tiles
-    for (var xTile = 0; xTile < (hh / TILE_SIZE); xTile++) {
-      // loop through rows of pixels inside tile
-      for (var yPixel = 0; yPixel < TILE_SIZE; yPixel++) {
-        // loop through columns of pixels inside tile
-        for (var xPixel = 0; xPixel < TILE_SIZE; xPixel++) {
-
-          var depth = 4;
-          var pixel = pixels[index / (TILE_SIZE / depth)];
-          if ((index & 1) === 0) { pixel &= 0x0F; }
-          else { pixel = (pixel & 0xF0) >> depth; }
-
-          if (pixel > 0) { ctx.fillStyle = "#fff"; }
-          else { ctx.fillStyle = "#000"; }
-
-          ctx.fillRect(
-            xPixel + (xTile * TILE_SIZE),
-            yPixel + (yTile * TILE_SIZE),
-            1, 1
-          );
-
-          index++;
-        }
-      }
-    }
+  var cryTbl1 = OFFSETS.CRY_TABLE;
+  var cryTbl2 = OFFSETS.CRY_TABLE2;
+  var cryConvTbl = OFFSETS.CRY_CONVERSION_TABLE;
+  var offset = readPointer(buffer, cryTbl1 + (id * 12) + 4);
+  var compressed = 0x1;
+  var looped = 0x4000;
+  var sampleRate = readInt(buffer, offset + 4) >> 10;
+  var loopStart = readInt(buffer, offset + 8);
+  var size = readInt(buffer, offset + 12) + 1;
+  var bytes = [];
+  for (var ii = 0; ii < size; ++ii) {
+    var byte = readByte(buffer, offset + 16 + ii);
+    bytes.push(byte);
   }
+  return bytes;
+};
+Rom.prototype.generatePkmnString = function generatePkmnString () {
+  var string = this.getPkmnString();
+  this.names.pkmn = string;
+};
+Rom.prototype.generateAttackNameTable = function generateAttackNameTable () {
+    var this$1 = this;
 
-
-  /*let imgd = new ImageData(ww, hh);
-  for (let ii = 0; ii < ww * hh; ++ii) {
-    let px = ii * 4;
-    imgd.data[px + 0] = pixels[ii + 0];
-    imgd.data[px + 1] = pixels[ii + 1];
-    imgd.data[px + 2] = pixels[ii + 2];
-    imgd.data[px + 3] = pixels[ii + 3];
-  };
-  var canvas = document.createElement("canvas");
-  canvas.width = ww;
-  canvas.height = hh;
-  var ctx = canvas.getContext("2d");
-  ctx.putImageData(imgd, 0, 0);*/
-
-  var img = document.createElement("img");
-  img.src = canvas.toDataURL("image/png");
-  document.body.appendChild(img);
+  var table = this.names.attacks;
+  for (var ii = 1; ii <= OFFSETS.ATTACK_COUNT; ++ii) {
+    var atk = this$1.getAttackNameById(ii);
+    table[ii] = atk;
+  }
 };
 Rom.prototype.generatePkmnNameTable = function generatePkmnNameTable () {
     var this$1 = this;
 
-  var table = this.names.pkmn;
-  for (var ii = 1; ii <= 151; ++ii) {
+  var table = this.names.pkmns;
+  for (var ii = 1; ii <= OFFSETS.PKMN_COUNT; ++ii) {
     var name = this$1.getPkmnNameById(ii);
     table[ii] = name;
   }
 };
-Rom.prototype.test = function test () {
-  var buffer = this.buffer;
-  var itemImageDataPtr = 0x3D4294;
-  var imgPtr = readPointerAsInt(itemImageDataPtr + 0);
-  var palettePtr = readPointerAsInt(itemImageDataPtr + 4);
-  //console.log(readBytes(buffer, itemImageDataPtr, 10));
-  //console.log(readBytes(buffer, imgPtr, 10));
+Rom.prototype.generatePkmnGraphicTable = function generatePkmnGraphicTable () {
+    var this$1 = this;
+
+  var table = this.graphics.pkmns;
+  for (var ii = 1; ii <= OFFSETS.PKMN_COUNT; ++ii) {
+    var icon = this$1.getPkmnIconImgById(ii);
+    var back = this$1.getPkmnBackImgById(ii);
+    var front = this$1.getPkmnFrontImgById(ii);
+    table.icon[ii] = front;
+    table.back[ii] = back;
+    table.front[ii] = front;
+  }
+};
+Rom.prototype.generateItemNameTable = function generateItemNameTable () {
+    var this$1 = this;
+
+  var table = this.names.items;
+  for (var ii = 1; ii <= OFFSETS.ITEM_COUNT; ++ii) {
+    var name = this$1.getItemNameById(ii);
+    table[ii] = name;
+  }
+};
+Rom.prototype.generateItemGraphicTable = function generateItemGraphicTable () {
+    var this$1 = this;
+
+  var table = this.graphics.items;
+  for (var ii = 1; ii <= OFFSETS.ITEM_COUNT; ++ii) {
+    var item = this$1.getItemImageById(ii);
+    table[ii] = item;
+  }
+};
+Rom.prototype.generateBerryGraphicTable = function generateBerryGraphicTable () {
+  var table = this.graphics.berries;
+
+};
+Rom.prototype.generateOverworldGraphicTable = function generateOverworldGraphicTable () {
+    var this$1 = this;
+
+  var table = this.graphics.overworlds;
+  for (var ii = 0; ii < OFFSETS.OVERWORLD_COUNT; ++ii) {
+    var frames = getMaxFrame(ii);
+    table[ii] = [];
+    for (var frm = 0; frm <= frames; ++frm) {
+      if (frames >= 8 && isFrameMirrorable(frm - 1)) {
+        var sprite = this$1.getOverworldImgById(ii, frm - 1);
+        var ctx = createCanvasBuffer(sprite.canvas.width, sprite.canvas.height).ctx;
+        ctx.setTransform(-1, 0, 0, 1, sprite.canvas.width, 0);
+        ctx.drawImage(
+          sprite.canvas,
+          0, 0
+        );
+        sprite.canvas = ctx.canvas;
+        table[ii].push(sprite);
+      }
+      var sprite$1 = this$1.getOverworldImgById(ii, frm);
+      table[ii].push(sprite$1);
+    }
+  }
 };
 
 console.clear();
 
+var ctx = canvas.getContext("2d");
+
+var width = 0;
+var height = 0;
+
+function debug(msg) {
+  ctx.clearRect(0, 0, width, height);
+  var size = 18;
+  ctx.font = size + "px Arial";
+  ctx.fillStyle = "rgba(255,255,255,1)";
+  msg = msg.toUpperCase();
+  var centerX = ctx.measureText(msg).width;
+  var xx = (width / 2) - centerX / 2;
+  var yy = (height / 2);
+  ctx.fillText(msg, xx, yy);
+}
+
+function $(el) {
+  return document.querySelector(el);
+}
+
+window.rom = null;
 readBinaryFile("rom.gba").then(function (buffer) {
-  console.log("ROM successfully loaded");
-  var rom = new Rom(buffer);
-  console.log(rom);
+  resize();
+  new Rom(buffer, { debug: debug }).then(function (instance) {
+    rom = instance;
+    init();
+  });
+});
+
+var DIR = {
+  LEFT: 0,
+  UP: 1,
+  RIGHT: 2,
+  DOWN: 3
+};
+
+function zoomScale(x) {
+  return (
+    x >= 0 ? x + 1 :
+    x < 0 ? x + 1 :
+    x + 1
+  );
+}
+
+
+
+function init() {
+  $(".ui").style.opacity = 1.0;
+  resize();
+  (function draw() {
+    requestAnimationFrame(draw);
+    updateEntity(player);
+    ctx.clearRect(0, 0, width, height);
+    for (var key in rom.maps) {
+      drawMap(key);
+    }
+    updateCamera();
+    ctx.fillStyle = "red";
+    drawSprite(
+      0,
+      player.frame,
+      cx + (player.x * 16) * cz,
+      cy + (player.y * 16) * cz
+    );
+  })();
+  console.log(rom.maps);
+}
+
+function drawSprite(id, frame, x, y) {
+  var sprite = rom.graphics.overworlds[id][frame].canvas;
+  ctx.drawImage(
+    sprite,
+    0, 0,
+    sprite.width, sprite.height,
+    x, y,
+    sprite.width * cz, sprite.height * cz
+  );
+}
+
+function inView(map) {
+  var img = map.texture.canvas;
+  var xx = cx + (((map.x - 8) * 16) * cz) | 0;
+  var yy = cy + (((map.y - 8) * 16) * cz) | 0;
+  var ww = (((map.width + 16) * 16) * cz) | 0;
+  var hh = (((map.height + 16) * 16) * cz) | 0;
+  return (
+    (xx + ww >= 0 && xx <= width) &&
+    (yy + hh >= 0 && yy <= height)
+  );
+}
+
+function drawMap(id) {
+  var map = rom.maps[id];
+  var img = map.texture.canvas;
+  var xx = cx + (((map.x | 0) * 16) * cz) | 0;
+  var yy = cy + (((map.y | 0) * 16) * cz) | 0;
+  var ww = (img.width * cz) | 0;
+  var hh = (img.height * cz) | 0;
+  if (!inView(map)) { return; }
+  if (map.name === "UNDERWATER") { return; }
+  drawBorder(map);
+  ctx.drawImage(
+    img,
+    0, 0,
+    img.width, img.height,
+    xx, yy,
+    ww, hh
+  );
+  ctx.font = "12px Arial";
+  ctx.fillStyle = "#fff";
+  ctx.fillText(map.name + " [" + map.bank + ":" + map.id + "]", xx + 16, yy + 16);
+}
+
+function hasConnection(map, dir) {
+  for (var ii = 0; ii < map.connections.length; ++ii) {
+    var con = map.connections[ii];
+    switch (con.lType) {
+      case OFFSETS.MAP_CONNECTION.LEFT:
+        if (dir === DIR.LEFT) { return true; }
+      break;
+      case OFFSETS.MAP_CONNECTION.UP:
+        if (dir === DIR.UP) { return true; }
+      break;
+      case OFFSETS.MAP_CONNECTION.RIGHT:
+        if (dir === DIR.RIGHT) { return true; }
+      break;
+      case OFFSETS.MAP_CONNECTION.DOWN:
+        if (dir === DIR.DOWN) { return true; }
+      break;
+    }
+  }
+  return false;
+}
+
+function drawBorder(map) {
+  var border = map.border;
+  var texture = border.canvas;
+  var tw = texture.width;
+  var th = texture.height;
+  var padding = 4;
+  var mw = (map.width / 2) | 0;
+  var mh = (map.height / 2) | 0;
+  // horizontal border
+  for (var xx = 0; xx < 4; ++xx) {
+    for (var yy = 0; yy < mh; ++yy) {
+      if (!hasConnection(map, DIR.LEFT)) {
+        ctx.drawImage(
+          texture,
+          0, 0,
+          tw, th,
+          cx + (((map.x - 2 - (xx * 2) | 0) * 16) * cz) | 0,
+          cy + ((((map.y + (yy * 2)) | 0) * 16) * cz) | 0,
+          (tw * cz) | 0, (th * cz) | 0
+        );
+      }
+      if (!hasConnection(map, DIR.RIGHT)) {
+        ctx.drawImage(
+          texture,
+          0, 0,
+          tw, th,
+          cx + ((((map.x + map.width) + (xx * 2) | 0) * 16) * cz) | 0,
+          cy + ((((map.y + (yy * 2)) | 0) * 16) * cz) | 0,
+          (tw * cz) | 0, (th * cz) | 0
+        );
+      }
+    }
+  }
+  // vertical border
+  for (var yy$1 = 0; yy$1 < 4; ++yy$1) {
+    for (var xx$1 = 0; xx$1 < (mw); ++xx$1) {
+      if (!hasConnection(map, DIR.UP)) {
+        ctx.drawImage(
+          texture,
+          0, 0,
+          tw, th,
+          cx + (((map.x + (xx$1 * 2) | 0) * 16) * cz) | 0,
+          cy + ((((map.y - 2 - (yy$1 * 2)) | 0) * 16) * cz) | 0,
+          (tw * cz) | 0, (th * cz) | 0
+        );
+      }
+      if (!hasConnection(map, DIR.DOWN)) {
+        ctx.drawImage(
+          texture,
+          0, 0,
+          tw, th,
+          cx + (((map.x + (xx$1 * 2) | 0) * 16) * cz) | 0,
+          cy + ((((map.y + map.height + (yy$1 * 2)) | 0) * 16) * cz) | 0,
+          (tw * cz) | 0, (th * cz) | 0
+        );
+      }
+    }
+  }
+}
+
+window.player = {
+  frameIndex: 0,
+  waitMove: 0,
+  facing: DIR.DOWN,
+  speed: 0.06,
+  tx: 10, ty: 5,
+  dx: 0, dy: 0,
+  vx: 0, vy: 0,
+  x: 10, y: 5, frame: 0
+};
+
+function updateCamera() {
+  cx = (width / 2) - (((player.x * 16) + 8)) * cz;
+  cy = (height / 2) - (((player.y * 16) + 16)) * cz;
+}
+
+function updateEntity(entity) {
+  // IEEE 754 hack
+  if (entity.x !== entity.tx) { entity.x = Math.round(entity.x * 1e3) / 1e3; }
+  if (entity.y !== entity.ty) { entity.y = Math.round(entity.y * 1e3) / 1e3; }
+  var isMovingX = (
+    (entity.tx > entity.x && entity.x + entity.speed >= entity.tx) ||
+    (entity.tx < entity.x && entity.x - entity.speed <= entity.tx)
+  );
+  var isMovingY = (
+    (entity.ty > entity.y && entity.y + entity.speed >= entity.ty) ||
+    (entity.ty < entity.y && entity.y - entity.speed <= entity.ty)
+  );
+  if (isMovingX) {
+    entity.x = entity.tx;
+    entity.vx = 0;
+  }
+  if (isMovingY) {
+    entity.y = entity.ty;
+    entity.vy = 0;
+  }
+  if (entity.vx !== 0) { entity.x += entity.vx; }
+  if (entity.vy !== 0) { entity.y += entity.vy; }
+}
+
+function isBlocked(x, y) {
+  return false;
+}
+
+function isMoving(entity) {
+  return (
+    player.x !== player.tx ||
+    player.y !== player.ty
+  );
+}
+
+var FACE_TIME = 5;
+
+function movePlayer(dir, duration) {
+  if (!isMoving(player) && player.facing !== dir) {
+    player.waitMove = FACE_TIME;
+  } else {
+    if (player.waitMove > 0) {
+      player.waitMove--;
+      return;
+    }
+  }
+  if (dir === DIR.LEFT) {
+    if (!isMoving(player) && player.facing !== DIR.LEFT && duration <= FACE_TIME) {
+      player.facing = DIR.LEFT;
+      player.frame = 2;
+      return;
+    }
+    player.facing = DIR.LEFT;
+    if (!isBlocked(player.x - 1, player.y) && !isMoving(player)) {
+      player.frame = 2;
+      player.tx = player.x - 1;
+      player.vx += (player.tx - player.x) * player.speed;
+    }
+  }
+  if (dir === DIR.UP) {
+    if (!isMoving(player) && player.facing !== DIR.UP && duration <= FACE_TIME) {
+      player.facing = DIR.UP;
+      player.frame = 1;
+      return;
+    }
+    player.facing = DIR.UP;
+    if (!isBlocked(player.x, player.y - 1) && !isMoving(player)) {
+      player.frame = 1;
+      player.ty = player.y - 1;
+      player.vy += (player.ty - player.y) * player.speed;
+    }
+  }
+  if (dir === DIR.RIGHT) {
+    if (!isMoving(player) && player.facing !== DIR.RIGHT && duration <= FACE_TIME) {
+      player.facing = DIR.RIGHT;
+      player.frame = 3;
+      return;
+    }
+    player.facing = DIR.RIGHT;
+    if (!isBlocked(player.x + 1, player.y) && !isMoving(player)) {
+      player.frame = 3;
+      player.tx = player.x + 1;
+      player.vx += (player.tx - player.x) * player.speed;
+    }
+  }
+  if (dir === DIR.DOWN) {
+    if (!isMoving(player) && player.facing !== DIR.DOWN && duration <= FACE_TIME) {
+      player.facing = DIR.DOWN;
+      player.frame = 0;
+      return;
+    }
+    player.facing = DIR.DOWN;
+    if (!isBlocked(player.x, player.y + 1) && !isMoving(player)) {
+      player.frame = 0;
+      player.ty = player.y + 1;
+      player.vy += (player.ty - player.y) * player.speed;
+    }
+  }
+}
+
+var keys = {};
+window.addEventListener("keydown", function (e) {
+  if (!keys[e.key]) { keys[e.key] = 1; }
+  keys[e.key] = 1;
+  updateKeys();
+});
+window.addEventListener("keyup", function (e) {
+  if (!keys[e.key]) { keys[e.key] = 1; }
+  keys[e.key] = 0;
+  updateKeys();
+});
+
+function updateKeys() {
+  var left = keys["a"] || keys["ArrowLeft"];
+  var up = keys["w"] || keys["ArrowUp"];
+  var right = keys["d"] || keys["ArrowRight"];
+  var down = keys["s"] || keys["ArrowDown"];
+  if (left) { movePlayer(DIR.LEFT, left); }
+  if (up) { movePlayer(DIR.UP, keys["w"]); }
+  if (right) { movePlayer(DIR.RIGHT, keys["d"]); }
+  if (down) { movePlayer(DIR.DOWN, keys["s"]); }
+  for (var key in keys) {
+    if (keys[key] > 0) { keys[key] += 1; }
+  }
+}
+
+setInterval(updateKeys, 1e3 / 60);
+
+var down = false;
+window.addEventListener("mouseup", function (e) { return down = false; });
+window.addEventListener("mousedown", function (e) {
+  down = true;
+  lx = e.clientX; ly = e.clientY;
+});
+
+var lx = 0; var ly = 0;
+window.addEventListener("mousemove", function (e) {
+  var x = e.clientX;
+  var y = e.clientY;
+  if (!down) {
+    lx = x; ly = y;
+    return;
+  }
+  cx -= lx - x; cy -= ly - y;
+  lx = x; ly = y;
+});
+
+window.cz = 6.125;
+window.cx = 0; window.cy = 0;
+window.addEventListener("mousewheel", function (e) {
+  var dir = e.deltaY > 0 ? -1 : 1;
+  cz = cz + (dir * 0.25) * (zoomScale(cz) * 0.3);
+  if (cz <= 0.1) { cz = 0.1; }
+  updateCamera();
+});
+
+function resize() {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = width;
+  canvas.height = height;
+  var resolution = window.devicePixelRatio;
+  canvas.width = width * resolution;
+  canvas.height = height * resolution;
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+  ctx.setTransform(resolution, 0, 0, resolution, 0, 0);
+  setImageSmoothing(ctx, false);
+}
+
+window.addEventListener("resize", resize);
+
+window.addEventListener("contextmenu", function (e) {
+  e.preventDefault();
 });
 
 }());

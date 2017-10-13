@@ -27,13 +27,15 @@ import {
   LZ77,
   toHex,
   getMaxFrame,
-  searchString
+  searchString,
+  isFrameMirrorable
 } from "./rom-utils";
 
 import { OFFSETS as OFS } from "./offsets";
 
 export default class Rom {
-  constructor(buffer) {
+  constructor(buffer, opt = {}) {
+    this.options = opt;
     this.buffer = buffer;
     this.code = null;
     this.name = null;
@@ -46,6 +48,7 @@ export default class Rom {
     };
     this.graphics = {
       items: {},
+      berries: {},
       pkmns: {
         back: {},
         front: {},
@@ -56,15 +59,19 @@ export default class Rom {
     this.maps = {};
     this.bankPointers = [];
     this.mapInBanksCount = [];
-    this.init();
+    return new Promise((resolve) => {
+      this.init().then(() => resolve(this));
+    });
   }
-  init() {
+  init(resolve) {
     let buffer = this.buffer;
     this.code = readBinaryString(buffer, OFS.GAME_CODE, 4);
     this.name = readBinaryString(buffer, OFS.GAME_NAME, 4);
     this.maker = readBinaryString(buffer, OFS.GAME_MAKER, 2);
     assert(this.code === "BPEE"); // emerald rom
-    this.generateTables();
+    return new Promise((resolve) => {
+      this.generateTables().then(resolve);
+    });
     /*for (let ii = 1; ii < OFS.PKMN_COUNT; ++ii) {
       let pkmn = ii;
       let bisa_front = this.getPkmnFrontImgById(pkmn);
@@ -86,22 +93,30 @@ export default class Rom {
     };*/
   }
   generateTables() {
-    console.log(`Generating Pkmn String...`);
-    this.generatePkmnString();
-    console.log(`Generating Item Name Table...`);
-    this.generateItemNameTable();
-    console.log(`Generating Pkmn Name Table...`);
-    this.generatePkmnNameTable();
-    console.log(`Generating Attack Name Table...`);
-    this.generateAttackNameTable();
-    console.log(`Generating Pkmn Graphic Table...`);
-    this.generatePkmnGraphicTable();
-    console.log(`Generating Item Graphic Table...`);
-    this.generateItemGraphicTable();
-    console.log(`Generating Overworld Graphic Table...`);
-    this.generateOverworldGraphicTable();
-    console.log(`Generating maps...`);
-    this.generateMaps();
+    let tasks = [];
+    tasks.push(this.generatePkmnString, `Generating Pkmn String...`);
+    tasks.push(this.generateItemNameTable, `Generating Item Name Table...`);
+    tasks.push(this.generatePkmnNameTable, `Generating Pkmn Name Table...`);
+    tasks.push(this.generateAttackNameTable, `Generating Attack Name Table...`);
+    tasks.push(this.generatePkmnGraphicTable, `Generating Pkmn Graphic Table...`);
+    tasks.push(this.generateItemGraphicTable, `Generating Item Graphic Table...`);
+    tasks.push(this.generateBerryGraphicTable, `Generating Berry Graphic Table...`);
+    tasks.push(this.generateOverworldGraphicTable, `Generating Overworld Graphic Table...`);
+    tasks.push(this.generateMaps, `Generating World Map...`);
+    tasks.push(() => {}, `Finished!`);
+    return new Promise((resolve) => {
+      let self = this;
+      (function nextTask() {
+        if (!tasks.length) return;
+        let task = tasks.shift();
+        let desc = tasks.shift();
+        self.options.debug(desc);
+        setTimeout(() => {
+          task.call(self, []);
+          !tasks.length ? resolve() : nextTask();
+        });
+      })();
+    });
   }
   generateMaps() {
     for (let ii = 0; ii < OFS.MAP_BANK_POINTERS.length; ++ii) {
@@ -109,20 +124,41 @@ export default class Rom {
       this.bankPointers[ii] = OFS.MAP_BANK_POINTERS[ii];
     };
     this.loadWorldMap(0, 9);
-    /*let map = this.generateMap(0, 9);
-    document.body.appendChild(map.texture.canvas);
-    console.log(map.connections);*/
+    this.loadWorldMap(0, 18);
   }
-  loadWorldMap(bank, id) {
-    let mapId = bank + ":" + id;
-    if (this.maps[mapId]) return;
-    let map = this.generateMap(bank, id);
-    this.maps[mapId] = map;
-    if (map.connections.length) {
-      map.connections.map(connection => {
-        this.loadWorldMap(connection.bBank, connection.bMap);
-      });
-    }
+  fetchMap(bBank, bMap) {
+    let id = bBank + ":" + bMap;
+    return (
+      this.maps[id] ||
+      (this.maps[id] = this.generateMap(bBank, bMap))
+    );
+  }
+  loadWorldMap(bBank, bMap, resolve) {
+    let map = this.fetchMap(bBank, bMap);
+    if (map.loaded) return;
+    map.loaded = true;
+    map.connections.map(con => {
+      let conMap = this.fetchMap(con.bBank, con.bMap);
+      switch (con.lType) {
+        case OFS.MAP_CONNECTION.LEFT:
+          conMap.x = map.x - conMap.width;
+          conMap.y = map.y + con.lOffset;
+        break;
+        case OFS.MAP_CONNECTION.UP:
+          conMap.x = map.x + con.lOffset;
+          conMap.y = map.y - conMap.height;
+        break;
+        case OFS.MAP_CONNECTION.RIGHT:
+          conMap.x = map.x + map.width;
+          conMap.y = map.y + con.lOffset;
+        break;
+        case OFS.MAP_CONNECTION.DOWN:
+          conMap.x = map.x + con.lOffset;
+          conMap.y = map.y + map.height;
+        break;
+      };
+      this.loadWorldMap(con.bBank, con.bMap, resolve);
+    });
   }
   generateMap(bank, map) {
     let buffer = this.buffer;
@@ -177,7 +213,7 @@ export default class Rom {
     let pTraps = readPointer(buffer, offset); offset += 0x4;
     let pSigns = readPointer(buffer, offset); offset += 0x4;
 
-    // SpritesNPC etc...
+    // TODO: SpritesNPC etc...
 
     // # MAP DATA
     offset = pMap;
@@ -277,6 +313,27 @@ export default class Rom {
         }
       };
 
+      // TILE ANIMATIONS
+      //console.log(readBytes(buffer, readPointer(buffer, 0x84F8738), 256));
+      offset = 0x5059F8;
+      let anim = readPointer(buffer, offset);
+      console.log(readBytes(buffer, anim, 96));
+      /*console.log(readBytes(buffer, offset, 256));
+      console.log(readBytes(buffer, offset + 16, 256));
+      console.log(readBytes(buffer, readPointer(buffer, offset + 16), 256));
+      console.log("---------------------");
+*/
+      // STRUCTURE:
+      /*
+        .2byte 0xFFFF @ tiles tag
+        .2byte 0x1005 @ palette tag
+        .4byte gFieldObjectBaseOam_16x16
+        .4byte gFieldEffectObjectImageAnimTable_TallGrass
+        .4byte gFieldEffectObjectPicTable_TallGrass
+        .4byte gDummySpriteAffineAnimTable
+        .4byte unc_grass_normal
+      */
+
       // # DECODE PALETTES
       let palettes = [];
       for (let ii = 0; ii < 256; ++ii) {
@@ -331,27 +388,59 @@ export default class Rom {
       tileset = ctx;
     })();
 
-    let ctx = createCanvasBuffer(mapWidth * 16, mapHeight * 16).ctx;
+    let tileSize = 16;
 
+    // # BORDER DATA
+    let bw = borderWidth;
+    let bh = borderHeight;
+    let border = createCanvasBuffer(bw * tileSize, bh * tileSize);
+    offset = borderTilePtr;
+    for (let ii = 0; ii < bw * bh; ++ii) {
+      let xx = (ii % bw) | 0;
+      let yy = (ii / bw) | 0;
+      let value = readShort(buffer, offset + ii * 2);
+      let tile = value & 0x3ff;
+      let srcX = (tile % 8) * tileSize;
+      let srcY = ((tile / 8) | 0) * tileSize;
+      let destX = xx * tileSize;
+      let destY = yy * tileSize;
+      border.ctx.drawImage(
+        tileset.canvas,
+        srcX, srcY,
+        tileSize, tileSize,
+        destX, destY,
+        tileSize, tileSize
+      );
+    };
+
+    let ctx = createCanvasBuffer(mapWidth * tileSize, mapHeight * tileSize).ctx;
+    // # RENDER MAP
     offset = mapTilesPtr;
     for (let ii = 0; ii < mapWidth * mapHeight; ++ii) {
       let xx = (ii % mapWidth) | 0;
       let yy = (ii / mapWidth) | 0;
       let value = readShort(buffer, offset + ii * 2);
       let tile = value & 0x3FF;
-
+      let attr = value >> 10;
       ctx.drawImage(
         tileset.canvas,
-        (tile % 8) * 16, (((tile / 8) | 0) * 16),
-        16, 16,
-        xx * 16, (yy * 16),
-        16, 16
+        (tile % 8) * tileSize, (((tile / 8) | 0) * tileSize),
+        tileSize, tileSize,
+        xx * tileSize, (yy * tileSize),
+        tileSize, tileSize
       );
+      /*if (attr === 1) {
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = "red";
+        ctx.fillRect(xx * tileSize, yy * tileSize, 16, 16);
+        ctx.globalAlpha = 1.0;
+      }*/
     };
 
     return {
       id: map,
       bank: bank,
+      border: border.ctx,
       name: mapName,
       width: mapWidth,
       height: mapHeight,
@@ -369,9 +458,6 @@ export default class Rom {
       let g = ((0x1E << 0xA) & palettes[ii]) | 0;
       //palettes[ii] = (r | b | g) & 0xff;
     }
-  }
-  loadTileset() {
-
   }
   readTilesetHeader(offset) {
     let buffer = this.buffer;
@@ -460,6 +546,9 @@ export default class Rom {
   }
   getItemImageById(id) {
     let buffer = this.buffer;
+    if (id === 139) {
+      //console.log(readPointer(buffer, OFS.ITEM_IMG + id * 8), toHex(readPointer(buffer, OFS.ITEM_IMG + id * 8)));
+    }
     let pixels = readPointer(buffer, OFS.ITEM_IMG + id * 8);
     let palette = readPointer(buffer, OFS.ITEM_IMG + (id * 8) + 4);
     return this.getImage(pixels, palette, 0, 0, 24, 24);
@@ -540,14 +629,29 @@ export default class Rom {
       table[ii] = item;
     };
   }
+  generateBerryGraphicTable() {
+    let table = this.graphics.berries;
+
+  }
   generateOverworldGraphicTable() {
     let table = this.graphics.overworlds;
     for (let ii = 0; ii < OFS.OVERWORLD_COUNT; ++ii) {
       let frames = getMaxFrame(ii);
       table[ii] = [];
       for (let frm = 0; frm <= frames; ++frm) {
+        if (frames >= 8 && isFrameMirrorable(frm - 1)) {
+          let sprite = this.getOverworldImgById(ii, frm - 1);
+          let ctx = createCanvasBuffer(sprite.canvas.width, sprite.canvas.height).ctx;
+          ctx.setTransform(-1, 0, 0, 1, sprite.canvas.width, 0);
+          ctx.drawImage(
+            sprite.canvas,
+            0, 0
+          );
+          sprite.canvas = ctx.canvas;
+          table[ii].push(sprite);
+        }
         let sprite = this.getOverworldImgById(ii, frm);
-        table[ii][frm] = sprite;
+        table[ii].push(sprite);
       };
     };
   }

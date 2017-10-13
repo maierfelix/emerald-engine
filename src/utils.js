@@ -22,14 +22,14 @@ export function createCanvasBuffer(width, height) {
   canvas.width = width;
   canvas.height = height;
   let ctx = canvas.getContext("2d");
-  disableImageSmoothing(ctx);
+  setImageSmoothing(ctx, false);
   return { ctx, canvas };
 };
 
-export function disableImageSmoothing(ctx) {
-  ctx.imageSmoothingEnabled = false;
-  ctx.webkitImageSmoothingEnabled = false;
-  ctx.mozImageSmoothingEnabled = false;
-  ctx.msImageSmoothingEnabled = false;
-  ctx.oImageSmoothingEnabled = false;
+export function setImageSmoothing(ctx, state) {
+  ctx.imageSmoothingEnabled = state;
+  ctx.webkitImageSmoothingEnabled = state;
+  ctx.mozImageSmoothingEnabled = state;
+  ctx.msImageSmoothingEnabled = state;
+  ctx.oImageSmoothingEnabled = state;
 };

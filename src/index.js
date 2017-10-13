@@ -4,7 +4,7 @@ import Rom from "./rom";
 
 import {
   readBinaryFile,
-  disableImageSmoothing
+  setImageSmoothing
 } from "./utils";
 
 console.clear();
@@ -14,12 +14,37 @@ let ctx = canvas.getContext("2d");
 let width = 0;
 let height = 0;
 
-let rom = null;
+function debug(msg) {
+  ctx.clearRect(0, 0, width, height);
+  let size = 18;
+  ctx.font = `${size}px Arial`;
+  ctx.fillStyle = "rgba(255,255,255,1)";
+  msg = msg.toUpperCase();
+  let centerX = ctx.measureText(msg).width;
+  let xx = (width / 2) - centerX / 2;
+  let yy = (height / 2);
+  ctx.fillText(msg, xx, yy);
+};
+
+function $(el) {
+  return document.querySelector(el);
+};
+
+window.rom = null;
 readBinaryFile("rom.gba").then((buffer) => {
-  console.log("ROM successfully loaded");
-  rom = new Rom(buffer);
-  init();
+  resize();
+  new Rom(buffer, { debug }).then((instance) => {
+    rom = instance;
+    init();
+  });
 });
+
+let DIR = {
+  LEFT: 0,
+  UP: 1,
+  RIGHT: 2,
+  DOWN: 3
+};
 
 function zoomScale(x) {
   return (
@@ -34,26 +59,23 @@ function roundTo(x, f) {
   return (Math.round(x * i) / i);
 };
 
-window.player = {
-  x: 9, y: 10, frame: 0
-};
 function init() {
+  $(".ui").style.opacity = 1.0;
   resize();
-  loadMap("0:9");
   (function draw() {
     requestAnimationFrame(draw);
+    updateEntity(player);
     ctx.clearRect(0, 0, width, height);
     for (let key in rom.maps) {
       drawMap(key);
     };
-    cx = (width / 2) - ((player.x * 16)) * cz;
-    cy = (height / 2) - ((player.y * 16)) * cz;
+    updateCamera();
     ctx.fillStyle = "red";
     drawSprite(
       0,
       player.frame,
-      cx + (((player.x * 16)) | 0) * cz,
-      cy + (((player.y * 16)) | 0) * cz
+      cx + (player.x * 16) * cz,
+      cy + (player.y * 16) * cz
     );
   })();
   console.log(rom.maps);
@@ -70,73 +92,264 @@ function drawSprite(id, frame, x, y) {
   );
 };
 
+function inView(map) {
+  let img = map.texture.canvas;
+  let xx = cx + (((map.x - 8) * 16) * cz) | 0;
+  let yy = cy + (((map.y - 8) * 16) * cz) | 0;
+  let ww = (((map.width + 16) * 16) * cz) | 0;
+  let hh = (((map.height + 16) * 16) * cz) | 0;
+  return (
+    (xx + ww >= 0 && xx <= width) &&
+    (yy + hh >= 0 && yy <= height)
+  );
+};
+
 function drawMap(id) {
   let map = rom.maps[id];
   let img = map.texture.canvas;
   let xx = cx + (((map.x | 0) * 16) * cz) | 0;
   let yy = cy + (((map.y | 0) * 16) * cz) | 0;
+  let ww = (img.width * cz) | 0;
+  let hh = (img.height * cz) | 0;
+  if (!inView(map)) return;
   if (map.name === "UNDERWATER") return;
+  drawBorder(map);
   ctx.drawImage(
     img,
     0, 0,
     img.width, img.height,
     xx, yy,
-    (img.width * cz) | 0, (img.height * cz) | 0
+    ww, hh
   );
   ctx.font = "12px Arial";
   ctx.fillStyle = "#fff";
   ctx.fillText(map.name + " [" + map.bank + ":" + map.id + "]", xx + 16, yy + 16);
 };
 
-let deep = 0;
-let x = 0; let y = 0;
-function loadMap(id) {
-  let map = rom.maps[id];
-  map.loaded = true;
-  //console.log("Generating", map.name, id);
-  if (map.connections.length) {
-    // connected map position
-    map.connections.map(con => {
-      let conId = con.bBank + ":" + con.bMap;
-      let conMap = rom.maps[conId];
-      if (conMap.loaded) return;
-      switch (con.lType) {
-        case OFS.MAP_CONNECTION.LEFT:
-          conMap.x = map.x - conMap.width;
-          conMap.y = map.y + con.lOffset;
-        break;
-        case OFS.MAP_CONNECTION.UP:
-          conMap.x = map.x + con.lOffset;
-          conMap.y = map.y - conMap.height;
-        break;
-        case OFS.MAP_CONNECTION.RIGHT:
-          conMap.x = map.x + map.width;
-          conMap.y = map.y + con.lOffset;
-        break;
-        case OFS.MAP_CONNECTION.DOWN:
-          conMap.x = map.x + con.lOffset;
-          conMap.y = map.y + map.height;
-        break;
-      };
-    });
-    // load map connections
-    map.connections.map(con => {
-      let conId = con.bBank + ":" + con.bMap;
-      let conMap = rom.maps[conId];
-      if (conMap.loaded) return;
-      //console.log(`Connection: [${id}] => [${conId}] | "${map.name}" => "${conMap.name}"`);
-      loadMap(conId);
-    });
+function hasConnection(map, dir) {
+  for (let ii = 0; ii < map.connections.length; ++ii) {
+    let con = map.connections[ii];
+    switch (con.lType) {
+      case OFS.MAP_CONNECTION.LEFT:
+        if (dir === DIR.LEFT) return true;
+      break;
+      case OFS.MAP_CONNECTION.UP:
+        if (dir === DIR.UP) return true;
+      break;
+      case OFS.MAP_CONNECTION.RIGHT:
+        if (dir === DIR.RIGHT) return true;
+      break;
+      case OFS.MAP_CONNECTION.DOWN:
+        if (dir === DIR.DOWN) return true;
+      break;
+    };
+  };
+  return false;
+};
+
+function drawBorder(map) {
+  let border = map.border;
+  let texture = border.canvas;
+  let tw = texture.width;
+  let th = texture.height;
+  let padding = 4;
+  let mw = (map.width / 2) | 0;
+  let mh = (map.height / 2) | 0;
+  // horizontal border
+  for (let xx = 0; xx < 4; ++xx) {
+    for (let yy = 0; yy < mh; ++yy) {
+      if (!hasConnection(map, DIR.LEFT)) {
+        ctx.drawImage(
+          texture,
+          0, 0,
+          tw, th,
+          cx + (((map.x - 2 - (xx * 2) | 0) * 16) * cz) | 0,
+          cy + ((((map.y + (yy * 2)) | 0) * 16) * cz) | 0,
+          (tw * cz) | 0, (th * cz) | 0
+        );
+      }
+      if (!hasConnection(map, DIR.RIGHT)) {
+        ctx.drawImage(
+          texture,
+          0, 0,
+          tw, th,
+          cx + ((((map.x + map.width) + (xx * 2) | 0) * 16) * cz) | 0,
+          cy + ((((map.y + (yy * 2)) | 0) * 16) * cz) | 0,
+          (tw * cz) | 0, (th * cz) | 0
+        );
+      }
+    };
+  };
+  // vertical border
+  for (let yy = 0; yy < 4; ++yy) {
+    for (let xx = 0; xx < (mw); ++xx) {
+      if (!hasConnection(map, DIR.UP)) {
+        ctx.drawImage(
+          texture,
+          0, 0,
+          tw, th,
+          cx + (((map.x + (xx * 2) | 0) * 16) * cz) | 0,
+          cy + ((((map.y - 2 - (yy * 2)) | 0) * 16) * cz) | 0,
+          (tw * cz) | 0, (th * cz) | 0
+        );
+      }
+      if (!hasConnection(map, DIR.DOWN)) {
+        ctx.drawImage(
+          texture,
+          0, 0,
+          tw, th,
+          cx + (((map.x + (xx * 2) | 0) * 16) * cz) | 0,
+          cy + ((((map.y + map.height + (yy * 2)) | 0) * 16) * cz) | 0,
+          (tw * cz) | 0, (th * cz) | 0
+        );
+      }
+    };
+  };
+};
+
+window.player = {
+  frameIndex: 0,
+  waitMove: 0,
+  facing: DIR.DOWN,
+  speed: 0.06,
+  tx: 10, ty: 5,
+  dx: 0, dy: 0,
+  vx: 0, vy: 0,
+  x: 10, y: 5, frame: 0
+};
+
+function updateCamera() {
+  cx = (width / 2) - (((player.x * 16) + 8)) * cz;
+  cy = (height / 2) - (((player.y * 16) + 16)) * cz;
+};
+
+function updateEntity(entity) {
+  // IEEE 754 hack
+  if (entity.x !== entity.tx) entity.x = Math.round(entity.x * 1e3) / 1e3;
+  if (entity.y !== entity.ty) entity.y = Math.round(entity.y * 1e3) / 1e3;
+  let isMovingX = (
+    (entity.tx > entity.x && entity.x + entity.speed >= entity.tx) ||
+    (entity.tx < entity.x && entity.x - entity.speed <= entity.tx)
+  );
+  let isMovingY = (
+    (entity.ty > entity.y && entity.y + entity.speed >= entity.ty) ||
+    (entity.ty < entity.y && entity.y - entity.speed <= entity.ty)
+  );
+  if (isMovingX) {
+    entity.x = entity.tx;
+    entity.vx = 0;
+  }
+  if (isMovingY) {
+    entity.y = entity.ty;
+    entity.vy = 0;
+  }
+  if (entity.vx !== 0) entity.x += entity.vx;
+  if (entity.vy !== 0) entity.y += entity.vy;
+};
+
+function isBlocked(x, y) {
+  return false;
+};
+
+function isMoving(entity) {
+  return (
+    player.x !== player.tx ||
+    player.y !== player.ty
+  );
+};
+
+let FACE_TIME = 5;
+
+function movePlayer(dir, duration) {
+  if (!isMoving(player) && player.facing !== dir) {
+    player.waitMove = FACE_TIME;
+  } else {
+    if (player.waitMove > 0) {
+      player.waitMove--;
+      return;
+    }
+  }
+  if (dir === DIR.LEFT) {
+    if (!isMoving(player) && player.facing !== DIR.LEFT && duration <= FACE_TIME) {
+      player.facing = DIR.LEFT;
+      player.frame = 2;
+      return;
+    }
+    player.facing = DIR.LEFT;
+    if (!isBlocked(player.x - 1, player.y) && !isMoving(player)) {
+      player.frame = 2;
+      player.tx = player.x - 1;
+      player.vx += (player.tx - player.x) * player.speed;
+    }
+  }
+  if (dir === DIR.UP) {
+    if (!isMoving(player) && player.facing !== DIR.UP && duration <= FACE_TIME) {
+      player.facing = DIR.UP;
+      player.frame = 1;
+      return;
+    }
+    player.facing = DIR.UP;
+    if (!isBlocked(player.x, player.y - 1) && !isMoving(player)) {
+      player.frame = 1;
+      player.ty = player.y - 1;
+      player.vy += (player.ty - player.y) * player.speed;
+    }
+  }
+  if (dir === DIR.RIGHT) {
+    if (!isMoving(player) && player.facing !== DIR.RIGHT && duration <= FACE_TIME) {
+      player.facing = DIR.RIGHT;
+      player.frame = 3;
+      return;
+    }
+    player.facing = DIR.RIGHT;
+    if (!isBlocked(player.x + 1, player.y) && !isMoving(player)) {
+      player.frame = 3;
+      player.tx = player.x + 1;
+      player.vx += (player.tx - player.x) * player.speed;
+    }
+  }
+  if (dir === DIR.DOWN) {
+    if (!isMoving(player) && player.facing !== DIR.DOWN && duration <= FACE_TIME) {
+      player.facing = DIR.DOWN;
+      player.frame = 0;
+      return;
+    }
+    player.facing = DIR.DOWN;
+    if (!isBlocked(player.x, player.y + 1) && !isMoving(player)) {
+      player.frame = 0;
+      player.ty = player.y + 1;
+      player.vy += (player.ty - player.y) * player.speed;
+    }
   }
 };
 
+let keys = {};
 window.addEventListener("keydown", (e) => {
-  let v = 1;
-  if (e.key === "a") { player.x -= v; player.frame = 2; }
-  else if (e.key === "w") { player.y -= v; player.frame = 1; }
-  else if (e.key === "d") { player.x += v; player.frame = 2; }
-  else if (e.key === "s") { player.y += v; player.frame = 0; }
+  if (!keys[e.key]) keys[e.key] = 1;
+  keys[e.key] = 1;
+  updateKeys();
 });
+window.addEventListener("keyup", (e) => {
+  if (!keys[e.key]) keys[e.key] = 1;
+  keys[e.key] = 0;
+  updateKeys();
+});
+
+function updateKeys() {
+  let left = keys["a"] || keys["ArrowLeft"];
+  let up = keys["w"] || keys["ArrowUp"];
+  let right = keys["d"] || keys["ArrowRight"];
+  let down = keys["s"] || keys["ArrowDown"];
+  if (left) movePlayer(DIR.LEFT, left);
+  if (up) movePlayer(DIR.UP, keys["w"]);
+  if (right) movePlayer(DIR.RIGHT, keys["d"]);
+  if (down) movePlayer(DIR.DOWN, keys["s"]);
+  for (let key in keys) {
+    if (keys[key] > 0) keys[key] += 1;
+  };
+};
+
+setInterval(updateKeys, 1e3 / 60);
 
 let down = false;
 window.addEventListener("mouseup", (e) => down = false);
@@ -157,10 +370,13 @@ window.addEventListener("mousemove", (e) => {
   lx = x; ly = y;
 });
 
-window.cz = 4.25;
+window.cz = 6.125;
 window.cx = 0; window.cy = 0;
 window.addEventListener("mousewheel", (e) => {
   let dir = e.deltaY > 0 ? -1 : 1;
+  cz = cz + (dir * 0.25) * (zoomScale(cz) * 0.3);
+  if (cz <= 0.1) cz = 0.1;
+  updateCamera();
 });
 
 function resize() {
@@ -168,7 +384,13 @@ function resize() {
   height = window.innerHeight;
   canvas.width = width;
   canvas.height = height;
-  disableImageSmoothing(ctx);
+  let resolution = window.devicePixelRatio;
+  canvas.width = width * resolution;
+  canvas.height = height * resolution;
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+  ctx.setTransform(resolution, 0, 0, resolution, 0, 0);
+  setImageSmoothing(ctx, false);
 };
 
 window.addEventListener("resize", resize);

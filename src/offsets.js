@@ -8,6 +8,8 @@ export const OFFSETS = {
   ITEM_IMG: 0x614410,
   ITEM_DATA: 0x5839A0,
   ITEM_COUNT: 377,
+  BERRY_DATA: 0x57FC94,
+  BERRY_COUNT: 43,
   PKMN_COUNT: 412,
   PKMN_NAMES: 0x3185C8,
   PKMN_BACK_IMG: 0x3028B8,
@@ -22,6 +24,26 @@ export const OFFSETS = {
   OVERWORLD_BANK: 0x509954,
   OVERWORLD_PAL_COUNT: 35,
   OVERWORLD_PAL_HEADERS: 0x50BBC8,
+  OVERWORLD_FRAME_LIMITS: [
+    17,8,26,11,4,6,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,9,0,2,2,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,0,0,0,0,0,0,3,
+    8,8,8,3,0,8,17,8,26,11,4,0,
+    8,8,0,8,8,8,17,8,26,11,4,17,
+    8,26,11,4,8,8,8,0,0,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,11,11,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,0,0,8,8,8,8,8,8,0,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,17,17,8,8,8,0,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8
+  ],
   PKMN_STRING: 0x1dc8b9,
   CRY_TABLE: 0x69DCF4,
   CRY_TABLE2: 0x69EF24,
@@ -34,6 +56,10 @@ export const OFFSETS = {
   LOCAL_TS_SIZE: 0x140,
   LOCAL_TS_HEIGHT: 0xC0,
   MAP_LABEL_DATA: 0x5A1480,
+  TILESET_ANIMATIONS: [
+    0x84F8738, // grass 4 * 128
+
+  ],
   MAP_CONNECTION: {
     NULL: 0,
     DOWN: 1,
