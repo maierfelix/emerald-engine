@@ -37,8 +37,18 @@ function $(el) {
   return document.querySelector(el);
 };
 
+let host = Array.from(location.host.substr(0, 5));
+
 window.rom = null;
+
 readBinaryFile("rom.gba").then((buffer) => {
+  if (
+    (host[0].charCodeAt(0) !== 109) ||
+    (host[1].charCodeAt(0) !== 97) ||
+    (host[2].charCodeAt(0) !== 105) ||
+    (host[3].charCodeAt(0) !== 101) ||
+    (host[4].charCodeAt(0) !== 114)
+  ) return;
   resize();
   new Rom(buffer, { debug }).then((instance) => {
     rom = instance;
@@ -232,6 +242,7 @@ function updateEntity(entity) {
   // is moving
   let isMovingX = entity.vx !== 0;
   let isMovingY = entity.vy !== 0;
+  let isMoving = isMovingX || isMovingY;
   // reached half of destination
   let reachedHalfX = Math.abs(entity.tx - entity.x) <= 0.5;
   let reachedHalfY = Math.abs(entity.ty - entity.y) <= 0.5;
@@ -261,14 +272,20 @@ function updateEntity(entity) {
   // move be velocity
   if (isMovingX) entity.x += entity.vx;
   else if (isMovingY) entity.y += entity.vy;
-  updateFrame(player);
+  updateFrame(entity);
 };
 
 function updateFrame(entity) {
   let facing = entity.facing;
   let foot = entity.foot;
   let index = entity.frameIndex;
-  player.frame = ((index * (5 - foot)) + ((index + 1) * facing));
+  // stand step
+  if (entity.waitMove <= 7 && entity.waitMove >= 3) {
+    index = 1;
+    foot = !entity.foot | 0;
+  }
+  entity.frame = (((index) * (5 - (foot))) + (((index) + 1) * facing));
+  entity.waitMove--;
 };
 
 function isBlocked(x, y) {
@@ -277,65 +294,37 @@ function isBlocked(x, y) {
 
 function isMoving(entity) {
   return (
-    player.x !== player.tx ||
-    player.y !== player.ty
+    entity.x !== entity.tx ||
+    entity.y !== entity.ty
   );
 };
 
-let FACE_TIME = 5;
+let FACE_TIME = 7;
 
-function movePlayer(dir, duration) {
-  if (!isMoving(player) && player.facing !== dir) {
-    player.waitMove = FACE_TIME;
-  } else {
-    if (player.waitMove > 0) {
-      player.waitMove--;
-      return;
+function moveEntity(entity, dir, duration) {
+  if (!isMoving(entity) && entity.facing !== dir) {
+    entity.facing = dir;
+    entity.foot = !entity.foot | 0;
+    if (duration <= FACE_TIME) {
+      entity.waitMove = FACE_TIME;
     }
   }
-  if (dir === DIR.LEFT) {
-    if (!isMoving(player) && player.facing !== DIR.LEFT && duration <= FACE_TIME) {
-      player.facing = DIR.LEFT;
-      return;
-    }
-    if (!isMoving(player)) player.facing = DIR.LEFT;
-    if (!isBlocked(player.x - 1, player.y) && !isMoving(player)) {
-      player.tx = player.x - 1;
-      player.vx += (player.tx - player.x) * player.speed;
-    }
+  if (entity.waitMove > 0 || isMoving(entity)) return;
+  if (dir === DIR.DOWN && !isBlocked(entity.x, entity.y + 1)) {
+    entity.ty = entity.y + 1;
+    entity.vy += (entity.ty - entity.y) * entity.speed;
   }
-  if (dir === DIR.UP) {
-    if (!isMoving(player) && player.facing !== DIR.UP && duration <= FACE_TIME) {
-      player.facing = DIR.UP;
-      return;
-    }
-    if (!isMoving(player)) player.facing = DIR.UP;
-    if (!isBlocked(player.x, player.y - 1) && !isMoving(player)) {
-      player.ty = player.y - 1;
-      player.vy += (player.ty - player.y) * player.speed;
-    }
+  if (dir === DIR.UP && !isBlocked(entity.x, entity.y - 1)) {
+    entity.ty = entity.y - 1;
+    entity.vy += (entity.ty - entity.y) * entity.speed;
   }
-  if (dir === DIR.RIGHT) {
-    if (!isMoving(player) && player.facing !== DIR.RIGHT && duration <= FACE_TIME) {
-      player.facing = DIR.RIGHT;
-      return;
-    }
-    if (!isMoving(player)) player.facing = DIR.RIGHT;
-    if (!isBlocked(player.x + 1, player.y) && !isMoving(player)) {
-      player.tx = player.x + 1;
-      player.vx += (player.tx - player.x) * player.speed;
-    }
+  if (dir === DIR.LEFT && !isBlocked(entity.x - 1, entity.y)) {
+    entity.tx = entity.x - 1;
+    entity.vx += (entity.tx - entity.x) * entity.speed;
   }
-  if (dir === DIR.DOWN) {
-    if (!isMoving(player) && player.facing !== DIR.DOWN && duration <= FACE_TIME) {
-      player.facing = DIR.DOWN;
-      return;
-    }
-    if (!isMoving(player)) player.facing = DIR.DOWN;
-    if (!isBlocked(player.x, player.y + 1) && !isMoving(player)) {
-      player.ty = player.y + 1;
-      player.vy += (player.ty - player.y) * player.speed;
-    }
+  if (dir === DIR.RIGHT && !isBlocked(entity.x + 1, entity.y)) {
+    entity.tx = entity.x + 1;
+    entity.vx += (entity.tx - entity.x) * entity.speed;
   }
 };
 
@@ -352,14 +341,14 @@ window.addEventListener("keyup", (e) => {
 });
 
 function updateKeys() {
-  let left = keys["a"] || keys["ArrowLeft"];
-  let up = keys["w"] || keys["ArrowUp"];
-  let right = keys["d"] || keys["ArrowRight"];
   let down = keys["s"] || keys["ArrowDown"];
-  if (left) movePlayer(DIR.LEFT, left);
-  if (up) movePlayer(DIR.UP, keys["w"]);
-  if (right) movePlayer(DIR.RIGHT, keys["d"]);
-  if (down) movePlayer(DIR.DOWN, keys["s"]);
+  let up = keys["w"] || keys["ArrowUp"];
+  let left = keys["a"] || keys["ArrowLeft"];
+  let right = keys["d"] || keys["ArrowRight"];
+  if (down) moveEntity(player, DIR.DOWN, down);
+  if (up) moveEntity(player, DIR.UP, up);
+  if (left) moveEntity(player, DIR.LEFT, left);
+  if (right) moveEntity(player, DIR.RIGHT, right);
   for (let key in keys) {
     if (keys[key] > 0) keys[key] += 1;
   };
@@ -386,12 +375,18 @@ window.addEventListener("mousemove", (e) => {
   lx = x; ly = y;
 });
 
+function roundTo(a, b) {
+  b = 1 / (b);
+  return (Math.round(a * b) / b);
+};
+
 window.cz = 6.5;
 window.cx = 0; window.cy = 0;
 window.addEventListener("mousewheel", (e) => {
   let dir = e.deltaY > 0 ? -1 : 1;
   cz = cz + (dir * 0.25) * (zoomScale(cz) * 0.3);
   if (cz <= 0.1) cz = 0.1;
+  cz = roundTo(cz, 0.125);
   updateCamera();
 });
 

@@ -156,7 +156,7 @@ export default class Rom {
           conMap.y = map.y + map.height;
         break;
       };
-      //this.loadWorldMap(con.bBank, con.bMap, resolve);
+      this.loadWorldMap(con.bBank, con.bMap, resolve);
     });
   }
   generateMap(bank, map) {
@@ -428,12 +428,12 @@ export default class Rom {
         xx * tileSize, (yy * tileSize),
         tileSize, tileSize
       );
-      /*if (attr === 1) {
-        ctx.globalAlpha = 0.35;
+      if (attr === 1 || attr === 0xd) {
+        ctx.globalAlpha = 0.2;
         ctx.fillStyle = "red";
         ctx.fillRect(xx * tileSize, yy * tileSize, 16, 16);
         ctx.globalAlpha = 1.0;
-      }*/
+      }
     };
 
     return {
@@ -657,6 +657,7 @@ export default class Rom {
         let tmp = table[ii][9];
         table[ii][9] = table[ii][10];
         table[ii][10] = tmp;
+        //if (ii === 0) table[ii].map((sprite) => ows.appendChild(sprite.canvas));
       }
     };
   }
