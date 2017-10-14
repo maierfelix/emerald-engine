@@ -655,7 +655,6 @@ Rom.prototype.generateMaps = function generateMaps () {
     this$1.bankPointers[ii] = OFFSETS.MAP_BANK_POINTERS[ii];
   }
   this.loadWorldMap(0, 9);
-  this.loadWorldMap(0, 18);
 };
 Rom.prototype.fetchMap = function fetchMap (bBank, bMap) {
   var id = bBank + ":" + bMap;
@@ -690,7 +689,7 @@ Rom.prototype.loadWorldMap = function loadWorldMap (bBank, bMap, resolve) {
         conMap.y = map.y + map.height;
       break;
     }
-    this$1.loadWorldMap(con.bBank, con.bMap, resolve);
+    //this.loadWorldMap(con.bBank, con.bMap, resolve);
   });
 };
 Rom.prototype.generateMap = function generateMap (bank, map) {
@@ -1202,6 +1201,12 @@ Rom.prototype.generateOverworldGraphicTable = function generateOverworldGraphicT
       var sprite$1 = this$1.getOverworldImgById(ii, frm);
       table[ii].push(sprite$1);
     }
+    if (frames >= 8) {
+      // 10 -> 9
+      var tmp = table[ii][9];
+      table[ii][9] = table[ii][10];
+      table[ii][10] = tmp;
+    }
   }
 };
 
@@ -1211,6 +1216,13 @@ var ctx = canvas.getContext("2d");
 
 var width = 0;
 var height = 0;
+
+var DIR = {
+  DOWN: 0,
+  UP: 1,
+  LEFT: 2,
+  RIGHT: 3
+};
 
 function debug(msg) {
   ctx.clearRect(0, 0, width, height);
@@ -1236,13 +1248,6 @@ readBinaryFile("rom.gba").then(function (buffer) {
     init();
   });
 });
-
-var DIR = {
-  LEFT: 0,
-  UP: 1,
-  RIGHT: 2,
-  DOWN: 3
-};
 
 function zoomScale(x) {
   return (
@@ -1403,6 +1408,8 @@ function drawBorder(map) {
 }
 
 window.player = {
+  foot: 0,
+  frame: 0,
   frameIndex: 0,
   waitMove: 0,
   facing: DIR.DOWN,
@@ -1410,7 +1417,7 @@ window.player = {
   tx: 10, ty: 5,
   dx: 0, dy: 0,
   vx: 0, vy: 0,
-  x: 10, y: 5, frame: 0
+  x: 10, y: 5
 };
 
 function updateCamera() {
@@ -1422,24 +1429,46 @@ function updateEntity(entity) {
   // IEEE 754 hack
   if (entity.x !== entity.tx) { entity.x = Math.round(entity.x * 1e3) / 1e3; }
   if (entity.y !== entity.ty) { entity.y = Math.round(entity.y * 1e3) / 1e3; }
-  var isMovingX = (
+  // is moving
+  var isMovingX = entity.vx !== 0;
+  var isMovingY = entity.vy !== 0;
+  // reached half of destination
+  var reachedHalfX = Math.abs(entity.tx - entity.x) <= 0.5;
+  var reachedHalfY = Math.abs(entity.ty - entity.y) <= 0.5;
+  // reached destination
+  var reachedDestX = (
     (entity.tx > entity.x && entity.x + entity.speed >= entity.tx) ||
     (entity.tx < entity.x && entity.x - entity.speed <= entity.tx)
   );
-  var isMovingY = (
+  var reachedDestY = (
     (entity.ty > entity.y && entity.y + entity.speed >= entity.ty) ||
     (entity.ty < entity.y && entity.y - entity.speed <= entity.ty)
   );
-  if (isMovingX) {
+  // stop moving
+  if (reachedDestX) {
     entity.x = entity.tx;
     entity.vx = 0;
+    entity.foot = !entity.foot | 0;
   }
-  if (isMovingY) {
+  else if (reachedDestY) {
     entity.y = entity.ty;
     entity.vy = 0;
+    entity.foot = !entity.foot | 0;
   }
-  if (entity.vx !== 0) { entity.x += entity.vx; }
-  if (entity.vy !== 0) { entity.y += entity.vy; }
+  // half tile walk foot
+  if (isMovingX) { entity.frameIndex = (!reachedHalfX) | 0; }
+  if (isMovingY) { entity.frameIndex = (!reachedHalfY) | 0; }
+  // move be velocity
+  if (isMovingX) { entity.x += entity.vx; }
+  else if (isMovingY) { entity.y += entity.vy; }
+  updateFrame(player);
+}
+
+function updateFrame(entity) {
+  var facing = entity.facing;
+  var foot = entity.foot;
+  var index = entity.frameIndex;
+  player.frame = ((index * (5 - foot)) + ((index + 1) * facing));
 }
 
 function isBlocked(x, y) {
@@ -1467,12 +1496,10 @@ function movePlayer(dir, duration) {
   if (dir === DIR.LEFT) {
     if (!isMoving(player) && player.facing !== DIR.LEFT && duration <= FACE_TIME) {
       player.facing = DIR.LEFT;
-      player.frame = 2;
       return;
     }
-    player.facing = DIR.LEFT;
+    if (!isMoving(player)) { player.facing = DIR.LEFT; }
     if (!isBlocked(player.x - 1, player.y) && !isMoving(player)) {
-      player.frame = 2;
       player.tx = player.x - 1;
       player.vx += (player.tx - player.x) * player.speed;
     }
@@ -1480,12 +1507,10 @@ function movePlayer(dir, duration) {
   if (dir === DIR.UP) {
     if (!isMoving(player) && player.facing !== DIR.UP && duration <= FACE_TIME) {
       player.facing = DIR.UP;
-      player.frame = 1;
       return;
     }
-    player.facing = DIR.UP;
+    if (!isMoving(player)) { player.facing = DIR.UP; }
     if (!isBlocked(player.x, player.y - 1) && !isMoving(player)) {
-      player.frame = 1;
       player.ty = player.y - 1;
       player.vy += (player.ty - player.y) * player.speed;
     }
@@ -1493,12 +1518,10 @@ function movePlayer(dir, duration) {
   if (dir === DIR.RIGHT) {
     if (!isMoving(player) && player.facing !== DIR.RIGHT && duration <= FACE_TIME) {
       player.facing = DIR.RIGHT;
-      player.frame = 3;
       return;
     }
-    player.facing = DIR.RIGHT;
+    if (!isMoving(player)) { player.facing = DIR.RIGHT; }
     if (!isBlocked(player.x + 1, player.y) && !isMoving(player)) {
-      player.frame = 3;
       player.tx = player.x + 1;
       player.vx += (player.tx - player.x) * player.speed;
     }
@@ -1506,12 +1529,10 @@ function movePlayer(dir, duration) {
   if (dir === DIR.DOWN) {
     if (!isMoving(player) && player.facing !== DIR.DOWN && duration <= FACE_TIME) {
       player.facing = DIR.DOWN;
-      player.frame = 0;
       return;
     }
-    player.facing = DIR.DOWN;
+    if (!isMoving(player)) { player.facing = DIR.DOWN; }
     if (!isBlocked(player.x, player.y + 1) && !isMoving(player)) {
-      player.frame = 0;
       player.ty = player.y + 1;
       player.vy += (player.ty - player.y) * player.speed;
     }
@@ -1565,7 +1586,7 @@ window.addEventListener("mousemove", function (e) {
   lx = x; ly = y;
 });
 
-window.cz = 6.125;
+window.cz = 6.5;
 window.cx = 0; window.cy = 0;
 window.addEventListener("mousewheel", function (e) {
   var dir = e.deltaY > 0 ? -1 : 1;

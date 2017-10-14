@@ -124,7 +124,6 @@ export default class Rom {
       this.bankPointers[ii] = OFS.MAP_BANK_POINTERS[ii];
     };
     this.loadWorldMap(0, 9);
-    this.loadWorldMap(0, 18);
   }
   fetchMap(bBank, bMap) {
     let id = bBank + ":" + bMap;
@@ -157,7 +156,7 @@ export default class Rom {
           conMap.y = map.y + map.height;
         break;
       };
-      this.loadWorldMap(con.bBank, con.bMap, resolve);
+      //this.loadWorldMap(con.bBank, con.bMap, resolve);
     });
   }
   generateMap(bank, map) {
@@ -653,6 +652,12 @@ export default class Rom {
         let sprite = this.getOverworldImgById(ii, frm);
         table[ii].push(sprite);
       };
+      if (frames >= 8) {
+        // 10 -> 9
+        let tmp = table[ii][9];
+        table[ii][9] = table[ii][10];
+        table[ii][10] = tmp;
+      }
     };
   }
 };

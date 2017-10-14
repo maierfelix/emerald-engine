@@ -12,6 +12,13 @@ canvas {
   image-rendering: pixelated;
 }
 
+#ows {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  z-index:999;
+}
+
 .ui {
   transition: opacity 0.25s;
   opacity: 0;
@@ -72,9 +79,9 @@ canvas {
 }
 
 .party-pkmn-inner > img {
-  width: 64px;
-  height: 64px;
+  width: 88px;
+  height: 88px;
   position: absolute;
-  left: 8px;
-  top: 0px;
+  left: -4px;
+  top: -6px;
 }
