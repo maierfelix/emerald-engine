@@ -23,6 +23,36 @@ var OFFSETS = {
   ICON_POINTER_TBL: 0x57BCA8,
   ICON_PAL_TABLE: 0x57C388,
   ICON_PALS: 0xDDE1F8,
+  FIELD_EFFECT_NAME: {
+    GRASS_STEP: 0,
+    WATER_STEP: 1,
+    ASHE_STEP: 2,
+    SURF_BLOB: 3,
+    MAP_ARROW: 4,
+    SAND_STEP: 5,
+    DEEP_SAND_STEP: 6
+  },
+  DOOR_ANIM_HEADER: 0x497174,
+  FIELD_EFFECT_HEADER: 0x5059F8,
+  FIELD_EFFECT_PAL: [
+    0x4F77B8,
+    0x4F77D8,
+    0x4FACB8,
+    0x4FBAD8,
+    0x0,
+    0x0,
+    0x4F6E98,
+    0x4AD918
+  ],
+  FIELD_EFFECT_IMGS: [
+    // id, palIdx w, h
+    [4,  1,  16,  80], // grass step
+    [5,  1,  16,  80], // water ripple step
+    [6,  1,  16,  80], // ashe step
+    [7,  7,  32,  96], // surf blob
+    [8,  1,  16,  64], // map arrows
+    [11, 0,  16,  32], // sand step
+    [23, 0,  16,  32] ],
   OVERWORLD_COUNT: 244,
   OVERWORLD_BANK: 0x509954,
   OVERWORLD_PAL_COUNT: 35,
@@ -572,13 +602,14 @@ var Rom = function Rom(buffer, opt) {
     attacks: {}
   };
   this.graphics = {
+    effects: {},
     items: {},
-    berries: {},
     pkmns: {
       back: {},
       front: {},
       icon: {}
     },
+    doors: {},
     overworlds: {}
   };
   this.maps = {};
@@ -629,7 +660,8 @@ Rom.prototype.generateTables = function generateTables () {
   tasks.push(this.generateAttackNameTable, "Generating Attack Name Table...");
   tasks.push(this.generatePkmnGraphicTable, "Generating Pkmn Graphic Table...");
   tasks.push(this.generateItemGraphicTable, "Generating Item Graphic Table...");
-  tasks.push(this.generateBerryGraphicTable, "Generating Berry Graphic Table...");
+  tasks.push(this.generateFieldEffectGraphicTable, "Generating Field Effect Graphic Table...");
+  tasks.push(this.generateDoorAnimationGraphicTable, "Generating Door Animation Graphic Table...");
   tasks.push(this.generateOverworldGraphicTable, "Generating Overworld Graphic Table...");
   tasks.push(this.generateMaps, "Generating World Map...");
   tasks.push(function () {}, "Finished!");
@@ -654,7 +686,8 @@ Rom.prototype.generateMaps = function generateMaps () {
     this$1.mapInBanksCount[ii] = OFFSETS.MAPS_IN_BANK[ii];
     this$1.bankPointers[ii] = OFFSETS.MAP_BANK_POINTERS[ii];
   }
-  this.loadWorldMap(0, 9);
+  this.fetchMap(0, 9);
+  //this.fetchMap(0, 19);
 };
 Rom.prototype.fetchMap = function fetchMap (bBank, bMap) {
   var id = bBank + ":" + bMap;
@@ -663,7 +696,7 @@ Rom.prototype.fetchMap = function fetchMap (bBank, bMap) {
     (this.maps[id] = this.generateMap(bBank, bMap))
   );
 };
-Rom.prototype.loadWorldMap = function loadWorldMap (bBank, bMap, resolve) {
+Rom.prototype.loadWorldMap = function loadWorldMap (bBank, bMap) {
     var this$1 = this;
 
   var map = this.fetchMap(bBank, bMap);
@@ -689,7 +722,7 @@ Rom.prototype.loadWorldMap = function loadWorldMap (bBank, bMap, resolve) {
         conMap.y = map.y + map.height;
       break;
     }
-    this$1.loadWorldMap(con.bBank, con.bMap, resolve);
+    //this.loadWorldMap(con.bBank, con.bMap);
   });
 };
 Rom.prototype.generateMap = function generateMap (bank, map) {
@@ -790,8 +823,19 @@ Rom.prototype.generateMap = function generateMap (bank, map) {
   var mainBlocks = OFFSETS.MAIN_TS_BLOCKS;
   var localBlocks = OFFSETS.LOCAL_TS_SIZE;
 
+  var baseAnimHeader = 0x497174;
+  for (var ii$2 = 0; ii$2 < 53; ++ii$2) {
+    var doorAnimHeader = baseAnimHeader + (ii$2 * 0xc);
+    var paletteOffset = readPointer(buffer, doorAnimHeader + 0x8);
+    var paletteNum = readByte(buffer, paletteOffset);
+    var imageOffset = readPointer(buffer, doorAnimHeader + 0x4);
+    var palOffset = minorTileset.palettePtr + (paletteNum * 32);
+    var img = this$1.getImage(imageOffset, palOffset, 0, 0, 16, 96, true);
+    ows.appendChild(img.canvas);
+  }
+
   // # RENDER MAP TILESETS [PRIMARY, SECONDARY]
-  var tileset = null;
+  var tileData = null;
   (function () {
 
     var offset = 0;
@@ -802,12 +846,10 @@ Rom.prototype.generateMap = function generateMap (bank, map) {
     var majorPalettes = 96;
 
     var ctx = createCanvasBuffer(128, 2560).ctx;
-    var tilesetImg = ctx.canvas;
 
     var paldata = [];
 
     // # READ PALETTE
-
     offset = minorTileset.palettePtr;
     for (var ii = 0; ii < 208; ++ii) {
       var palette = readShort(buffer, offset); offset += 0x2;
@@ -820,7 +862,7 @@ Rom.prototype.generateMap = function generateMap (bank, map) {
       paldata[ii$1] = palette$1;
     }
 
-    this$1.paletteHook(paldata);
+    //this.paletteHook(paldata);
 
     // # READ TILESET
     var blockLimits = [512, 512];
@@ -848,25 +890,8 @@ Rom.prototype.generateMap = function generateMap (bank, map) {
     }
 
     // TILE ANIMATIONS
-    //console.log(readBytes(buffer, readPointer(buffer, 0x84F8738), 256));
     offset = 0x5059F8;
     var anim = readPointer(buffer, offset);
-    console.log(readBytes(buffer, anim, 96));
-    /*console.log(readBytes(buffer, offset, 256));
-    console.log(readBytes(buffer, offset + 16, 256));
-    console.log(readBytes(buffer, readPointer(buffer, offset + 16), 256));
-    console.log("---------------------");
-*/
-    // STRUCTURE:
-    /*
-      .2byte 0xFFFF @ tiles tag
-      .2byte 0x1005 @ palette tag
-      .4byte gFieldObjectBaseOam_16x16
-      .4byte gFieldEffectObjectImageAnimTable_TallGrass
-      .4byte gFieldEffectObjectPicTable_TallGrass
-      .4byte gDummySpriteAffineAnimTable
-      .4byte unc_grass_normal
-    */
 
     // # DECODE PALETTES
     var palettes = [];
@@ -876,50 +901,89 @@ Rom.prototype.generateMap = function generateMap (bank, map) {
 
     // # DRAW TILESET
     var tilesetBlockDataOffset = [ majorTileset.blocksPtr, minorTileset.blocksPtr ];
+    var tilesetBehaveDataOffset = [ majorTileset.behavePtr, minorTileset.behavePtr ];
     var x = 0; var y = 0;
     var posX = [0, 8, 0, 8];
     var posY = [0, 0, 8, 8];
 
     var cw = ctx.canvas.width; var ch = ctx.canvas.height;
-    var imgData = new ImageData(cw, ch);
-    var pixels = imgData.data;
+    var backgroundImage = new ImageData(cw, ch);
+    var foregroundImage = new ImageData(cw, ch);
+    var backgroundPixels = backgroundImage.data;
+    var foregroundPixels = foregroundImage.data;
+    var offset2 = 0;
+    var behaviorData = new Uint8Array(cw * ch);
+    var backgroundData = new Uint8Array(cw * ch);
     for (var ts = 0; ts < 2; ++ts) {
       offset = tilesetBlockDataOffset[ts];
+      offset2 = tilesetBehaveDataOffset[ts];
       for (var ii$5 = 0; ii$5 < blockLimits[ts]; ++ii$5) {
         for (var ly = 0; ly < 2; ++ly) { // 2, bg, fg
+          var isBackground = ly === 0;
+          var isForeground = ly === 1;
+          var bytes$1 = readBytes(buffer, offset2 + ii$5 * 2, 2);
+          var behavior = bytes$1[0];
+          var background = bytes$1[1];
           for (var tt = 0; tt < 4; ++tt) { // 4 tile based
-            var tile = readShort(buffer, offset); offset += 0x2;
+            var tile = readWord(buffer, offset); offset += 0x2;
             var tileIndex = tile & 0x3FF;
-            var flipX = ((tile & 0x400) >> 10) === 1;
-            var flipY = ((tile & 0x800) >> 11) === 1;
+            var flipX = (tile & 0x400) >> 10;
+            var flipY = (tile & 0x800) >> 11;
             var palIndex = (tile & 0xF000) >> 12;
             var tileSeeker = tileIndex * 64;
             if (tileSeeker + 64 > tiles.length) { continue; }
             var dx = x * tileSize + posX[tt];
             var dy = y * tileSize + posY[tt];
+            if (behavior > 0) {
+              behaviorData[dy * cw + dx] = behavior;
+            }
+            if (background > 0) {
+              backgroundData[dy * cw + dx] = background;
+            }
             var xx = 0; var yy = 0;
             for (var px = 0; px < 64; ++px) {
               var pixel = tiles[tileSeeker + px];
               if (pixel > 0) {
                 var color = palettes[pixel + (palIndex * 16)];
-                var ddx = (dx + (flipX ? (-xx + 7) : xx));
-                var ddy = (dy + (flipY ? (-yy + 7) : yy));
+                var ddx = (dx + (flipX > 0 ? (-xx + 7) : xx));
+                var ddy = (dy + (flipY > 0 ? (-yy + 7) : yy));
                 var index = 4 * (ddy * cw + ddx);
-                pixels[index + 0] = color.r;
-                pixels[index + 1] = color.g;
-                pixels[index + 2] = color.b;
-                pixels[index + 3] = 0xff;
+
+                if (isBackground) {
+                  backgroundPixels[index + 0] = color.r;
+                  backgroundPixels[index + 1] = color.g;
+                  backgroundPixels[index + 2] = color.b;
+                  backgroundPixels[index + 3] = 0xff;
+                } else {
+                  foregroundPixels[index + 0] = color.r;
+                  foregroundPixels[index + 1] = color.g;
+                  foregroundPixels[index + 2] = color.b;
+                  foregroundPixels[index + 3] = 0xff;
+                }
               }
-              xx++; if (xx == 8) { xx = 0; yy++; }
+              xx++; if (xx === 8) { xx = 0; yy++; }
             }
           }
         }
-        if ((++x) == 8) { x = 0; y++; }
+        if ((++x) === 8) { x = 0; y++; }
       }
     }
-    ctx.putImageData(imgData, 0, 0);
+
+    var bg = createCanvasBuffer(128, 2560).ctx;
+    var fg = createCanvasBuffer(128, 2560).ctx;
+
+    bg.putImageData(backgroundImage, 0, 0);
+    fg.putImageData(foregroundImage, 0, 0);
     //document.body.appendChild(ctx.canvas);
-    tileset = ctx;
+    tileData = {
+      behavior: behaviorData,
+      background: backgroundData,
+      layers: {
+        background: bg,
+        foreground: fg
+      },
+      canvas: ctx.canvas
+    };
   })();
 
   var tileSize = 16;
@@ -928,16 +992,16 @@ Rom.prototype.generateMap = function generateMap (bank, map) {
   var bw = borderWidth;
   var bh = borderHeight;
   var border = createCanvasBuffer(bw * tileSize, bh * tileSize);
-  offset = borderTilePtr;
-  for (var ii$2 = 0; ii$2 < bw * bh; ++ii$2) {
-    var xx$1 = (ii$2 % bw) | 0;
-    var yy$1 = (ii$2 / bw) | 0;
-    var value = readShort(buffer, offset + ii$2 * 2);
-    var tile$1 = value & 0x3ff;
-    var srcX = (tile$1 % 8) * tileSize;
-    var srcY = ((tile$1 / 8) | 0) * tileSize;
-    var destX = xx$1 * tileSize;
-    var destY = yy$1 * tileSize;
+  /*offset = borderTilePtr;
+  for (let ii = 0; ii < bw * bh; ++ii) {
+    let xx = (ii % bw) | 0;
+    let yy = (ii / bw) | 0;
+    let value = readShort(buffer, offset + ii * 2);
+    let tile = value & 0x3ff;
+    let srcX = (tile % 8) * tileSize;
+    let srcY = ((tile / 8) | 0) * tileSize;
+    let destX = xx * tileSize;
+    let destY = yy * tileSize;
     border.ctx.drawImage(
       tileset.canvas,
       srcX, srcY,
@@ -945,31 +1009,106 @@ Rom.prototype.generateMap = function generateMap (bank, map) {
       destX, destY,
       tileSize, tileSize
     );
-  }
+  };*/
 
-  var ctx = createCanvasBuffer(mapWidth * tileSize, mapHeight * tileSize).ctx;
+  var behavior = new Uint8Array(mapWidth * mapHeight);
+  var background = new Uint8Array(mapWidth * mapHeight);
+  var attributes = new Uint8Array(mapWidth * mapHeight);
+
+  var layers = [
+    createCanvasBuffer(mapWidth * tileSize, mapHeight * tileSize).ctx,
+    createCanvasBuffer(mapWidth * tileSize, mapHeight * tileSize).ctx
+  ];
+  var layerData = [
+    tileData.layers.background,
+    tileData.layers.foreground
+  ];
+
   // # RENDER MAP
   offset = mapTilesPtr;
-  for (var ii$3 = 0; ii$3 < mapWidth * mapHeight; ++ii$3) {
-    var xx$2 = (ii$3 % mapWidth) | 0;
-    var yy$2 = (ii$3 / mapWidth) | 0;
-    var value$1 = readShort(buffer, offset + ii$3 * 2);
-    var tile$2 = value$1 & 0x3FF;
-    var attr = value$1 >> 10;
-    ctx.drawImage(
-      tileset.canvas,
-      (tile$2 % 8) * tileSize, (((tile$2 / 8) | 0) * tileSize),
-      tileSize, tileSize,
-      xx$2 * tileSize, (yy$2 * tileSize),
-      tileSize, tileSize
-    );
-    if (attr === 1 || attr === 0xd) {
-      ctx.globalAlpha = 0.2;
-      ctx.fillStyle = "red";
-      ctx.fillRect(xx$2 * tileSize, yy$2 * tileSize, 16, 16);
-      ctx.globalAlpha = 1.0;
+  for (var ii$3 = 0; ii$3 < layers.length; ++ii$3) {
+    var ctx = layers[ii$3];
+    var tileset = layerData[ii$3];
+    for (var ii$4 = 0; ii$4 < mapWidth * mapHeight; ++ii$4) {
+      var xx$1 = (ii$4 % mapWidth) | 0;
+      var yy$1 = (ii$4 / mapWidth) | 0;
+      var value = readShort(buffer, offset + ii$4 * 2);
+      var tile$1 = value & 0x3FF;
+      var attr = value >> 10;
+      var tx = (tile$1 % 8) * tileSize;
+      var ty = (((tile$1 / 8) | 0) * tileSize);
+      var tindex = ty * tileset.canvas.width + tx;
+      behavior[ii$4] = tileData.behavior[tindex];
+      background[ii$4] = tileData.background[tindex];
+      attributes[ii$4] = attr;
+      /*if (behavior[ii] === 0x69) {
+        let buffer = createCanvasBuffer(16, 16);
+        buffer.ctx.drawImage(
+          tileset.canvas,
+          tx, ty,
+          16, 16,
+          0, 0,
+          16, 16
+        );
+        console.log(tile);
+        ows.appendChild(buffer.canvas);
+      }*/
+      if (background[ii$4] === 0x10) {
+        layers[0].drawImage(
+          tileset.canvas,
+          tx, ty,
+          tileSize, tileSize,
+          xx$1 * tileSize, (yy$1 * tileSize),
+          tileSize, tileSize
+        );
+        continue;
+      }
+      ctx.drawImage(
+        tileset.canvas,
+        tx, ty,
+        tileSize, tileSize,
+        xx$1 * tileSize, (yy$1 * tileSize),
+        tileSize, tileSize
+      );
     }
   }
+
+  // # RENDER MAP
+  /*offset = mapTilesPtr;
+  for (let ii = 0; ii < mapWidth * mapHeight; ++ii) {
+    let xx = (ii % mapWidth) | 0;
+    let yy = (ii / mapWidth) | 0;
+    let value = readShort(buffer, offset + ii * 2);
+    let tile = value & 0x3FF;
+    let attr = value >> 10;
+    let tx = (tile % 8) * tileSize;
+    let ty = (((tile / 8) | 0) * tileSize);
+    let tindex = ty * tileset.canvas.width + tx;
+    behavior[ii] = tileset.behavior[tindex];
+    background[ii] = tileset.background[tindex];
+    attributes[ii] = attr;
+    ctx.drawImage(
+      tileset.canvas,
+      tx, ty,
+      tileSize, tileSize,
+      xx * tileSize, (yy * tileSize),
+      tileSize, tileSize
+    );
+    ctx.globalAlpha = 0.5;
+    if (behavior[ii] > 0) {
+      ctx.fillStyle = "#8bc34a";
+      ctx.fillRect(xx * tileSize, yy * tileSize, 16, 16);
+    }
+    if (background[ii] > 0) {
+      ctx.fillStyle = "#03a9f4";
+      ctx.fillRect(xx * tileSize, yy * tileSize, 16, 16);
+    }
+    if (attributes[ii] === 1 || attributes[ii] === 0xd) {
+      ctx.fillStyle = "#f44336";
+      ctx.fillRect(xx * tileSize, yy * tileSize, 16, 16);
+    }
+    ctx.globalAlpha = 1.0;
+  };*/
 
   return {
     id: map,
@@ -978,7 +1117,10 @@ Rom.prototype.generateMap = function generateMap (bank, map) {
     name: mapName,
     width: mapWidth,
     height: mapHeight,
-    texture: ctx,
+    texture: layers,
+    behavior: behavior,
+    background: background,
+    attributes: attributes,
     connections: connections,
     loaded: false, // anti recursion
     x: 0, y: 0
@@ -1002,8 +1144,8 @@ Rom.prototype.readTilesetHeader = function readTilesetHeader (offset) {
   object.tilesetImgPtr = readPointer(buffer, offset); offset += 0x4;
   object.palettePtr = readPointer(buffer, offset); offset += 0x4;
   object.blocksPtr = readPointer(buffer, offset); offset += 0x4;
-  object.animPtr = readPointer(buffer, offset); offset += 0x4;
   object.behavePtr = readPointer(buffer, offset); offset += 0x4;
+  object.animPtr = readPointer(buffer, offset); offset += 0x4;
   object.blockCount = object.compressed ? OFFSETS.MAIN_TS_BLOCKS : OFFSETS.LOCAL_TS_BLOCKS;
   return object;
 };
@@ -1175,9 +1317,53 @@ Rom.prototype.generateItemGraphicTable = function generateItemGraphicTable () {
     table[ii] = item;
   }
 };
-Rom.prototype.generateBerryGraphicTable = function generateBerryGraphicTable () {
-  var table = this.graphics.berries;
+Rom.prototype.generateFieldEffectGraphicTable = function generateFieldEffectGraphicTable () {
+    var this$1 = this;
 
+  var table = this.graphics.effects;
+  var palettes = OFFSETS.FIELD_EFFECT_PAL;
+  var imgs = OFFSETS.FIELD_EFFECT_IMGS;
+  for (var ii = 0; ii < imgs.length; ++ii) {
+    var item = imgs[ii];
+    var img = this$1.getFieldEffect(item[0], palettes[item[1]], item[2], item[3]);
+    table[ii] = img;
+    //ows.appendChild(img.canvas);
+  }
+};
+Rom.prototype.getFieldEffect = function getFieldEffect (id, pal, w, h) {
+  var buffer = this.buffer;
+  var baseOffset = OFFSETS.FIELD_EFFECT_HEADER;
+  var basePtr = readPointer(buffer, baseOffset + (id * 0x4));
+  var offset = basePtr;
+  var tilesTag = readShort(buffer, offset); offset += 0x2;
+  var paletteTag = readShort(buffer, offset); offset += 0x2;
+  var baseOamPtr = readPointer(buffer, offset); offset += 0x4;
+  var animTablePtr = readPointer(buffer, offset); offset += 0x4;
+  var imgPtr = readPointer(buffer, offset); offset += 0x4;
+  var dummyAffine = readPointer(buffer, offset); offset += 0x4;
+  var oamc = readPointer(buffer, offset); offset += 0x4;
+  var picTable = readPointer(buffer, imgPtr);
+  var pixels = picTable;
+  var palette = pal;
+  return this.getImage(pixels, palette, 0, 0, w, h, true);
+};
+Rom.prototype.getDoorAnimation = function getDoorAnimation (id) {
+  var buffer = this.buffer;
+  var minorTsPalPtr = 0x33a704; // TODO: Dont hardcode this
+  var baseAnimHeader = OFFSETS.DOOR_ANIM_HEADER;
+  var doorAnimHeader = baseAnimHeader + (id * 0xc);
+  var paletteOffset = readPointer(buffer, doorAnimHeader + 0x8);
+  var paletteNum = readByte(buffer, paletteOffset);
+  var imageOffset = readPointer(buffer, doorAnimHeader + 0x4);
+  var palOffset = minorTsPalPtr + (paletteNum * 32);
+  return this.getImage(imageOffset, palOffset, 0, 0, 16, 96, true);
+};
+Rom.prototype.generateDoorAnimationGraphicTable = function generateDoorAnimationGraphicTable () {
+  var table = this.graphics.doors;
+  for (var ii = 0; ii < 53; ++ii) {
+    //table[ii] = this.getDoorAnimation(ii);
+    //ows.appendChild(table[ii].canvas);
+  }
 };
 Rom.prototype.generateOverworldGraphicTable = function generateOverworldGraphicTable () {
     var this$1 = this;
@@ -1228,7 +1414,7 @@ var DIR = {
 function debug(msg) {
   ctx.clearRect(0, 0, width, height);
   var size = 18;
-  ctx.font = size + "px Arial";
+  ctx.font = size + "px Open Sans";
   ctx.fillStyle = "rgba(255,255,255,1)";
   msg = msg.toUpperCase();
   var centerX = ctx.measureText(msg).width;
@@ -1241,18 +1427,16 @@ function $(el) {
   return document.querySelector(el);
 }
 
-var host = Array.from(location.host.substr(0, 5));
-
 window.rom = null;
 
 readBinaryFile("rom.gba").then(function (buffer) {
-  if (
+  /*if (
     (host[0].charCodeAt(0) !== 109) ||
     (host[1].charCodeAt(0) !== 97) ||
     (host[2].charCodeAt(0) !== 105) ||
     (host[3].charCodeAt(0) !== 101) ||
     (host[4].charCodeAt(0) !== 114)
-  ) { return; }
+  ) return;*/
   resize();
   new Rom(buffer, { debug: debug }).then(function (instance) {
     rom = instance;
@@ -1276,30 +1460,89 @@ function init() {
   (function draw() {
     requestAnimationFrame(draw);
     updateEntity(player);
-    ctx.clearRect(0, 0, width, height);
-    for (var key in rom.maps) {
-      drawMap(key);
-    }
     updateCamera();
-    ctx.fillStyle = "red";
-    drawSprite(
-      0,
-      player.frame,
-      cx + (player.x * 16) * cz,
-      cy + (player.y * 16) * cz
-    );
+    ctx.clearRect(0, 0, width, height);
+    drawBackgroundMap();
+    drawEntity(player);
+    drawEntities();
+    drawForegroundMap();
   })();
   console.log(rom.maps);
 }
 
+function drawBackgroundMap() {
+  for (var key in rom.maps) { drawMap(key, 0); }
+}
+
+function drawForegroundMap() {
+  for (var key in rom.maps) { drawMap(key, 1); }
+}
+
+function drawEntities() {
+  for (var ii = 0; ii < entities.length; ++ii) {
+    var entity = entities[ii];
+    var dx = cx + (entity.x * 16) * cz;
+    var dy = cy + ((entity.y) * 16) * cz;
+    if (entity.frame >= 4) {
+      entity.frame = 0;
+      entity.paused = true;
+    }
+    var frame = entity.frame | 0;
+    var sprite = entity.sprite.canvas;
+    var sw = sprite.width;
+    var sh = sprite.height;
+    ctx.drawImage(
+      sprite,
+      frame, frame * 16,
+      16, 16,
+      dx, dy,
+      16 * cz, 16 * cz
+    );
+    if (!entity.paused) { entity.frame += 0.1; }
+  }
+}
+
+function drawEntity(entity) {
+  var dx = cx + (entity.x * 16) * cz;
+  var dy = cy + ((entity.y - 1) * 16) * cz;
+  var map = rom.maps[currentMap];
+  var index = ((entity.y + 1 | 0) * map.width + (entity.x | 0));
+  // water reflection
+  if (
+    (entity === player) &&
+    (map.behavior[index] === 0x10 ||
+    map.behavior[index] === 0x16 ||
+    map.behavior[index] === 0x20 ||
+    map.behavior[index] === 0x1a ||
+    map.behavior[index] === 0x2b)
+  ) {
+    var sprite = rom.graphics.overworlds[0][entity.frame].canvas;
+    var sw = sprite.width;
+    var sh = sprite.height;
+    ctx.globalAlpha = 0.425;
+    var resolution = window.devicePixelRatio;
+    ctx.drawImage(
+      sprite,
+      0, 0,
+      sw, sh,
+      dx, cy + ((entity.y) * 16) * cz,
+      sw * cz, sh * cz
+    );
+    ctx.globalAlpha = 1.0;
+  }
+  drawSprite(0, entity.frame, dx, dy);
+}
+
 function drawSprite(id, frame, x, y) {
   var sprite = rom.graphics.overworlds[id][frame].canvas;
+  var sw = sprite.width;
+  var sh = sprite.height;
   ctx.drawImage(
     sprite,
     0, 0,
-    sprite.width, sprite.height,
+    sw, sh,
     x, y,
-    sprite.width * cz, sprite.height * cz
+    sw * cz, sh * cz
   );
 }
 
@@ -1315,9 +1558,9 @@ function inView(map) {
   );
 }
 
-function drawMap(id) {
+function drawMap(id, layer) {
   var map = rom.maps[id];
-  var img = map.texture.canvas;
+  var img = map.texture[layer].canvas;
   var xx = cx + (((map.x | 0) * 16) * cz) | 0;
   var yy = cy + (((map.y | 0) * 16) * cz) | 0;
   var ww = (img.width * cz) | 0;
@@ -1332,7 +1575,7 @@ function drawMap(id) {
     xx, yy,
     ww, hh
   );
-  ctx.font = "12px Arial";
+  ctx.font = (12 * cz) + "px Open Sans";
   ctx.fillStyle = "#fff";
   ctx.fillText(map.name + " [" + map.bank + ":" + map.id + "]", xx + 16, yy + 16);
 }
@@ -1425,15 +1668,24 @@ window.player = {
   waitMove: 0,
   facing: DIR.DOWN,
   speed: 0.06,
-  tx: 10, ty: 5,
+  tx: 8, ty: 8,
   dx: 0, dy: 0,
   vx: 0, vy: 0,
-  x: 10, y: 5
+  x: 8, y: 8,
+  lock: false
 };
 
+window.FREE_CAMERA = false;
+
+var entities = [];
+
+var currentMap = "0:9";
+
 function updateCamera() {
-  cx = (width / 2) - (((player.x * 16) + 8)) * cz;
-  cy = (height / 2) - (((player.y * 16) + 16)) * cz;
+  if (!FREE_CAMERA) {
+    cx = (width / 2) - (((player.x * 16) + 8)) * cz;
+    cy = (height / 2) - ((((player.y - 1) * 16) + 20)) * cz;
+  }
 }
 
 function updateEntity(entity) {
@@ -1444,6 +1696,14 @@ function updateEntity(entity) {
   var isMovingX = entity.vx !== 0;
   var isMovingY = entity.vy !== 0;
   var isMoving = isMovingX || isMovingY;
+  var justMovedOneFrame = isMoving && (
+    (Math.abs(entity.tx - entity.x) < 0.2 && Math.abs(entity.tx - entity.x) > 0.0) ||
+    (Math.abs(entity.ty - entity.y) < 0.2 && Math.abs(entity.ty - entity.y) > 0.0)
+  );
+  var didntMoveYet = isMoving && (
+    (Math.abs(entity.tx - entity.x) >= 1.0) ||
+    (Math.abs(entity.ty - entity.y) >= 1.0)
+  );
   // reached half of destination
   var reachedHalfX = Math.abs(entity.tx - entity.x) <= 0.5;
   var reachedHalfY = Math.abs(entity.ty - entity.y) <= 0.5;
@@ -1456,6 +1716,16 @@ function updateEntity(entity) {
     (entity.ty > entity.y && entity.y + entity.speed >= entity.ty) ||
     (entity.ty < entity.y && entity.y - entity.speed <= entity.ty)
   );
+  // get the moved to tile
+  // - round up if positive
+  // - round down if negative
+  var nextTileX = (
+    entity.vx > 0 ? Math.ceil(entity.x) : (entity.x | 0)
+  );
+  var nextTileY = (
+    entity.vy > 0 ? Math.ceil(entity.y) : (entity.y | 0)
+  );
+
   // stop moving
   if (reachedDestX) {
     entity.x = entity.tx;
@@ -1470,10 +1740,71 @@ function updateEntity(entity) {
   // half tile walk foot
   if (isMovingX) { entity.frameIndex = (!reachedHalfX) | 0; }
   if (isMovingY) { entity.frameIndex = (!reachedHalfY) | 0; }
+
+  var map = rom.maps[currentMap];
+  var index = (Math.ceil(entity.y) * map.width + Math.ceil(entity.x));
+  // water ripple step
+  if (
+    map.behavior[index] === 0x16 &&
+    justMovedOneFrame
+  ) {
+    entities.push({
+      x: Math.ceil(player.x),
+      y: Math.ceil(player.y),
+      frame: 0,
+      sprite: rom.graphics.effects[1]
+    });
+  }
+  // stepping into grass
+  if (
+    justMovedOneFrame &&
+    map.behavior[(nextTileY * map.width + nextTileX)] === 0x2
+  ) {
+    entities.push({
+      x: nextTileX,
+      y: nextTileY,
+      frame: 0,
+      sprite: rom.graphics.effects[0]
+    });
+  }
+
+  // border jump
+  if (didntMoveYet) {
+    var index$1 = (entity.ty * map.width + entity.tx) | 0;
+    var behavior = map.behavior[index$1];
+    if (behavior === 0x3b) {
+      if (entity.ty > entity.y) {
+        entity.ty = entity.ty + 1;
+        entity.y = entity.ty | 0;
+        entity.vy = 0;
+      } else {
+        stopMove(entity);
+      }
+      /*if (isMovingX) {
+        if (entity.tx > entity.x) {
+          entity.x = entity.tx = entity.tx;
+        }
+        else {
+          entity.x = entity.tx = entity.tx;
+        }
+        entity.vx = 0;
+      }*/
+    }
+  }
+
   // move be velocity
   if (isMovingX) { entity.x += entity.vx; }
   else if (isMovingY) { entity.y += entity.vy; }
+
   updateFrame(entity);
+}
+
+function stopMove(entity) {
+  entity.vx = 0;
+  entity.vy = 0;
+  entity.tx = entity.x | 0;
+  entity.ty = entity.y | 0;
+  entity.frameIndex = 0;
 }
 
 function updateFrame(entity) {
@@ -1481,7 +1812,7 @@ function updateFrame(entity) {
   var foot = entity.foot;
   var index = entity.frameIndex;
   // stand step
-  if (entity.waitMove <= 7 && entity.waitMove >= 3) {
+  if (entity.waitMove <= FACE_TIME && entity.waitMove >= FACE_TIME - 2) {
     index = 1;
     foot = !entity.foot | 0;
   }
@@ -1490,17 +1821,28 @@ function updateFrame(entity) {
 }
 
 function isBlocked(x, y) {
-  return false;
+  var map = rom.maps[currentMap];
+  var index = (y * map.width + x) | 0;
+  var attr = map.attributes[index];
+  var behavior = map.behavior[index];
+  return (
+    (x < 0 || x >= map.width) ||
+    (y < 0 || y >= map.height) ||
+    (attr === 1 || attr === 0xd) &&
+    (behavior !== 0x3b)
+
+  );
 }
 
 function isMoving(entity) {
   return (
-    entity.x !== entity.tx ||
-    entity.y !== entity.ty
+    !entity.lock &&
+    (entity.x !== entity.tx ||
+    entity.y !== entity.ty)
   );
 }
 
-var FACE_TIME = 7;
+var FACE_TIME = 8;
 
 function moveEntity(entity, dir, duration) {
   if (!isMoving(entity) && entity.facing !== dir) {
@@ -1514,18 +1856,22 @@ function moveEntity(entity, dir, duration) {
   if (dir === DIR.DOWN && !isBlocked(entity.x, entity.y + 1)) {
     entity.ty = entity.y + 1;
     entity.vy += (entity.ty - entity.y) * entity.speed;
+    entity.waitMove = 0;
   }
   if (dir === DIR.UP && !isBlocked(entity.x, entity.y - 1)) {
     entity.ty = entity.y - 1;
     entity.vy += (entity.ty - entity.y) * entity.speed;
+    entity.waitMove = 0;
   }
   if (dir === DIR.LEFT && !isBlocked(entity.x - 1, entity.y)) {
     entity.tx = entity.x - 1;
     entity.vx += (entity.tx - entity.x) * entity.speed;
+    entity.waitMove = 0;
   }
   if (dir === DIR.RIGHT && !isBlocked(entity.x + 1, entity.y)) {
     entity.tx = entity.x + 1;
     entity.vx += (entity.tx - entity.x) * entity.speed;
+    entity.waitMove = 0;
   }
 }
 
@@ -1601,14 +1947,19 @@ function resize() {
   canvas.height = height * resolution;
   canvas.style.width = width + "px";
   canvas.style.height = height + "px";
-  ctx.setTransform(resolution, 0, 0, resolution, 0, 0);
+  resetTransformation();
   setImageSmoothing(ctx, false);
+}
+
+function resetTransformation() {
+  var resolution = window.devicePixelRatio;
+  ctx.setTransform(resolution, 0, 0, resolution, 0, 0);
 }
 
 window.addEventListener("resize", resize);
 
 window.addEventListener("contextmenu", function (e) {
-  e.preventDefault();
+  if (e.target === canvas) { e.preventDefault(); }
 });
 
 }());

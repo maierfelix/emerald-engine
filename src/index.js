@@ -24,7 +24,7 @@ let DIR = {
 function debug(msg) {
   ctx.clearRect(0, 0, width, height);
   let size = 18;
-  ctx.font = `${size}px Arial`;
+  ctx.font = `${size}px Open Sans`;
   ctx.fillStyle = "rgba(255,255,255,1)";
   msg = msg.toUpperCase();
   let centerX = ctx.measureText(msg).width;
@@ -42,13 +42,13 @@ let host = Array.from(location.host.substr(0, 5));
 window.rom = null;
 
 readBinaryFile("rom.gba").then((buffer) => {
-  if (
+  /*if (
     (host[0].charCodeAt(0) !== 109) ||
     (host[1].charCodeAt(0) !== 97) ||
     (host[2].charCodeAt(0) !== 105) ||
     (host[3].charCodeAt(0) !== 101) ||
     (host[4].charCodeAt(0) !== 114)
-  ) return;
+  ) return;*/
   resize();
   new Rom(buffer, { debug }).then((instance) => {
     rom = instance;
@@ -75,30 +75,89 @@ function init() {
   (function draw() {
     requestAnimationFrame(draw);
     updateEntity(player);
-    ctx.clearRect(0, 0, width, height);
-    for (let key in rom.maps) {
-      drawMap(key);
-    };
     updateCamera();
-    ctx.fillStyle = "red";
-    drawSprite(
-      0,
-      player.frame,
-      cx + (player.x * 16) * cz,
-      cy + (player.y * 16) * cz
-    );
+    ctx.clearRect(0, 0, width, height);
+    drawBackgroundMap();
+    drawEntity(player);
+    drawEntities();
+    drawForegroundMap();
   })();
   console.log(rom.maps);
 };
 
+function drawBackgroundMap() {
+  for (let key in rom.maps) drawMap(key, 0);
+};
+
+function drawForegroundMap() {
+  for (let key in rom.maps) drawMap(key, 1);
+};
+
+function drawEntities() {
+  for (let ii = 0; ii < entities.length; ++ii) {
+    let entity = entities[ii];
+    let dx = cx + (entity.x * 16) * cz;
+    let dy = cy + ((entity.y) * 16) * cz;
+    if (entity.frame >= 4) {
+      entity.frame = 0;
+      entity.paused = true;
+    }
+    let frame = entity.frame | 0;
+    let sprite = entity.sprite.canvas;
+    let sw = sprite.width;
+    let sh = sprite.height;
+    ctx.drawImage(
+      sprite,
+      frame, frame * 16,
+      16, 16,
+      dx, dy,
+      16 * cz, 16 * cz
+    );
+    if (!entity.paused) entity.frame += 0.1;
+  };
+};
+
+function drawEntity(entity) {
+  let dx = cx + (entity.x * 16) * cz;
+  let dy = cy + ((entity.y - 1) * 16) * cz;
+  let map = rom.maps[currentMap];
+  let index = ((entity.y + 1 | 0) * map.width + (entity.x | 0));
+  // water reflection
+  if (
+    (entity === player) &&
+    (map.behavior[index] === 0x10 ||
+    map.behavior[index] === 0x16 ||
+    map.behavior[index] === 0x20 ||
+    map.behavior[index] === 0x1a ||
+    map.behavior[index] === 0x2b)
+  ) {
+    let sprite = rom.graphics.overworlds[0][entity.frame].canvas;
+    let sw = sprite.width;
+    let sh = sprite.height;
+    ctx.globalAlpha = 0.425;
+    let resolution = window.devicePixelRatio;
+    ctx.drawImage(
+      sprite,
+      0, 0,
+      sw, sh,
+      dx, cy + ((entity.y) * 16) * cz,
+      sw * cz, sh * cz
+    );
+    ctx.globalAlpha = 1.0;
+  }
+  drawSprite(0, entity.frame, dx, dy);
+};
+
 function drawSprite(id, frame, x, y) {
   let sprite = rom.graphics.overworlds[id][frame].canvas;
+  let sw = sprite.width;
+  let sh = sprite.height;
   ctx.drawImage(
     sprite,
     0, 0,
-    sprite.width, sprite.height,
+    sw, sh,
     x, y,
-    sprite.width * cz, sprite.height * cz
+    sw * cz, sh * cz
   );
 };
 
@@ -114,9 +173,9 @@ function inView(map) {
   );
 };
 
-function drawMap(id) {
+function drawMap(id, layer) {
   let map = rom.maps[id];
-  let img = map.texture.canvas;
+  let img = map.texture[layer].canvas;
   let xx = cx + (((map.x | 0) * 16) * cz) | 0;
   let yy = cy + (((map.y | 0) * 16) * cz) | 0;
   let ww = (img.width * cz) | 0;
@@ -131,7 +190,7 @@ function drawMap(id) {
     xx, yy,
     ww, hh
   );
-  ctx.font = "12px Arial";
+  ctx.font = `${12 * cz}px Open Sans`;
   ctx.fillStyle = "#fff";
   ctx.fillText(map.name + " [" + map.bank + ":" + map.id + "]", xx + 16, yy + 16);
 };
@@ -224,15 +283,24 @@ window.player = {
   waitMove: 0,
   facing: DIR.DOWN,
   speed: 0.06,
-  tx: 10, ty: 5,
+  tx: 8, ty: 8,
   dx: 0, dy: 0,
   vx: 0, vy: 0,
-  x: 10, y: 5
+  x: 8, y: 8,
+  lock: false
 };
 
+window.FREE_CAMERA = false;
+
+let entities = [];
+
+let currentMap = "0:9";
+
 function updateCamera() {
-  cx = (width / 2) - (((player.x * 16) + 8)) * cz;
-  cy = (height / 2) - (((player.y * 16) + 16)) * cz;
+  if (!FREE_CAMERA) {
+    cx = (width / 2) - (((player.x * 16) + 8)) * cz;
+    cy = (height / 2) - ((((player.y - 1) * 16) + 20)) * cz;
+  }
 };
 
 function updateEntity(entity) {
@@ -243,6 +311,14 @@ function updateEntity(entity) {
   let isMovingX = entity.vx !== 0;
   let isMovingY = entity.vy !== 0;
   let isMoving = isMovingX || isMovingY;
+  let justMovedOneFrame = isMoving && (
+    (Math.abs(entity.tx - entity.x) < 0.2 && Math.abs(entity.tx - entity.x) > 0.0) ||
+    (Math.abs(entity.ty - entity.y) < 0.2 && Math.abs(entity.ty - entity.y) > 0.0)
+  );
+  let didntMoveYet = isMoving && (
+    (Math.abs(entity.tx - entity.x) >= 1.0) ||
+    (Math.abs(entity.ty - entity.y) >= 1.0)
+  );
   // reached half of destination
   let reachedHalfX = Math.abs(entity.tx - entity.x) <= 0.5;
   let reachedHalfY = Math.abs(entity.ty - entity.y) <= 0.5;
@@ -255,6 +331,16 @@ function updateEntity(entity) {
     (entity.ty > entity.y && entity.y + entity.speed >= entity.ty) ||
     (entity.ty < entity.y && entity.y - entity.speed <= entity.ty)
   );
+  // get the moved to tile
+  // - round up if positive
+  // - round down if negative
+  let nextTileX = (
+    entity.vx > 0 ? Math.ceil(entity.x) : (entity.x | 0)
+  );
+  let nextTileY = (
+    entity.vy > 0 ? Math.ceil(entity.y) : (entity.y | 0)
+  );
+
   // stop moving
   if (reachedDestX) {
     entity.x = entity.tx;
@@ -269,10 +355,71 @@ function updateEntity(entity) {
   // half tile walk foot
   if (isMovingX) entity.frameIndex = (!reachedHalfX) | 0;
   if (isMovingY) entity.frameIndex = (!reachedHalfY) | 0;
+
+  let map = rom.maps[currentMap];
+  let index = (Math.ceil(entity.y) * map.width + Math.ceil(entity.x));
+  // water ripple step
+  if (
+    map.behavior[index] === 0x16 &&
+    justMovedOneFrame
+  ) {
+    entities.push({
+      x: Math.ceil(player.x),
+      y: Math.ceil(player.y),
+      frame: 0,
+      sprite: rom.graphics.effects[1]
+    });
+  }
+  // stepping into grass
+  if (
+    justMovedOneFrame &&
+    map.behavior[(nextTileY * map.width + nextTileX)] === 0x2
+  ) {
+    entities.push({
+      x: nextTileX,
+      y: nextTileY,
+      frame: 0,
+      sprite: rom.graphics.effects[0]
+    });
+  }
+
+  // border jump
+  if (didntMoveYet) {
+    let index = (entity.ty * map.width + entity.tx) | 0;
+    let behavior = map.behavior[index];
+    if (behavior === 0x3b) {
+      if (entity.ty > entity.y) {
+        entity.ty = entity.ty + 1;
+        entity.y = entity.ty | 0;
+        entity.vy = 0;
+      } else {
+        stopMove(entity);
+      }
+      /*if (isMovingX) {
+        if (entity.tx > entity.x) {
+          entity.x = entity.tx = entity.tx;
+        }
+        else {
+          entity.x = entity.tx = entity.tx;
+        }
+        entity.vx = 0;
+      }*/
+    }
+  }
+
   // move be velocity
   if (isMovingX) entity.x += entity.vx;
   else if (isMovingY) entity.y += entity.vy;
+
   updateFrame(entity);
+};
+
+function stopMove(entity) {
+  entity.vx = 0;
+  entity.vy = 0;
+  entity.tx = entity.x | 0;
+  entity.ty = entity.y | 0;
+  entity.frameIndex = 0;
 };
 
 function updateFrame(entity) {
@@ -280,7 +427,7 @@ function updateFrame(entity) {
   let foot = entity.foot;
   let index = entity.frameIndex;
   // stand step
-  if (entity.waitMove <= 7 && entity.waitMove >= 3) {
+  if (entity.waitMove <= FACE_TIME && entity.waitMove >= FACE_TIME - 2) {
     index = 1;
     foot = !entity.foot | 0;
   }
@@ -289,17 +436,28 @@ function updateFrame(entity) {
 };
 
 function isBlocked(x, y) {
-  return false;
+  let map = rom.maps[currentMap];
+  let index = (y * map.width + x) | 0;
+  let attr = map.attributes[index];
+  let behavior = map.behavior[index];
+  return (
+    (x < 0 || x >= map.width) ||
+    (y < 0 || y >= map.height) ||
+    (attr === 1 || attr === 0xd) &&
+    (behavior !== 0x3b)
+
+  );
 };
 
 function isMoving(entity) {
   return (
-    entity.x !== entity.tx ||
-    entity.y !== entity.ty
+    !entity.lock &&
+    (entity.x !== entity.tx ||
+    entity.y !== entity.ty)
   );
 };
 
-let FACE_TIME = 7;
+let FACE_TIME = 8;
 
 function moveEntity(entity, dir, duration) {
   if (!isMoving(entity) && entity.facing !== dir) {
@@ -313,18 +471,22 @@ function moveEntity(entity, dir, duration) {
   if (dir === DIR.DOWN && !isBlocked(entity.x, entity.y + 1)) {
     entity.ty = entity.y + 1;
     entity.vy += (entity.ty - entity.y) * entity.speed;
+    entity.waitMove = 0;
   }
   if (dir === DIR.UP && !isBlocked(entity.x, entity.y - 1)) {
     entity.ty = entity.y - 1;
     entity.vy += (entity.ty - entity.y) * entity.speed;
+    entity.waitMove = 0;
   }
   if (dir === DIR.LEFT && !isBlocked(entity.x - 1, entity.y)) {
     entity.tx = entity.x - 1;
     entity.vx += (entity.tx - entity.x) * entity.speed;
+    entity.waitMove = 0;
   }
   if (dir === DIR.RIGHT && !isBlocked(entity.x + 1, entity.y)) {
     entity.tx = entity.x + 1;
     entity.vx += (entity.tx - entity.x) * entity.speed;
+    entity.waitMove = 0;
   }
 };
 
@@ -400,12 +562,17 @@ function resize() {
   canvas.height = height * resolution;
   canvas.style.width = width + "px";
   canvas.style.height = height + "px";
-  ctx.setTransform(resolution, 0, 0, resolution, 0, 0);
+  resetTransformation();
   setImageSmoothing(ctx, false);
+};
+
+function resetTransformation() {
+  let resolution = window.devicePixelRatio;
+  ctx.setTransform(resolution, 0, 0, resolution, 0, 0);
 };
 
 window.addEventListener("resize", resize);
 
 window.addEventListener("contextmenu", (e) => {
-  e.preventDefault();
+  if (e.target === canvas) e.preventDefault();
 });

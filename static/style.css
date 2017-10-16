@@ -20,6 +20,7 @@ canvas {
 }
 
 .ui {
+  display: none;
   transition: opacity 0.25s;
   opacity: 0;
 }

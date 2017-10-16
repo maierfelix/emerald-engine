@@ -47,13 +47,14 @@ export default class Rom {
       attacks: {}
     };
     this.graphics = {
+      effects: {},
       items: {},
-      berries: {},
       pkmns: {
         back: {},
         front: {},
         icon: {}
       },
+      doors: {},
       overworlds: {}
     };
     this.maps = {};
@@ -100,7 +101,8 @@ export default class Rom {
     tasks.push(this.generateAttackNameTable, `Generating Attack Name Table...`);
     tasks.push(this.generatePkmnGraphicTable, `Generating Pkmn Graphic Table...`);
     tasks.push(this.generateItemGraphicTable, `Generating Item Graphic Table...`);
-    tasks.push(this.generateBerryGraphicTable, `Generating Berry Graphic Table...`);
+    tasks.push(this.generateFieldEffectGraphicTable, `Generating Field Effect Graphic Table...`);
+    tasks.push(this.generateDoorAnimationGraphicTable, `Generating Door Animation Graphic Table...`);
     tasks.push(this.generateOverworldGraphicTable, `Generating Overworld Graphic Table...`);
     tasks.push(this.generateMaps, `Generating World Map...`);
     tasks.push(() => {}, `Finished!`);
@@ -123,7 +125,8 @@ export default class Rom {
       this.mapInBanksCount[ii] = OFS.MAPS_IN_BANK[ii];
       this.bankPointers[ii] = OFS.MAP_BANK_POINTERS[ii];
     };
-    this.loadWorldMap(0, 9);
+    this.fetchMap(0, 9);
+    //this.fetchMap(0, 19);
   }
   fetchMap(bBank, bMap) {
     let id = bBank + ":" + bMap;
@@ -132,7 +135,7 @@ export default class Rom {
       (this.maps[id] = this.generateMap(bBank, bMap))
     );
   }
-  loadWorldMap(bBank, bMap, resolve) {
+  loadWorldMap(bBank, bMap) {
     let map = this.fetchMap(bBank, bMap);
     if (map.loaded) return;
     map.loaded = true;
@@ -156,7 +159,7 @@ export default class Rom {
           conMap.y = map.y + map.height;
         break;
       };
-      this.loadWorldMap(con.bBank, con.bMap, resolve);
+      //this.loadWorldMap(con.bBank, con.bMap);
     });
   }
   generateMap(bank, map) {
@@ -255,8 +258,19 @@ export default class Rom {
     let mainBlocks = OFS.MAIN_TS_BLOCKS;
     let localBlocks = OFS.LOCAL_TS_SIZE;
 
+    let baseAnimHeader = 0x497174;
+    for (let ii = 0; ii < 53; ++ii) {
+      let doorAnimHeader = baseAnimHeader + (ii * 0xc);
+      let paletteOffset = readPointer(buffer, doorAnimHeader + 0x8);
+      let paletteNum = readByte(buffer, paletteOffset);
+      let imageOffset = readPointer(buffer, doorAnimHeader + 0x4);
+      let palOffset = minorTileset.palettePtr + (paletteNum * 32);
+      let img = this.getImage(imageOffset, palOffset, 0, 0, 16, 96, true);
+      ows.appendChild(img.canvas);
+    };
+
     // # RENDER MAP TILESETS [PRIMARY, SECONDARY]
-    let tileset = null;
+    let tileData = null;
     (() => {
 
       let offset = 0;
@@ -267,12 +281,10 @@ export default class Rom {
       let majorPalettes = 96;
 
       let ctx = createCanvasBuffer(128, 2560).ctx;
-      let tilesetImg = ctx.canvas;
 
       let paldata = [];
 
       // # READ PALETTE
-
       offset = minorTileset.palettePtr;
       for (let ii = 0; ii < 208; ++ii) {
         let palette = readShort(buffer, offset); offset += 0x2;
@@ -285,7 +297,7 @@ export default class Rom {
         paldata[ii] = palette;
       };
 
-      this.paletteHook(paldata);
+      //this.paletteHook(paldata);
 
       // # READ TILESET
       let blockLimits = [512, 512];
@@ -313,25 +325,8 @@ export default class Rom {
       };
 
       // TILE ANIMATIONS
-      //console.log(readBytes(buffer, readPointer(buffer, 0x84F8738), 256));
       offset = 0x5059F8;
       let anim = readPointer(buffer, offset);
-      console.log(readBytes(buffer, anim, 96));
-      /*console.log(readBytes(buffer, offset, 256));
-      console.log(readBytes(buffer, offset + 16, 256));
-      console.log(readBytes(buffer, readPointer(buffer, offset + 16), 256));
-      console.log("---------------------");
-*/
-      // STRUCTURE:
-      /*
-        .2byte 0xFFFF @ tiles tag
-        .2byte 0x1005 @ palette tag
-        .4byte gFieldObjectBaseOam_16x16
-        .4byte gFieldEffectObjectImageAnimTable_TallGrass
-        .4byte gFieldEffectObjectPicTable_TallGrass
-        .4byte gDummySpriteAffineAnimTable
-        .4byte unc_grass_normal
-      */
 
       // # DECODE PALETTES
       let palettes = [];
@@ -341,50 +336,89 @@ export default class Rom {
 
       // # DRAW TILESET
       let tilesetBlockDataOffset = [ majorTileset.blocksPtr, minorTileset.blocksPtr ];
+      let tilesetBehaveDataOffset = [ majorTileset.behavePtr, minorTileset.behavePtr ];
       let x = 0; let y = 0;
       let posX = [0, 8, 0, 8];
       let posY = [0, 0, 8, 8];
 
       let cw = ctx.canvas.width; let ch = ctx.canvas.height;
-      let imgData = new ImageData(cw, ch);
-      let pixels = imgData.data;
+      let backgroundImage = new ImageData(cw, ch);
+      let foregroundImage = new ImageData(cw, ch);
+      let backgroundPixels = backgroundImage.data;
+      let foregroundPixels = foregroundImage.data;
+      let offset2 = 0;
+      let behaviorData = new Uint8Array(cw * ch);
+      let backgroundData = new Uint8Array(cw * ch);
       for (let ts = 0; ts < 2; ++ts) {
         offset = tilesetBlockDataOffset[ts];
+        offset2 = tilesetBehaveDataOffset[ts];
         for (let ii = 0; ii < blockLimits[ts]; ++ii) {
           for (let ly = 0; ly < 2; ++ly) { // 2, bg, fg
+            let isBackground = ly === 0;
+            let isForeground = ly === 1;
+            let bytes = readBytes(buffer, offset2 + ii * 2, 2);
+            let behavior = bytes[0];
+            let background = bytes[1];
             for (let tt = 0; tt < 4; ++tt) { // 4 tile based
-              let tile = readShort(buffer, offset); offset += 0x2;
+              let tile = readWord(buffer, offset); offset += 0x2;
               let tileIndex = tile & 0x3FF;
-              let flipX = ((tile & 0x400) >> 10) === 1;
-              let flipY = ((tile & 0x800) >> 11) === 1;
+              let flipX = (tile & 0x400) >> 10;
+              let flipY = (tile & 0x800) >> 11;
               let palIndex = (tile & 0xF000) >> 12;
               let tileSeeker = tileIndex * 64;
               if (tileSeeker + 64 > tiles.length) continue;
               let dx = x * tileSize + posX[tt];
               let dy = y * tileSize + posY[tt];
-              let xx = 0; let yy = 0 ;
+              if (behavior > 0) {
+                behaviorData[dy * cw + dx] = behavior;
+              }
+              if (background > 0) {
+                backgroundData[dy * cw + dx] = background;
+              }
+              let xx = 0; let yy = 0;
               for (let px = 0; px < 64; ++px) {
                 let pixel = tiles[tileSeeker + px];
                 if (pixel > 0) {
                   let color = palettes[pixel + (palIndex * 16)];
-                  let ddx = (dx + (flipX ? (-xx + 7) : xx));
-                  let ddy = (dy + (flipY ? (-yy + 7) : yy));
+                  let ddx = (dx + (flipX > 0 ? (-xx + 7) : xx));
+                  let ddy = (dy + (flipY > 0 ? (-yy + 7) : yy));
                   let index = 4 * (ddy * cw + ddx);
-                  pixels[index + 0] = color.r;
-                  pixels[index + 1] = color.g;
-                  pixels[index + 2] = color.b;
-                  pixels[index + 3] = 0xff;
+
+                  if (isBackground) {
+                    backgroundPixels[index + 0] = color.r;
+                    backgroundPixels[index + 1] = color.g;
+                    backgroundPixels[index + 2] = color.b;
+                    backgroundPixels[index + 3] = 0xff;
+                  } else {
+                    foregroundPixels[index + 0] = color.r;
+                    foregroundPixels[index + 1] = color.g;
+                    foregroundPixels[index + 2] = color.b;
+                    foregroundPixels[index + 3] = 0xff;
+                  }
                 }
-                xx++; if (xx == 8) { xx = 0; yy++; }
+                xx++; if (xx === 8) { xx = 0; yy++; }
               };
             };
           };
-          if ((++x) == 8) { x = 0; y++; }
+          if ((++x) === 8) { x = 0; y++; }
         };
       };
-      ctx.putImageData(imgData, 0, 0);
+
+      let bg = createCanvasBuffer(128, 2560).ctx;
+      let fg = createCanvasBuffer(128, 2560).ctx;
+
+      bg.putImageData(backgroundImage, 0, 0);
+      fg.putImageData(foregroundImage, 0, 0);
       //document.body.appendChild(ctx.canvas);
-      tileset = ctx;
+      tileData = {
+        behavior: behaviorData,
+        background: backgroundData,
+        layers: {
+          background: bg,
+          foreground: fg
+        },
+        canvas: ctx.canvas
+      };
     })();
 
     let tileSize = 16;
@@ -393,7 +427,7 @@ export default class Rom {
     let bw = borderWidth;
     let bh = borderHeight;
     let border = createCanvasBuffer(bw * tileSize, bh * tileSize);
-    offset = borderTilePtr;
+    /*offset = borderTilePtr;
     for (let ii = 0; ii < bw * bh; ++ii) {
       let xx = (ii % bw) | 0;
       let yy = (ii / bw) | 0;
@@ -410,31 +444,106 @@ export default class Rom {
         destX, destY,
         tileSize, tileSize
       );
-    };
+    };*/
 
-    let ctx = createCanvasBuffer(mapWidth * tileSize, mapHeight * tileSize).ctx;
+    let behavior = new Uint8Array(mapWidth * mapHeight);
+    let background = new Uint8Array(mapWidth * mapHeight);
+    let attributes = new Uint8Array(mapWidth * mapHeight);
+
+    let layers = [
+      createCanvasBuffer(mapWidth * tileSize, mapHeight * tileSize).ctx,
+      createCanvasBuffer(mapWidth * tileSize, mapHeight * tileSize).ctx
+    ];
+    let layerData = [
+      tileData.layers.background,
+      tileData.layers.foreground
+    ];
+
     // # RENDER MAP
     offset = mapTilesPtr;
+    for (let ii = 0; ii < layers.length; ++ii) {
+      let ctx = layers[ii];
+      let tileset = layerData[ii];
+      for (let ii = 0; ii < mapWidth * mapHeight; ++ii) {
+        let xx = (ii % mapWidth) | 0;
+        let yy = (ii / mapWidth) | 0;
+        let value = readShort(buffer, offset + ii * 2);
+        let tile = value & 0x3FF;
+        let attr = value >> 10;
+        let tx = (tile % 8) * tileSize;
+        let ty = (((tile / 8) | 0) * tileSize);
+        let tindex = ty * tileset.canvas.width + tx;
+        behavior[ii] = tileData.behavior[tindex];
+        background[ii] = tileData.background[tindex];
+        attributes[ii] = attr;
+        /*if (behavior[ii] === 0x69) {
+          let buffer = createCanvasBuffer(16, 16);
+          buffer.ctx.drawImage(
+            tileset.canvas,
+            tx, ty,
+            16, 16,
+            0, 0,
+            16, 16
+          );
+          console.log(tile);
+          ows.appendChild(buffer.canvas);
+        }*/
+        if (background[ii] === 0x10) {
+          layers[0].drawImage(
+            tileset.canvas,
+            tx, ty,
+            tileSize, tileSize,
+            xx * tileSize, (yy * tileSize),
+            tileSize, tileSize
+          );
+          continue;
+        }
+        ctx.drawImage(
+          tileset.canvas,
+          tx, ty,
+          tileSize, tileSize,
+          xx * tileSize, (yy * tileSize),
+          tileSize, tileSize
+        );
+      };
+    };
+
+    // # RENDER MAP
+    /*offset = mapTilesPtr;
     for (let ii = 0; ii < mapWidth * mapHeight; ++ii) {
       let xx = (ii % mapWidth) | 0;
       let yy = (ii / mapWidth) | 0;
       let value = readShort(buffer, offset + ii * 2);
       let tile = value & 0x3FF;
       let attr = value >> 10;
+      let tx = (tile % 8) * tileSize;
+      let ty = (((tile / 8) | 0) * tileSize);
+      let tindex = ty * tileset.canvas.width + tx;
+      behavior[ii] = tileset.behavior[tindex];
+      background[ii] = tileset.background[tindex];
+      attributes[ii] = attr;
       ctx.drawImage(
         tileset.canvas,
-        (tile % 8) * tileSize, (((tile / 8) | 0) * tileSize),
+        tx, ty,
         tileSize, tileSize,
         xx * tileSize, (yy * tileSize),
         tileSize, tileSize
       );
-      if (attr === 1 || attr === 0xd) {
-        ctx.globalAlpha = 0.2;
-        ctx.fillStyle = "red";
+      ctx.globalAlpha = 0.5;
+      if (behavior[ii] > 0) {
+        ctx.fillStyle = "#8bc34a";
         ctx.fillRect(xx * tileSize, yy * tileSize, 16, 16);
-        ctx.globalAlpha = 1.0;
       }
-    };
+      if (background[ii] > 0) {
+        ctx.fillStyle = "#03a9f4";
+        ctx.fillRect(xx * tileSize, yy * tileSize, 16, 16);
+      }
+      if (attributes[ii] === 1 || attributes[ii] === 0xd) {
+        ctx.fillStyle = "#f44336";
+        ctx.fillRect(xx * tileSize, yy * tileSize, 16, 16);
+      }
+      ctx.globalAlpha = 1.0;
+    };*/
 
     return {
       id: map,
@@ -443,7 +552,10 @@ export default class Rom {
       name: mapName,
       width: mapWidth,
       height: mapHeight,
-      texture: ctx,
+      texture: layers,
+      behavior,
+      background,
+      attributes,
       connections: connections,
       loaded: false, // anti recursion
       x: 0, y: 0
@@ -467,8 +579,8 @@ export default class Rom {
     object.tilesetImgPtr = readPointer(buffer, offset); offset += 0x4;
     object.palettePtr = readPointer(buffer, offset); offset += 0x4;
     object.blocksPtr = readPointer(buffer, offset); offset += 0x4;
-    object.animPtr = readPointer(buffer, offset); offset += 0x4;
     object.behavePtr = readPointer(buffer, offset); offset += 0x4;
+    object.animPtr = readPointer(buffer, offset); offset += 0x4;
     object.blockCount = object.compressed ? OFS.MAIN_TS_BLOCKS : OFS.LOCAL_TS_BLOCKS;
     return object;
   }
@@ -628,9 +740,51 @@ export default class Rom {
       table[ii] = item;
     };
   }
-  generateBerryGraphicTable() {
-    let table = this.graphics.berries;
-
+  generateFieldEffectGraphicTable() {
+    let table = this.graphics.effects;
+    let palettes = OFS.FIELD_EFFECT_PAL;
+    let imgs = OFS.FIELD_EFFECT_IMGS;
+    for (let ii = 0; ii < imgs.length; ++ii) {
+      let item = imgs[ii];
+      let img = this.getFieldEffect(item[0], palettes[item[1]], item[2], item[3]);
+      table[ii] = img;
+      //ows.appendChild(img.canvas);
+    };
+  }
+  getFieldEffect(id, pal, w, h) {
+    let buffer = this.buffer;
+    let baseOffset = OFS.FIELD_EFFECT_HEADER;
+    let basePtr = readPointer(buffer, baseOffset + (id * 0x4));
+    let offset = basePtr;
+    let tilesTag = readShort(buffer, offset); offset += 0x2;
+    let paletteTag = readShort(buffer, offset); offset += 0x2;
+    let baseOamPtr = readPointer(buffer, offset); offset += 0x4;
+    let animTablePtr = readPointer(buffer, offset); offset += 0x4;
+    let imgPtr = readPointer(buffer, offset); offset += 0x4;
+    let dummyAffine = readPointer(buffer, offset); offset += 0x4;
+    let oamc = readPointer(buffer, offset); offset += 0x4;
+    let picTable = readPointer(buffer, imgPtr);
+    let pixels = picTable;
+    let palette = pal;
+    return this.getImage(pixels, palette, 0, 0, w, h, true);
+  }
+  getDoorAnimation(id) {
+    let buffer = this.buffer;
+    let minorTsPalPtr = 0x33a704; // TODO: Dont hardcode this
+    let baseAnimHeader = OFS.DOOR_ANIM_HEADER;
+    let doorAnimHeader = baseAnimHeader + (id * 0xc);
+    let paletteOffset = readPointer(buffer, doorAnimHeader + 0x8);
+    let paletteNum = readByte(buffer, paletteOffset);
+    let imageOffset = readPointer(buffer, doorAnimHeader + 0x4);
+    let palOffset = minorTsPalPtr + (paletteNum * 32);
+    return this.getImage(imageOffset, palOffset, 0, 0, 16, 96, true);
+  }
+  generateDoorAnimationGraphicTable() {
+    let table = this.graphics.doors;
+    for (let ii = 0; ii < 53; ++ii) {
+      //table[ii] = this.getDoorAnimation(ii);
+      //ows.appendChild(table[ii].canvas);
+    };
   }
   generateOverworldGraphicTable() {
     let table = this.graphics.overworlds;
