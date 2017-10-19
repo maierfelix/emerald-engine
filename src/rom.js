@@ -258,17 +258,6 @@ export default class Rom {
     let mainBlocks = OFS.MAIN_TS_BLOCKS;
     let localBlocks = OFS.LOCAL_TS_SIZE;
 
-    let baseAnimHeader = 0x497174;
-    for (let ii = 0; ii < 53; ++ii) {
-      let doorAnimHeader = baseAnimHeader + (ii * 0xc);
-      let paletteOffset = readPointer(buffer, doorAnimHeader + 0x8);
-      let paletteNum = readByte(buffer, paletteOffset);
-      let imageOffset = readPointer(buffer, doorAnimHeader + 0x4);
-      let palOffset = minorTileset.palettePtr + (paletteNum * 32);
-      let img = this.getImage(imageOffset, palOffset, 0, 0, 16, 96, true);
-      ows.appendChild(img.canvas);
-    };
-
     // # RENDER MAP TILESETS [PRIMARY, SECONDARY]
     let tileData = null;
     (() => {
@@ -324,10 +313,6 @@ export default class Rom {
         }
       };
 
-      // TILE ANIMATIONS
-      offset = 0x5059F8;
-      let anim = readPointer(buffer, offset);
-
       // # DECODE PALETTES
       let palettes = [];
       for (let ii = 0; ii < 256; ++ii) {
@@ -340,6 +325,12 @@ export default class Rom {
       let x = 0; let y = 0;
       let posX = [0, 8, 0, 8];
       let posY = [0, 0, 8, 8];
+
+      console.log(majorTileset.animPtr, minorTileset.animPtr);
+
+      function isAnimatedTile(offset) {
+        return offset === 508;
+      };
 
       let cw = ctx.canvas.width; let ch = ctx.canvas.height;
       let backgroundImage = new ImageData(cw, ch);
@@ -359,6 +350,11 @@ export default class Rom {
             let bytes = readBytes(buffer, offset2 + ii * 2, 2);
             let behavior = bytes[0];
             let background = bytes[1];
+            let draw = true;
+            let tileOffset = readWord(buffer, offset) & 0x3FF;
+            if (isAnimatedTile(tileOffset)) {
+              console.log(tileOffset);
+            }
             for (let tt = 0; tt < 4; ++tt) { // 4 tile based
               let tile = readWord(buffer, offset); offset += 0x2;
               let tileIndex = tile & 0x3FF;
@@ -383,7 +379,7 @@ export default class Rom {
                   let ddx = (dx + (flipX > 0 ? (-xx + 7) : xx));
                   let ddy = (dy + (flipY > 0 ? (-yy + 7) : yy));
                   let index = 4 * (ddy * cw + ddx);
-
+                  if (!draw) color = { r: 0, g: 0, b: 0 };
                   if (isBackground) {
                     backgroundPixels[index + 0] = color.r;
                     backgroundPixels[index + 1] = color.g;
@@ -409,6 +405,8 @@ export default class Rom {
 
       bg.putImageData(backgroundImage, 0, 0);
       fg.putImageData(foregroundImage, 0, 0);
+      ows.appendChild(bg.canvas);
+      ows.appendChild(fg.canvas);
       //document.body.appendChild(ctx.canvas);
       tileData = {
         behavior: behaviorData,
@@ -782,7 +780,7 @@ export default class Rom {
   generateDoorAnimationGraphicTable() {
     let table = this.graphics.doors;
     for (let ii = 0; ii < 53; ++ii) {
-      //table[ii] = this.getDoorAnimation(ii);
+      table[ii] = this.getDoorAnimation(ii);
       //ows.appendChild(table[ii].canvas);
     };
   }

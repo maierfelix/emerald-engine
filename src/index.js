@@ -41,20 +41,26 @@ let host = Array.from(location.host.substr(0, 5));
 
 window.rom = null;
 
-readBinaryFile("rom.gba").then((buffer) => {
-  /*if (
-    (host[0].charCodeAt(0) !== 109) ||
-    (host[1].charCodeAt(0) !== 97) ||
-    (host[2].charCodeAt(0) !== 105) ||
-    (host[3].charCodeAt(0) !== 101) ||
-    (host[4].charCodeAt(0) !== 114)
-  ) return;*/
-  resize();
-  new Rom(buffer, { debug }).then((instance) => {
-    rom = instance;
-    init();
+resize();
+
+debug(`Downloading ROM file...`);
+
+setTimeout(() => {
+  readBinaryFile("rom.gba").then((buffer) => {
+    resize();
+    /*if (
+      (host[0].charCodeAt(0) !== 109) ||
+      (host[1].charCodeAt(0) !== 97) ||
+      (host[2].charCodeAt(0) !== 105) ||
+      (host[3].charCodeAt(0) !== 101) ||
+      (host[4].charCodeAt(0) !== 114)
+    ) return;*/
+    new Rom(buffer, { debug }).then((instance) => {
+      rom = instance;
+      init();
+    });
   });
-});
+}, 1e2);
 
 function zoomScale(x) {
   return (
@@ -277,6 +283,7 @@ function drawBorder(map) {
 };
 
 window.player = {
+  test: 0,
   foot: 0,
   frame: 0,
   frameIndex: 0,
@@ -310,12 +317,12 @@ function updateEntity(entity) {
   // is moving
   let isMovingX = entity.vx !== 0;
   let isMovingY = entity.vy !== 0;
-  let isMoving = isMovingX || isMovingY;
-  let justMovedOneFrame = isMoving && (
+  let isMovingXY = isMovingX || isMovingY;
+  let justMovedOneFrame = isMovingXY && (
     (Math.abs(entity.tx - entity.x) < 0.2 && Math.abs(entity.tx - entity.x) > 0.0) ||
     (Math.abs(entity.ty - entity.y) < 0.2 && Math.abs(entity.ty - entity.y) > 0.0)
   );
-  let didntMoveYet = isMoving && (
+  let didntMoveYet = isMovingXY && (
     (Math.abs(entity.tx - entity.x) >= 1.0) ||
     (Math.abs(entity.ty - entity.y) >= 1.0)
   );
@@ -411,6 +418,11 @@ function updateEntity(entity) {
   if (isMovingX) entity.x += entity.vx;
   else if (isMovingY) entity.y += entity.vy;
 
+  // switch the foot
+  if (!isMoving(entity) && entity.frameIndex > 0 && (-entity.waitMove % (FACE_TIME * 6)) === 0) {
+    entity.frameIndex = 0;
+  }
+
   updateFrame(entity);
 };
 
@@ -435,20 +447,6 @@ function updateFrame(entity) {
   entity.waitMove--;
 };
 
-function isBlocked(x, y) {
-  let map = rom.maps[currentMap];
-  let index = (y * map.width + x) | 0;
-  let attr = map.attributes[index];
-  let behavior = map.behavior[index];
-  return (
-    (x < 0 || x >= map.width) ||
-    (y < 0 || y >= map.height) ||
-    (attr === 1 || attr === 0xd) &&
-    (behavior !== 0x3b)
-
-  );
-};
-
 function isMoving(entity) {
   return (
     !entity.lock &&
@@ -459,33 +457,82 @@ function isMoving(entity) {
 
 let FACE_TIME = 8;
 
+function isBlocked(entity, dir) {
+  let x = entity.x | 0;
+  let y = entity.y | 0;
+  switch (dir) {
+    case DIR.DOWN:  y += 1; break;
+    case DIR.UP:    y -= 1; break;
+    case DIR.LEFT:  x -= 1; break;
+    case DIR.RIGHT: x += 1; break;
+  };
+  let map = rom.maps[currentMap];
+  let index = (y * map.width + x) | 0;
+  let attr = map.attributes[index] | 0;
+  let behavior = map.behavior[index] | 0;
+  return (
+    (x < 0 || x >= map.width) ||
+    (y < 0 || y >= map.height) ||
+    (attr === 1 || attr === 0xd) &&
+    (behavior !== 0x3b)
+  );
+};
+
+function isAnyMoveKeyPressed() {
+  let down = keys["s"] || keys["ArrowDown"];
+  let up = keys["w"] || keys["ArrowUp"];
+  let left = keys["a"] || keys["ArrowLeft"];
+  let right = keys["d"] || keys["ArrowRight"];
+  return (down | up | left | right);
+};
+
 function moveEntity(entity, dir, duration) {
+  let blocked = isBlocked(entity, dir);
+  // bumping against a blocked tile
+  if (blocked) {
+    if (!isMoving(entity) && (duration % (FACE_TIME * 3)) === 0) {
+      entity.frameIndex = 1;
+      // switch the foot
+      if ((duration % (FACE_TIME * 6)) === 0) {
+        entity.frameIndex = 0;
+        entity.foot = !entity.foot | 0;
+      }
+      updateFrame(entity);
+    }
+  }
+  // allow changing the walk direction
+  // when we finished a walk task and stand on a tile
   if (!isMoving(entity) && entity.facing !== dir) {
     entity.facing = dir;
     entity.foot = !entity.foot | 0;
+    // allow changing face direction without moving
     if (duration <= FACE_TIME) {
       entity.waitMove = FACE_TIME;
     }
   }
-  if (entity.waitMove > 0 || isMoving(entity)) return;
-  if (dir === DIR.DOWN && !isBlocked(entity.x, entity.y + 1)) {
+  // this allows to walk more smoothly
+  if (entity.waitMove > 0 && !isAnyMoveKeyPressed()) return;
+  // dont setup a new walk task if we're already moving
+  if (isMoving(entity)) return;
+  // initialise a walk task
+  if (dir === DIR.DOWN && !blocked) {
     entity.ty = entity.y + 1;
-    entity.vy += (entity.ty - entity.y) * entity.speed;
+    entity.vy = (entity.ty - entity.y) * entity.speed;
     entity.waitMove = 0;
   }
-  if (dir === DIR.UP && !isBlocked(entity.x, entity.y - 1)) {
+  if (dir === DIR.UP && !blocked) {
     entity.ty = entity.y - 1;
-    entity.vy += (entity.ty - entity.y) * entity.speed;
+    entity.vy = (entity.ty - entity.y) * entity.speed;
     entity.waitMove = 0;
   }
-  if (dir === DIR.LEFT && !isBlocked(entity.x - 1, entity.y)) {
+  if (dir === DIR.LEFT && !blocked) {
     entity.tx = entity.x - 1;
-    entity.vx += (entity.tx - entity.x) * entity.speed;
+    entity.vx = (entity.tx - entity.x) * entity.speed;
     entity.waitMove = 0;
   }
-  if (dir === DIR.RIGHT && !isBlocked(entity.x + 1, entity.y)) {
+  if (dir === DIR.RIGHT && !blocked) {
     entity.tx = entity.x + 1;
-    entity.vx += (entity.tx - entity.x) * entity.speed;
+    entity.vx = (entity.tx - entity.x) * entity.speed;
     entity.waitMove = 0;
   }
 };
@@ -493,11 +540,9 @@ function moveEntity(entity, dir, duration) {
 let keys = {};
 window.addEventListener("keydown", (e) => {
   if (!keys[e.key]) keys[e.key] = 1;
-  keys[e.key] = 1;
   updateKeys();
 });
 window.addEventListener("keyup", (e) => {
-  if (!keys[e.key]) keys[e.key] = 1;
   keys[e.key] = 0;
   updateKeys();
 });
@@ -508,9 +553,9 @@ function updateKeys() {
   let left = keys["a"] || keys["ArrowLeft"];
   let right = keys["d"] || keys["ArrowRight"];
   if (down) moveEntity(player, DIR.DOWN, down);
-  if (up) moveEntity(player, DIR.UP, up);
-  if (left) moveEntity(player, DIR.LEFT, left);
-  if (right) moveEntity(player, DIR.RIGHT, right);
+  else if (up) moveEntity(player, DIR.UP, up);
+  else if (left) moveEntity(player, DIR.LEFT, left);
+  else if (right) moveEntity(player, DIR.RIGHT, right);
   for (let key in keys) {
     if (keys[key] > 0) keys[key] += 1;
   };
