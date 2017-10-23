@@ -87,9 +87,197 @@ export const OFFSETS = {
   LOCAL_TS_SIZE: 0x140,
   LOCAL_TS_HEIGHT: 0xC0,
   MAP_LABEL_DATA: 0x5A1480,
-  TILESET_ANIMATIONS: [
-    0x84F8738, // grass 4 * 128
-
+  TILESET_PRIMARY_ANIMATIONS: [
+    // flower
+    {
+      size: 0x80 / 0x20,
+      offset: 0x3F80 / 0x20,
+      animations: [
+        0x510644,
+        0x5105C4,
+        0x510644,
+        0x5106C4
+      ]
+    },
+    // water
+    {
+      size: 0x3C0 / 0x20,
+      offset: 0x3600 / 0x20,
+      animations: [
+        0x510774,
+        0x510B34,
+        0x510EF4,
+        0x5112B4,
+        0x511674,
+        0x511A34,
+        0x511DF4,
+        0x5121B4
+      ]
+    },
+    // water edge
+    {
+      size: 0x140 / 0x20,
+      offset: 0x3a00 / 0x20,
+      animations: [
+        0x512594,
+        0x5126D4,
+        0x512814,
+        0x512954,
+        0x512A94,
+        0x512BD4,
+        0x512D14,
+        0x512594
+      ]
+    },
+    // waterfall
+    {
+      size: 0xc0 / 0x20,
+      offset: 0x3e00 / 0x20,
+      animations: [
+        0x512E74,
+        0x512F34,
+        0x512FF4,
+        0x5130B4
+      ]
+    },
+    // water stuff
+    {
+      size: 0x140 / 0x20,
+      offset: 0x3c00 / 0x20,
+      animations: [
+        0x513184,
+        0x5132C4,
+        0x513404,
+        0x513544
+      ]
+    }
+  ],
+  TILESET_SECONDARY_ANIMATIONS: [
+    // rustboro fountain
+    {
+      tileset: "0:2",
+      size: 0x80 / 0x20,
+      offset: 0x7800 / 0x20,
+      animations: [
+        0x515844,
+        0x5158C4
+      ]
+    },
+    // rustboro reflecting water
+    {
+      tileset: "0:2",
+      size: 0x80 / 0x20,
+      offset: 0x5000 / 0x20,
+      interval: 0x80 / 0x20,
+      animations: [
+        0x515404,
+        0x515484,
+        0x515504,
+        0x515584,
+        0x515604,
+        0x515684,
+        0x515704,
+        0x515784
+      ]
+    },
+    // evergrande city
+    {
+      tileset: "0:11",
+      size: 0x80 / 0x20,
+      offset: 0x5c00 / 0x20,
+      interval: 0x80 / 0x20,
+      animations: [
+        0x515D9C,
+        0x515E1C,
+        0x515E9C,
+        0x515F1C,
+        0x515F9C,
+        0x51601C,
+        0x51609C,
+        0x51611C
+      ]
+    },
+    // lavaridge city pool
+    {
+      tileset: "0:6",
+      size: 0x80 / 0x20,
+      offset: 0x6400 / 0x20,
+      interval: 0x80 / 0x20,
+      animations: [
+        0x513694,
+        0x513714,
+        0x513794,
+        0x513814
+      ]
+    },
+    // mauville city 0a
+    {
+      tileset: "0:5",
+      size: 0x80 / 0x20,
+      offset: 0x4c00 / 0x20,
+      interval: 0x80 / 0x20,
+      animations: [
+        0x514E24,
+        0x514E24,
+        0x514EA4,
+        0x514F24,
+        0x514FA4,
+        0x514FA4,
+        0x514FA4,
+        0x514FA4,
+        0x514FA4,
+        0x514FA4,
+        0x514F24,
+        0x514EA4
+      ]
+    },
+    // mauville city 0b
+    {
+      tileset: "0:5",
+      size: 0x80 / 0x20,
+      offset: 0x5000 / 0x20,
+      interval: 0x80 / 0x20,
+      animations: [
+        0x5150A4,
+        0x5150A4,
+        0x515124,
+        0x5151A4,
+        0x515224,
+        0x515224,
+        0x515224,
+        0x515224,
+        0x515224,
+        0x515224,
+        0x5151A4,
+        0x515124
+      ]
+    },
+    // mauville city 1a
+    {
+      tileset: "0:5",
+      size: 0x80 / 0x20,
+      offset: 0x4c00 / 0x20,
+      interval: 0x80 / 0x20,
+      animations: [
+        0x514E24,
+        0x514E24,
+        0x515024,
+        0x515024
+      ]
+    },
+    // mauville city 1b
+    {
+      tileset: "0:5",
+      size: 0x80 / 0x20,
+      offset: 0x5000 / 0x20,
+      interval: 0x80 / 0x20,
+      animations: [
+        0x5150A4,
+        0x5150A4,
+        0x5152A4,
+        0x5152A4
+      ]
+    }
   ],
   MAP_CONNECTION: {
     NULL: 0,
@@ -172,5 +360,14 @@ export const OFFSETS = {
     0,
     2,
     0
+  ],
+  OTHER_ASSETS: [
+    {
+      name: "cloud-0",
+      pixels: 0xD82608,
+      palette: 0xD854C8,
+      width: 128, height: 128,
+      compressed: true
+    }
   ]
 };

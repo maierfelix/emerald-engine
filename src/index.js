@@ -92,11 +92,95 @@ function init() {
 };
 
 function drawBackgroundMap() {
-  for (let key in rom.maps) drawMap(key, 0);
+  for (let key in rom.maps) {
+    let map = rom.maps[key];
+    drawMap(key, 0);
+    drawMapAnimations(key, 0);
+    drawReflections(player);
+    drawMap(key, 2);
+    drawMapAnimations(key, 1);
+    drawMap(key, 1);
+  };
+  lol += 0.05;
 };
 
+function drawReflections(entity) {
+  let dx = cx + (entity.x * 16) * cz;
+  let dy = cy + ((entity.y - 1) * 16) * cz;
+  let map = rom.maps[currentMap];
+  let index = ((entity.y + 1 | 0) * map.width + (entity.x | 0));
+  // water reflection
+  if (
+    (entity === player) &&
+    (map.behavior[index] === 0x10 ||
+    map.behavior[index] === 0x16 ||
+    map.behavior[index] === 0x20 ||
+    map.behavior[index] === 0x1a ||
+    map.behavior[index] === 0x2b)
+  ) {
+    let sprite = rom.graphics.overworlds[0][entity.frame].canvas;
+    let sw = sprite.width;
+    let sh = sprite.height;
+    ctx.globalAlpha = 0.425;
+    let resolution = window.devicePixelRatio;
+    ctx.scale(1, -1);
+    ctx.drawImage(
+      sprite,
+      0, 0,
+      sw, sh,
+      dx, -(cy + ((entity.y + 0.85) * 16) * cz),
+      sw * cz, -sh * cz
+    );
+    resetTransformation();
+    ctx.globalAlpha = 1.0;
+  }
+};
+
+let lol = 0;
 function drawForegroundMap() {
   for (let key in rom.maps) drawMap(key, 1);
+};
+
+function drawMapAnimations(key, layer) {
+  let map = rom.maps[key];
+  let animations = map.animations[layer];
+  let animationData = map.animationData[layer];
+  for (let ii = 0; ii < animations.length; ++ii) {
+    let anim = animations[ii];
+    let data = animationData[anim.index].data;
+    let xx = anim.x;
+    let yy = anim.y;
+    let img = data[(lol | 0) % (data.length)].canvas;
+    ctx.drawImage(
+      img,
+      0, 0,
+      8, 8,
+      cx + (xx) * cz, cy + (yy) * cz,
+      8 * cz, 8 * cz
+    );
+  };
+};
+
+function drawMap(id, layer) {
+  let map = rom.maps[id];
+  let img = map.texture[layer].canvas;
+  let xx = cx + (((map.x | 0) * 16) * cz) | 0;
+  let yy = cy + (((map.y | 0) * 16) * cz) | 0;
+  let ww = (img.width * cz) | 0;
+  let hh = (img.height * cz) | 0;
+  if (!inView(map)) return;
+  if (map.name === "UNDERWATER") return;
+  drawBorder(map);
+  ctx.drawImage(
+    img,
+    0, 0,
+    img.width, img.height,
+    xx, yy,
+    ww, hh
+  );
+  ctx.font = `${12 * cz}px Open Sans`;
+  ctx.fillStyle = "#fff";
+  ctx.fillText(map.name + " [" + map.bank + ":" + map.id + "]", xx + 16, yy + 16);
 };
 
 function drawEntities() {
@@ -128,29 +212,6 @@ function drawEntity(entity) {
   let dy = cy + ((entity.y - 1) * 16) * cz;
   let map = rom.maps[currentMap];
   let index = ((entity.y + 1 | 0) * map.width + (entity.x | 0));
-  // water reflection
-  if (
-    (entity === player) &&
-    (map.behavior[index] === 0x10 ||
-    map.behavior[index] === 0x16 ||
-    map.behavior[index] === 0x20 ||
-    map.behavior[index] === 0x1a ||
-    map.behavior[index] === 0x2b)
-  ) {
-    let sprite = rom.graphics.overworlds[0][entity.frame].canvas;
-    let sw = sprite.width;
-    let sh = sprite.height;
-    ctx.globalAlpha = 0.425;
-    let resolution = window.devicePixelRatio;
-    ctx.drawImage(
-      sprite,
-      0, 0,
-      sw, sh,
-      dx, cy + ((entity.y) * 16) * cz,
-      sw * cz, sh * cz
-    );
-    ctx.globalAlpha = 1.0;
-  }
   drawSprite(0, entity.frame, dx, dy);
 };
 
@@ -177,28 +238,6 @@ function inView(map) {
     (xx + ww >= 0 && xx <= width) &&
     (yy + hh >= 0 && yy <= height)
   );
-};
-
-function drawMap(id, layer) {
-  let map = rom.maps[id];
-  let img = map.texture[layer].canvas;
-  let xx = cx + (((map.x | 0) * 16) * cz) | 0;
-  let yy = cy + (((map.y | 0) * 16) * cz) | 0;
-  let ww = (img.width * cz) | 0;
-  let hh = (img.height * cz) | 0;
-  if (!inView(map)) return;
-  if (map.name === "UNDERWATER") return;
-  drawBorder(map);
-  ctx.drawImage(
-    img,
-    0, 0,
-    img.width, img.height,
-    xx, yy,
-    ww, hh
-  );
-  ctx.font = `${12 * cz}px Open Sans`;
-  ctx.fillStyle = "#fff";
-  ctx.fillText(map.name + " [" + map.bank + ":" + map.id + "]", xx + 16, yy + 16);
 };
 
 function hasConnection(map, dir) {
@@ -290,18 +329,20 @@ window.player = {
   waitMove: 0,
   facing: DIR.DOWN,
   speed: 0.06,
-  tx: 8, ty: 8,
+  tx: 25, ty: 10,
   dx: 0, dy: 0,
   vx: 0, vy: 0,
-  x: 8, y: 8,
+  x: 25, y: 10,
   lock: false
 };
 
 window.FREE_CAMERA = false;
 
+window.cz = 3;
+
 let entities = [];
 
-let currentMap = "0:9";
+let currentMap = "0:32";
 
 function updateCamera() {
   if (!FREE_CAMERA) {
@@ -587,7 +628,6 @@ function roundTo(a, b) {
   return (Math.round(a * b) / b);
 };
 
-window.cz = 6.5;
 window.cx = 0; window.cy = 0;
 window.addEventListener("mousewheel", (e) => {
   let dir = e.deltaY > 0 ? -1 : 1;

@@ -125,7 +125,7 @@ export default class Rom {
       this.mapInBanksCount[ii] = OFS.MAPS_IN_BANK[ii];
       this.bankPointers[ii] = OFS.MAP_BANK_POINTERS[ii];
     };
-    this.fetchMap(0, 9);
+    this.fetchMap(0, 32);
     //this.fetchMap(0, 19);
   }
   fetchMap(bBank, bMap) {
@@ -247,8 +247,8 @@ export default class Rom {
     };
 
     // # MAP TILESETS [PRIMARY, SECONDARY]
-    let majorTileset = this.readTilesetHeader(pMajorTileset);
-    let minorTileset = this.readTilesetHeader(pMinorTileset);
+    let majorTileset = this.readTilesetHeader(pMajorTileset, mapHeaderPointer);
+    let minorTileset = this.readTilesetHeader(pMinorTileset, mapHeaderPointer);
 
     let mainPalCount = OFS.MAIN_TS_PAL_COUNT;
     let mainHeight = OFS.MAIN_TS_HEIGHT;
@@ -326,11 +326,75 @@ export default class Rom {
       let posX = [0, 8, 0, 8];
       let posY = [0, 0, 8, 8];
 
-      console.log(majorTileset.animPtr, minorTileset.animPtr);
+      // e.g. used to find secondary tileset relative animations
+      let tileset = majorTileset.number + ":" + minorTileset.number;
 
-      function isAnimatedTile(offset) {
-        return offset === 508;
+      // checks if a tile lies inside a
+      // tileset animation offset range
+      function getTileAnimation(offset) {
+        let animations = OFS.TILESET_PRIMARY_ANIMATIONS;
+        let sanimations = OFS.TILESET_SECONDARY_ANIMATIONS;
+        // primary animations
+        for (let ii = 0; ii < animations.length; ++ii) {
+          let anim = animations[ii];
+          let start = anim.offset;
+          let end = anim.offset + anim.size;
+          if (offset >= start && offset < end) return anim;
+        };
+        // secondary animations
+        for (let ii = 0; ii < sanimations.length; ++ii) {
+          let anim = sanimations[ii];
+          if (anim.tileset !== tileset) continue;
+          if (anim.interval !== void 0) {
+            let start = anim.offset;
+            let end = anim.offset + (anim.animations.length * anim.interval);
+            if (offset >= start && offset < end) return anim;
+          }
+          let start = anim.offset;
+          let end = anim.offset + anim.size;
+          if (offset >= start && offset < end) return anim;
+        };
+        return null;
       };
+
+      let self = this;
+      function getAnimationTileImg(anim, tileIndex, palIndex, flipX, flipY) {
+        let frames = [];
+        let index = (tileIndex - anim.offset);
+        let tileset = (anim.tileset ? minorTileset : majorTileset).palettePtr;
+        let palette = tileset + (palIndex * 0x20);
+        for (let ii = 0; ii < anim.animations.length; ++ii) {
+          let offset = anim.animations[ii];
+          if (anim.interval) {
+            index = (tileIndex - (anim.offset + (ii * anim.interval)));
+          }
+          let pal = readPalette(self.buffer, palette, true);
+          let tile = readPixels(self.buffer, offset + (index * 0x20), pal, 0x8, 0x8, true);
+          let buffer = createCanvasBuffer(0x8, 0x8).ctx;
+          buffer.putImageData(tile, 0, 0);
+          if (flipX) {
+            let img = createCanvasBuffer(0x8, 0x8).ctx;
+            img.scale(-1, 1);
+            img.drawImage(buffer.canvas, 0, 0, -0x8, 0x8);
+            buffer = img;
+          }
+          if (flipY) {
+            let img = createCanvasBuffer(0x8, 0x8).ctx;
+            img.scale(1, -1);
+            img.drawImage(buffer.canvas, 0, 0, 0x8, -0x8);
+            buffer = img;
+          }
+          if (anim.interval) {
+            buffer.globalAlpha = ii / 10;
+            buffer.fillRect(0, 0, 0x8, 0x8);
+          }
+          frames.push(buffer);
+        };
+        return frames;
+      };
+
+      let bganimations = [];
+      let fganimations = [];
 
       let cw = ctx.canvas.width; let ch = ctx.canvas.height;
       let backgroundImage = new ImageData(cw, ch);
@@ -350,11 +414,6 @@ export default class Rom {
             let bytes = readBytes(buffer, offset2 + ii * 2, 2);
             let behavior = bytes[0];
             let background = bytes[1];
-            let draw = true;
-            let tileOffset = readWord(buffer, offset) & 0x3FF;
-            if (isAnimatedTile(tileOffset)) {
-              console.log(tileOffset);
-            }
             for (let tt = 0; tt < 4; ++tt) { // 4 tile based
               let tile = readWord(buffer, offset); offset += 0x2;
               let tileIndex = tile & 0x3FF;
@@ -371,6 +430,20 @@ export default class Rom {
               if (background > 0) {
                 backgroundData[dy * cw + dx] = background;
               }
+              let anim = getTileAnimation(tileIndex);
+              // tile is animated
+              if (anim !== null) {
+                let data = getAnimationTileImg(anim, tileIndex, palIndex, flipX, flipY);
+                let animLayer = isForeground ? fganimations : bganimations;
+                let offset = anim.offset;
+                animLayer.push({
+                  x: x, y: y,
+                  data,
+                  layer: ly,
+                  tile: offset,
+                  index: tt
+                });
+              }
               let xx = 0; let yy = 0;
               for (let px = 0; px < 64; ++px) {
                 let pixel = tiles[tileSeeker + px];
@@ -379,7 +452,6 @@ export default class Rom {
                   let ddx = (dx + (flipX > 0 ? (-xx + 7) : xx));
                   let ddy = (dy + (flipY > 0 ? (-yy + 7) : yy));
                   let index = 4 * (ddy * cw + ddx);
-                  if (!draw) color = { r: 0, g: 0, b: 0 };
                   if (isBackground) {
                     backgroundPixels[index + 0] = color.r;
                     backgroundPixels[index + 1] = color.g;
@@ -405,8 +477,6 @@ export default class Rom {
 
       bg.putImageData(backgroundImage, 0, 0);
       fg.putImageData(foregroundImage, 0, 0);
-      ows.appendChild(bg.canvas);
-      ows.appendChild(fg.canvas);
       //document.body.appendChild(ctx.canvas);
       tileData = {
         behavior: behaviorData,
@@ -415,6 +485,7 @@ export default class Rom {
           background: bg,
           foreground: fg
         },
+        animations: [ bganimations, fganimations ],
         canvas: ctx.canvas
       };
     })();
@@ -447,21 +518,34 @@ export default class Rom {
     let behavior = new Uint8Array(mapWidth * mapHeight);
     let background = new Uint8Array(mapWidth * mapHeight);
     let attributes = new Uint8Array(mapWidth * mapHeight);
+    let animations = [
+      [], []
+    ];
 
     let layers = [
       createCanvasBuffer(mapWidth * tileSize, mapHeight * tileSize).ctx,
       createCanvasBuffer(mapWidth * tileSize, mapHeight * tileSize).ctx
     ];
+    let bgb = createCanvasBuffer(mapWidth * tileSize, mapHeight * tileSize).ctx;
     let layerData = [
       tileData.layers.background,
       tileData.layers.foreground
     ];
 
+    function getAnimationAt(layer, x, y, index) {
+      let animations = tileData.animations[layer];
+      for (let ii = 0; ii < animations.length; ++ii) {
+        let anim = animations[ii];
+        if (anim.x === x && anim.y === y && anim.index === index && anim.layer === layer) return ii;
+      };
+      return -1;
+    };
+
     // # RENDER MAP
     offset = mapTilesPtr;
-    for (let ii = 0; ii < layers.length; ++ii) {
-      let ctx = layers[ii];
-      let tileset = layerData[ii];
+    for (let ll = 0; ll < layers.length; ++ll) {
+      let ctx = layers[ll];
+      let tileset = layerData[ll];
       for (let ii = 0; ii < mapWidth * mapHeight; ++ii) {
         let xx = (ii % mapWidth) | 0;
         let yy = (ii / mapWidth) | 0;
@@ -474,74 +558,42 @@ export default class Rom {
         behavior[ii] = tileData.behavior[tindex];
         background[ii] = tileData.background[tindex];
         attributes[ii] = attr;
-        /*if (behavior[ii] === 0x69) {
-          let buffer = createCanvasBuffer(16, 16);
-          buffer.ctx.drawImage(
-            tileset.canvas,
-            tx, ty,
-            16, 16,
-            0, 0,
-            16, 16
-          );
-          console.log(tile);
-          ows.appendChild(buffer.canvas);
-        }*/
-        if (background[ii] === 0x10) {
-          layers[0].drawImage(
+        // tile (4 tile based) is animated
+        for (let jj = 0; jj < 4; ++jj) {
+          let x = (jj % 2) | 0;
+          let y = (jj / 2) | 0;
+          let pos = getAnimationAt(ll, (tile % 8) | 0, (tile / 8) | 0, jj);
+          if (pos !== -1) {
+            animations[ll].push({
+              index: pos,
+              layer: ll,
+              x: (xx * 16) + (x * 8),
+              y: (yy * 16) + (y * 8)
+            });
+          }
+        };
+        // block covered by hero
+        if (background[ii] === 0x10 && ll === 1) {
+          bgb.drawImage(
             tileset.canvas,
             tx, ty,
             tileSize, tileSize,
             xx * tileSize, (yy * tileSize),
             tileSize, tileSize
           );
-          continue;
+        } else {
+          ctx.drawImage(
+            tileset.canvas,
+            tx, ty,
+            tileSize, tileSize,
+            xx * tileSize, (yy * tileSize),
+            tileSize, tileSize
+          );
         }
-        ctx.drawImage(
-          tileset.canvas,
-          tx, ty,
-          tileSize, tileSize,
-          xx * tileSize, (yy * tileSize),
-          tileSize, tileSize
-        );
       };
     };
 
-    // # RENDER MAP
-    /*offset = mapTilesPtr;
-    for (let ii = 0; ii < mapWidth * mapHeight; ++ii) {
-      let xx = (ii % mapWidth) | 0;
-      let yy = (ii / mapWidth) | 0;
-      let value = readShort(buffer, offset + ii * 2);
-      let tile = value & 0x3FF;
-      let attr = value >> 10;
-      let tx = (tile % 8) * tileSize;
-      let ty = (((tile / 8) | 0) * tileSize);
-      let tindex = ty * tileset.canvas.width + tx;
-      behavior[ii] = tileset.behavior[tindex];
-      background[ii] = tileset.background[tindex];
-      attributes[ii] = attr;
-      ctx.drawImage(
-        tileset.canvas,
-        tx, ty,
-        tileSize, tileSize,
-        xx * tileSize, (yy * tileSize),
-        tileSize, tileSize
-      );
-      ctx.globalAlpha = 0.5;
-      if (behavior[ii] > 0) {
-        ctx.fillStyle = "#8bc34a";
-        ctx.fillRect(xx * tileSize, yy * tileSize, 16, 16);
-      }
-      if (background[ii] > 0) {
-        ctx.fillStyle = "#03a9f4";
-        ctx.fillRect(xx * tileSize, yy * tileSize, 16, 16);
-      }
-      if (attributes[ii] === 1 || attributes[ii] === 0xd) {
-        ctx.fillStyle = "#f44336";
-        ctx.fillRect(xx * tileSize, yy * tileSize, 16, 16);
-      }
-      ctx.globalAlpha = 1.0;
-    };*/
+    layers.push(bgb);
 
     return {
       id: map,
@@ -554,6 +606,8 @@ export default class Rom {
       behavior,
       background,
       attributes,
+      animations: animations,
+      animationData: tileData.animations,
       connections: connections,
       loaded: false, // anti recursion
       x: 0, y: 0
@@ -568,7 +622,7 @@ export default class Rom {
       //palettes[ii] = (r | b | g) & 0xff;
     }
   }
-  readTilesetHeader(offset) {
+  readTilesetHeader(offset, tilesetHeader) {
     let buffer = this.buffer;
     let object = {};
     object.compressed = readByte(buffer, offset); offset += 0x1;
@@ -579,7 +633,7 @@ export default class Rom {
     object.blocksPtr = readPointer(buffer, offset); offset += 0x4;
     object.behavePtr = readPointer(buffer, offset); offset += 0x4;
     object.animPtr = readPointer(buffer, offset); offset += 0x4;
-    object.blockCount = object.compressed ? OFS.MAIN_TS_BLOCKS : OFS.LOCAL_TS_BLOCKS;
+    object.number = ((offset - 0x3DF704 + 8) / 0x18) - 1 | 0;
     return object;
   }
   getPkmnString() {
@@ -719,7 +773,7 @@ export default class Rom {
       let icon = this.getPkmnIconImgById(ii);
       let back = this.getPkmnBackImgById(ii);
       let front = this.getPkmnFrontImgById(ii);
-      table.icon[ii] = front;
+      table.icon[ii] = icon;
       table.back[ii] = back;
       table.front[ii] = front;
     };
