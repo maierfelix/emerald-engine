@@ -125,7 +125,7 @@ export default class Rom {
       this.mapInBanksCount[ii] = OFS.MAPS_IN_BANK[ii];
       this.bankPointers[ii] = OFS.MAP_BANK_POINTERS[ii];
     };
-    this.fetchMap(0, 32);
+    this.fetchMap(0, 12);
     //this.fetchMap(0, 19);
   }
   fetchMap(bBank, bMap) {
@@ -338,21 +338,19 @@ export default class Rom {
         for (let ii = 0; ii < animations.length; ++ii) {
           let anim = animations[ii];
           let start = anim.offset;
-          let end = anim.offset + anim.size;
+          let end = start + anim.size;
           if (offset >= start && offset < end) return anim;
         };
-        // secondary animations
+        // secondary non-special animations
         for (let ii = 0; ii < sanimations.length; ++ii) {
           let anim = sanimations[ii];
           if (anim.tileset !== tileset) continue;
-          if (anim.interval !== void 0) {
-            let start = anim.offset;
-            let end = anim.offset + (anim.animations.length * anim.interval);
+          if (anim.interval === void 0) continue;
+          for (let jj = 0; jj < anim.animations.length; ++jj) {
+            let start = anim.offset + ((jj % 8) * anim.interval);
+            let end = start + anim.size;
             if (offset >= start && offset < end) return anim;
-          }
-          let start = anim.offset;
-          let end = anim.offset + anim.size;
-          if (offset >= start && offset < end) return anim;
+          };
         };
         return null;
       };
@@ -363,10 +361,20 @@ export default class Rom {
         let index = (tileIndex - anim.offset);
         let tileset = (anim.tileset ? minorTileset : majorTileset).palettePtr;
         let palette = tileset + (palIndex * 0x20);
-        for (let ii = 0; ii < anim.animations.length; ++ii) {
-          let offset = anim.animations[ii];
-          if (anim.interval) {
-            index = (tileIndex - (anim.offset + (ii * anim.interval)));
+        let tileFrame = index % 0x4;
+        let tileX = (index / 0x4) | 0;
+        let length = anim.animations.length;
+        for (let ii = 0; ii < length; ++ii) {
+          let index = 0;
+          let offset = 0;
+          // special animation
+          if (anim.interval !== void 0) {
+            index = (tileIndex - anim.offset) % 0x4;
+            offset = anim.animations[((length - ii) + tileX) % length];
+          // default animation
+          } else {
+            offset = anim.animations[ii];
+            index = (tileIndex - anim.offset);
           }
           let pal = readPalette(self.buffer, palette, true);
           let tile = readPixels(self.buffer, offset + (index * 0x20), pal, 0x8, 0x8, true);
@@ -384,10 +392,8 @@ export default class Rom {
             img.drawImage(buffer.canvas, 0, 0, 0x8, -0x8);
             buffer = img;
           }
-          if (anim.interval) {
-            buffer.globalAlpha = ii / 10;
-            buffer.fillRect(0, 0, 0x8, 0x8);
-          }
+          //buffer.globalAlpha = (ii / 10);
+          //buffer.fillRect(0, 0, 8, 8);
           frames.push(buffer);
         };
         return frames;
@@ -441,7 +447,8 @@ export default class Rom {
                   data,
                   layer: ly,
                   tile: offset,
-                  index: tt
+                  index: tt,
+                  interval: anim.interval || -1
                 });
               }
               let xx = 0; let yy = 0;
@@ -573,7 +580,10 @@ export default class Rom {
           }
         };
         // block covered by hero
-        if (background[ii] === 0x10 && ll === 1) {
+        if (
+          (background[ii] === 0x10)
+          && ll === 1
+        ) {
           bgb.drawImage(
             tileset.canvas,
             tx, ty,

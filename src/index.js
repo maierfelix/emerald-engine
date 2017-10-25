@@ -7,6 +7,12 @@ import {
   setImageSmoothing
 } from "./utils";
 
+// check browser compatibility
+console.assert(
+  (typeof Worker !== "undefined") &&
+  (typeof WebGLRenderingContext !== "undefined")
+);
+
 console.clear();
 
 let ctx = canvas.getContext("2d");
@@ -101,7 +107,7 @@ function drawBackgroundMap() {
     drawMapAnimations(key, 1);
     drawMap(key, 1);
   };
-  lol += 0.05;
+  lol += 0.075;
 };
 
 function drawReflections(entity) {
@@ -118,7 +124,7 @@ function drawReflections(entity) {
     map.behavior[index] === 0x1a ||
     map.behavior[index] === 0x2b)
   ) {
-    let sprite = rom.graphics.overworlds[0][entity.frame].canvas;
+    let sprite = rom.graphics.overworlds[89][entity.frame].canvas;
     let sw = sprite.width;
     let sh = sprite.height;
     ctx.globalAlpha = 0.425;
@@ -128,7 +134,7 @@ function drawReflections(entity) {
       sprite,
       0, 0,
       sw, sh,
-      dx, -(cy + ((entity.y + 0.85) * 16) * cz),
+      dx, -(cy + ((entity.y + 0.925) * 16) * cz),
       sw * cz, -sh * cz
     );
     resetTransformation();
@@ -212,7 +218,7 @@ function drawEntity(entity) {
   let dy = cy + ((entity.y - 1) * 16) * cz;
   let map = rom.maps[currentMap];
   let index = ((entity.y + 1 | 0) * map.width + (entity.x | 0));
-  drawSprite(0, entity.frame, dx, dy);
+  drawSprite(89, entity.frame, dx, dy);
 };
 
 function drawSprite(id, frame, x, y) {
@@ -329,10 +335,10 @@ window.player = {
   waitMove: 0,
   facing: DIR.DOWN,
   speed: 0.06,
-  tx: 25, ty: 10,
+  tx: 4, ty: 4,
   dx: 0, dy: 0,
   vx: 0, vy: 0,
-  x: 25, y: 10,
+  x: 4, y: 4,
   lock: false
 };
 
@@ -342,7 +348,7 @@ window.cz = 3;
 
 let entities = [];
 
-let currentMap = "0:32";
+let currentMap = "0:12";
 
 function updateCamera() {
   if (!FREE_CAMERA) {

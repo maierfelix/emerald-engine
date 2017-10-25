@@ -216,6 +216,7 @@ export const OFFSETS = {
       size: 0x80 / 0x20,
       offset: 0x4c00 / 0x20,
       interval: 0x80 / 0x20,
+      mod: 0x8,
       animations: [
         0x514E24,
         0x514E24,
