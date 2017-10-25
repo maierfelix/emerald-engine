@@ -125,7 +125,7 @@ export default class Rom {
       this.mapInBanksCount[ii] = OFS.MAPS_IN_BANK[ii];
       this.bankPointers[ii] = OFS.MAP_BANK_POINTERS[ii];
     };
-    this.fetchMap(0, 12);
+    this.fetchMap(26, 4);
     //this.fetchMap(0, 19);
   }
   fetchMap(bBank, bMap) {
@@ -233,8 +233,6 @@ export default class Rom {
     let pMapLabel = readPointer(buffer, labelOffset);
     let mapName = readString(buffer, pMapLabel);
 
-    console.log(`Loading ${mapName} [${mapWidth}x${mapHeight}], [${connections.length}] at ${toHex(pMap)}`);
-
     // # MAP DATA
     let tiles = [];
     let size = mapWidth * mapHeight;
@@ -249,6 +247,11 @@ export default class Rom {
     // # MAP TILESETS [PRIMARY, SECONDARY]
     let majorTileset = this.readTilesetHeader(pMajorTileset, mapHeaderPointer);
     let minorTileset = this.readTilesetHeader(pMinorTileset, mapHeaderPointer);
+
+    // e.g. used to find secondary tileset relative animations
+    let tileset = majorTileset.number + ":" + minorTileset.number;
+
+    console.log(`Loading ${mapName} [${mapWidth}x${mapHeight}], [${connections.length}] at ${toHex(pMap)}, TS [${tileset}]`);
 
     let mainPalCount = OFS.MAIN_TS_PAL_COUNT;
     let mainHeight = OFS.MAIN_TS_HEIGHT;
@@ -326,9 +329,6 @@ export default class Rom {
       let posX = [0, 8, 0, 8];
       let posY = [0, 0, 8, 8];
 
-      // e.g. used to find secondary tileset relative animations
-      let tileset = majorTileset.number + ":" + minorTileset.number;
-
       // checks if a tile lies inside a
       // tileset animation offset range
       function getTileAnimation(offset) {
@@ -342,6 +342,15 @@ export default class Rom {
           if (offset >= start && offset < end) return anim;
         };
         // secondary non-special animations
+        for (let ii = 0; ii < sanimations.length; ++ii) {
+          let anim = sanimations[ii];
+          if (anim.tileset !== tileset) continue;
+          if (anim.interval !== void 0) continue;
+          let start = anim.offset;
+          let end = start + anim.size;
+          if (offset >= start && offset < end) return anim;
+        };
+        // secondary special animations
         for (let ii = 0; ii < sanimations.length; ++ii) {
           let anim = sanimations[ii];
           if (anim.tileset !== tileset) continue;
@@ -553,7 +562,7 @@ export default class Rom {
     for (let ll = 0; ll < layers.length; ++ll) {
       let ctx = layers[ll];
       let tileset = layerData[ll];
-      for (let ii = 0; ii < mapWidth * mapHeight; ++ii) {
+      a: for (let ii = 0; ii < mapWidth * mapHeight; ++ii) {
         let xx = (ii % mapWidth) | 0;
         let yy = (ii / mapWidth) | 0;
         let value = readShort(buffer, offset + ii * 2);

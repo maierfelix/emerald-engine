@@ -153,7 +153,7 @@ export const OFFSETS = {
     }
   ],
   TILESET_SECONDARY_ANIMATIONS: [
-    // rustboro fountain
+    // rustboro city fountain
     {
       tileset: "0:2",
       size: 0x80 / 0x20,
@@ -161,6 +161,18 @@ export const OFFSETS = {
       animations: [
         0x515844,
         0x5158C4
+      ]
+    },
+    // slateport city
+    {
+      tileset: "0:4",
+      size: 0x80 / 0x20,
+      offset: 0x5c00 / 0x20,
+      animations: [
+        0x516B2C,
+        0x516BAC,
+        0x516C2C,
+        0x516CAC
       ]
     },
     // rustboro reflecting water
@@ -277,6 +289,194 @@ export const OFFSETS = {
         0x5150A4,
         0x5152A4,
         0x5152A4
+      ]
+    },
+    // sootopolis gym 0
+    {
+      tileset: "0:13",
+      size: 0x180 / 0x20,
+      offset: 0x7e00 / 0x20,
+      animations: [
+        0x516E44,
+        0x516FC4,
+        0x517144
+      ]
+    },
+    // sootopolis gym 1
+    {
+      tileset: "0:13",
+      size: 0x280 / 0x20,
+      offset: 0x7a00 / 0x20,
+      animations: [
+        0x5172C4,
+        0x517544,
+        0x5177C4
+      ]
+    },
+    // dewford city
+    {
+      tileset: "0:3",
+      size: 0xC0 / 0x20,
+      offset: 0x5540 / 0x20,
+      animations: [
+        0x5161FC,
+        0x5162BC,
+        0x51637C,
+        0x51643C
+      ]
+    },
+    // pacifidlog city 0
+    {
+      tileset: "0:12",
+      size: 0x3C0 / 0x20,
+      offset: 0x7a00 / 0x20,
+      animations: [
+        0x5138A4,
+        0x513C64,
+        0x514024,
+        0x513C64
+      ]
+    },
+    // pacifidlog city 1
+    {
+      tileset: "0:12",
+      size: 0x100 / 0x20,
+      offset: 0x7e00 / 0x20,
+      animations: [
+        0x514604,
+        0x514704,
+        0x514804,
+        0x514904,
+        0x514A04,
+        0x514B04,
+        0x514C04,
+        0x514D04
+      ]
+    },
+    // underwater
+    {
+      tileset: "0:44",
+      size: 0x80 / 0x20,
+      offset: 0x7e00 / 0x20,
+      animations: [
+        0x5143F4,
+        0x514474,
+        0x5144F4,
+        0x514574
+      ]
+    },
+    // battle frontier west
+    {
+      tileset: "0:14",
+      size: 0xC0 / 0x20,
+      offset: 0x5b40 / 0x20,
+      animations: [
+        0x51650C,
+        0x5165CC,
+        0x51668C,
+        0x51674C
+      ]
+    },
+    // battle frontier east
+    {
+      tileset: "0:15",
+      size: 0xC0 / 0x20,
+      offset: 0x5b40 / 0x20,
+      animations: [
+        0x51681C,
+        0x5168DC,
+        0x51699C,
+        0x516A5C
+      ]
+    },
+    // inside building
+    {
+      tileset: "16:42",
+      size: 0x80 / 0x20,
+      offset: 0x3e00 / 0x20,
+      animations: [
+        0x516D3C,
+        0x516DBC
+      ]
+    },
+    // elite four 0
+    {
+      tileset: "16:58",
+      size: 0x80 / 0x20,
+      offset: 0x7c00 / 0x20,
+      animations: [
+        0x517A5C,
+        0x517ADC
+      ]
+    },
+    // elite four 1
+    {
+      tileset: "16:58",
+      size: 0x20 / 0x20,
+      offset: 0x7f00 / 0x20,
+      animations: [
+        0x517B5C,
+        0x517B7C,
+        0x517B9C,
+        0x517BBC
+      ]
+    },
+    // mauville gym
+    {
+      tileset: "16:51",
+      size: 0x200 / 0x20,
+      offset: 0x5200 / 0x20,
+      animations: [
+        0x517C14,
+        0x517E14
+      ]
+    },
+    // bikeshop
+    {
+      tileset: "0:30",
+      size: 0x120 / 0x20,
+      offset: 0x7e00 / 0x20,
+      animations: [
+        0x51803C,
+        0x51815C
+      ]
+    },
+    // sootopolis
+    {
+      tileset: "0:13",
+      size: 0xc00 / 0x20,
+      offset: 0x5e00 / 0x20,
+      animations: [
+        0x5182A4,
+        0x518EA4,
+        0x519AA4,
+        0x51A6A4,
+        0x51B2A4,
+        0x51BEA4,
+        0x51CAA4,
+        0x51D6A4
+      ]
+    },
+    // battle pyramid 0
+    {
+      tileset: "16:65",
+      size: 0x100 / 0x20,
+      offset: 0x52e0 / 0x20,
+      animations: [
+        0x5202E4,
+        0x5203E4,
+        0x5204E4
+      ]
+    },
+    // battle pyramid 1
+    {
+      tileset: "16:65",
+      size: 0x100 / 0x20,
+      offset: 0x50e0 / 0x20,
+      animations: [
+        0x520604,
+        0x520704,
+        0x520804
       ]
     }
   ],

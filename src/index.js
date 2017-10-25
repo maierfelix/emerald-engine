@@ -335,10 +335,10 @@ window.player = {
   waitMove: 0,
   facing: DIR.DOWN,
   speed: 0.06,
-  tx: 4, ty: 4,
+  tx: 15, ty: 50,
   dx: 0, dy: 0,
   vx: 0, vy: 0,
-  x: 4, y: 4,
+  x: 15, y: 50,
   lock: false
 };
 
@@ -348,7 +348,7 @@ window.cz = 3;
 
 let entities = [];
 
-let currentMap = "0:12";
+let currentMap = "26:4";
 
 function updateCamera() {
   if (!FREE_CAMERA) {
