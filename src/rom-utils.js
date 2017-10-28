@@ -9,6 +9,7 @@ import {
 } from "./rom-read";
 
 import {
+  DIR,
   OFFSETS as OFS
 } from "./offsets";
 
@@ -67,6 +68,27 @@ export function searchString(buffer, string) {
     offset++;
   };
   return -1;
+};
+
+export function hasConnection(connections, dir) {
+  for (let ii = 0; ii < connections.length; ++ii) {
+    let con = connections[ii];
+    switch (con.lType) {
+      case OFS.MAP_CONNECTION.LEFT:
+        if (dir === DIR.LEFT) return true;
+      break;
+      case OFS.MAP_CONNECTION.UP:
+        if (dir === DIR.UP) return true;
+      break;
+      case OFS.MAP_CONNECTION.RIGHT:
+        if (dir === DIR.RIGHT) return true;
+      break;
+      case OFS.MAP_CONNECTION.DOWN:
+        if (dir === DIR.DOWN) return true;
+      break;
+    };
+  };
+  return false;
 };
 
 export function decodeCharByte(byte) {
@@ -249,6 +271,10 @@ export function isFrameMirrorable(frame) {
     case 11:
     case 16:
     case 17:
+    case 18:
+    case 23:
+    case 22:
+    case 24:
     return true;
   };
   return false;
