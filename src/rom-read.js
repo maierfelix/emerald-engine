@@ -173,3 +173,12 @@ export function readPixels(buffer, offset, palette, width, height, uncmp = false
   };
   return pixels;
 };
+
+export function decodePixels(data) {
+  let out = [];
+  for (let ii = 0; ii < data.length; ++ii) {
+    out.push((data[ii] % 0x10) & 0x7f);
+    out.push((data[ii] / 0x10) & 0x7f);
+  };
+  return out;
+};

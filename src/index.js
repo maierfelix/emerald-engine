@@ -10,6 +10,10 @@ import {
   setImageSmoothing
 } from "./utils";
 
+import {
+  hasConnection
+} from "./rom-utils";
+
 // check browser compatibility
 console.assert(
   (typeof Worker !== "undefined") &&
@@ -42,6 +46,8 @@ function $(el) {
 let host = Array.from(location.host.substr(0, 5));
 
 window.rom = null;
+
+let currentMap = "0:19";
 
 resize();
 
@@ -77,6 +83,7 @@ function roundTo(x, f) {
   return (Math.round(x * i) / i);
 };
 
+let lol = 0;
 let delta = 0;
 let gameTime = 0;
 let gameTicks = 0;
@@ -84,6 +91,8 @@ function init() {
   $(".ui").style.opacity = 1.0;
   resize();
   let last = 0;
+  let map = currentMap.split(":");
+  rom.loadMapWithConnections(map[0] | 0, map[1] | 0);
   (function drawLoop() {
     requestAnimationFrame(drawLoop);
     let now = Date.now();
@@ -93,6 +102,7 @@ function init() {
     draw();
     delta = now - last;
     last = now;
+    lol += 0.075;
   })();
   console.log(rom.maps);
 };
@@ -104,26 +114,54 @@ function update() {
 
 function draw() {
   ctx.clearRect(0, 0, width, height);
-  drawBackgroundMap();
-  drawEntity(player);
-  drawEntities();
-  drawForegroundMap();
+  let map = rom.maps[currentMap];
+  // draw connected maps
+  //console.log(map);
+  map.connections.map(con => {
+    let conId = con.bBank + ":" + con.bMap;
+    drawMap(conId);
+  });
+  // draw current map
+  drawMap(currentMap);
 };
 
-function drawBackgroundMap() {
-  for (let key in rom.maps) {
-    let map = rom.maps[key];
-    if (map.name === "UNDERWATER") continue;
-    drawBorder(key);
-    drawMap(key, 0);
-    drawMapAnimations(key, 0);
-    drawReflections(player);
-    drawMap(key, 2);
-    drawMapAnimations(key, 1);
-    drawMap(key, 1);
-    drawDoorAnimations(key);
-  };
-  lol += 0.075;
+function inView(map) {
+  let xx = cx + ((map.x * 16) * cz) | 0;
+  let yy = cy + ((map.y * 16) * cz) | 0;
+  let ww = ((map.width * 16) * cz) | 0;
+  let hh = ((map.height * 16) * cz) | 0;
+  if (map.name === "UNDERWATER") return false;
+  return (
+    (xx + ww >= 0 && xx <= width) &&
+    (yy + hh >= 0 && yy <= height)
+  );
+};
+
+function drawMap(key) {
+  let map = rom.maps[key];
+  if (!inView(map)) return;
+  drawBackgroundMap(key);
+  if (key === currentMap) drawEntity(player);
+  drawEntities();
+  drawForegroundMap(key);
+};
+
+function drawBackgroundMap(key) {
+  let map = rom.maps[key];
+  drawBorder(key);
+  drawMapLayer(key, 0);
+  drawMapAnimations(key, 0);
+  drawReflections(player);
+  drawMapLayer(key, 2);
+  drawMapAnimations(key, 1);
+  drawDoorAnimations(key);
+  drawMapArrows(key);
+};
+
+function drawForegroundMap(key) {
+  let map = rom.maps[key];
+  drawMapLayer(key, 1);
+  drawMapEvents(key);
 };
 
 function drawDoorAnimations(key) {
@@ -131,15 +169,17 @@ function drawDoorAnimations(key) {
   let doors = map.doors;
   for (let ii = 0; ii < doors.length; ++ii) {
     let door = doors[ii];
-    let xx = cx + ((((map.x | 0) * 16) + (door.x | 0)) * cz) | 0;
-    let yy = cy + ((((map.y | 0) * 16) + (door.y - 16) | 0) * cz) | 0;
+    let xx = cx + (((map.x * 16) + door.x) * cz) | 0;
+    let yy = cy + (((map.y * 16) + (door.y - 16)) * cz) | 0;
+    let ww = (32 * cz) | 0;
+    let hh = (32 * cz) | 0;
     let img = door.data.canvas;
     ctx.drawImage(
       img,
       0, (door.frame | 0) * 32,
       32, 32,
       xx, yy,
-      (32 * cz) | 0, (32 * cz) | 0
+      ww, hh
     );
     if (door.isOpening) {
       door.frame++;
@@ -225,17 +265,6 @@ function drawReflections(entity) {
   }
 };
 
-let lol = 0;
-function drawForegroundMap() {
-  for (let key in rom.maps) {
-    let map = rom.maps[key];
-    if (map.name === "UNDERWATER") continue;
-    drawMap(key, 1);
-    drawMapEvents(key);
-    drawMapArrows(key);
-  };
-};
-
 function drawMapEvents(key) {
   let map = rom.maps[key];
   let events = map.events;
@@ -278,9 +307,24 @@ function drawMapEvents(key) {
 
 function drawMapAnimations(key, layer) {
   let map = rom.maps[key];
+  let xx = cx + ((map.x * 16) * cz) | 0;
+  let yy = cy + ((map.y * 16) * cz) | 0;
+  let ww = ((map.width * 16) * cz) | 0;
+  let hh = ((map.height * 16) * cz) | 0;
   let animations = map.animations[layer];
-  let animationData = map.animationData[layer];
-  for (let ii = 0; ii < animations.length; ++ii) {
+  for (let key in animations) {
+    let anim = animations[key];
+    let frame = (lol | 0) % (anim.length);
+    let img = anim[frame].canvas;
+    ctx.drawImage(
+      img,
+      0, 0,
+      img.width, img.height,
+      xx, yy,
+      ww, hh
+    );
+  };
+  /*for (let ii = 0; ii < animations.length; ++ii) {
     let anim = animations[ii];
     let data = animationData[anim.index].data;
     let xx = anim.x;
@@ -293,17 +337,16 @@ function drawMapAnimations(key, layer) {
       cx + (xx) * cz, cy + (yy) * cz,
       8 * cz, 8 * cz
     );
-  };
+  };*/
 };
 
-function drawMap(id, layer) {
+function drawMapLayer(id, layer) {
   let map = rom.maps[id];
   let img = map.texture[layer].canvas;
-  let xx = cx + (((map.x | 0) * 16) * cz) | 0;
-  let yy = cy + (((map.y | 0) * 16) * cz) | 0;
+  let xx = cx + ((map.x * 16) * cz) | 0;
+  let yy = cy + ((map.y * 16) * cz) | 0;
   let ww = (img.width * cz) | 0;
   let hh = (img.height * cz) | 0;
-  if (!inView(map)) return;
   ctx.drawImage(
     img,
     0, 0,
@@ -341,9 +384,9 @@ function drawEntities() {
 };
 
 function drawEntity(entity) {
-  let dx = cx + (entity.x * 16) * cz;
-  let dy = cy + ((entity.y - 1) * 16) * cz;
   let map = rom.maps[currentMap];
+  let dx = cx + ((map.x + entity.x) * 16) * cz;
+  let dy = cy + ((map.y + entity.y - 1) * 16) * cz;
   let index = ((entity.y + 1 | 0) * map.width + (entity.x | 0));
   drawSprite(entity.sprite, entity.frame, dx, dy);
 };
@@ -358,18 +401,6 @@ function drawSprite(id, frame, x, y) {
     sw, sh,
     x, y,
     sw * cz, sh * cz
-  );
-};
-
-function inView(map) {
-  let img = map.texture.canvas;
-  let xx = cx + (((map.x - 8) * 16) * cz) | 0;
-  let yy = cy + (((map.y - 8) * 16) * cz) | 0;
-  let ww = (((map.width + 16) * 16) * cz) | 0;
-  let hh = (((map.height + 16) * 16) * cz) | 0;
-  return (
-    (xx + ww >= 0 && xx <= width) &&
-    (yy + hh >= 0 && yy <= height)
   );
 };
 
@@ -401,10 +432,10 @@ window.player = {
   lastMove: 0,
   facing: DIR.DOWN,
   speed: PLAYER_DEFAULT_SPEED,
-  tx: 8, ty: 8,
+  tx: 16, ty: 5,
   dx: 0, dy: 0,
   vx: 0, vy: 0,
-  x: 8, y: 8,
+  x: 16, y: 5,
   lock: false,
   isMoving: false,
   isRunning: false,
@@ -417,12 +448,11 @@ window.cz = 3;
 
 let entities = [];
 
-let currentMap = "0:9";
-
 function updateCamera() {
+  let map = rom.maps[currentMap];
   if (!FREE_CAMERA) {
-    cx = (width / 2) - (((player.x * 16) + 8)) * cz;
-    cy = (height / 2) - ((((player.y - 1) * 16) + 20)) * cz;
+    cx = (width / 2) - ((((map.x + player.x) * 16) + 8)) * cz;
+    cy = (height / 2) - ((((map.y + player.y - 1) * 16) + 20)) * cz;
   }
 };
 
@@ -572,7 +602,7 @@ function stopMove(entity) {
 };
 
 function updateFrame(entity) {
-  let facing = entity.facing;
+  let facing = entity.facing - 1;
   let foot = entity.foot;
   let index = entity.frameIndex;
   let state = 0;
@@ -629,14 +659,86 @@ function getExitTileAt(x, y) {
   for (let ii = 0; ii < exits.length; ++ii) {
     let exit = exits[ii];
     let behavior = getTileBehaviorAt(exit.x, exit.y);
-    if (behavior === 0x69 && x === exit.x && y === exit.y) return exit;
-    else if (behavior === 0x60 && x === exit.x && y === exit.y) return exit;
+    if (
+      (
+        (behavior === 0x69) ||
+        (behavior === 0x60) ||
+        (behavior === 0x6E)
+      ) &&
+      (x === exit.x && y === exit.y)
+    ) return exit;
     else if (behavior === 0x65 && x === exit.x && y === exit.y + 1) return exit;
     else if (behavior === 0x64 && x === exit.x && y === exit.y - 1) return exit;
     else if (behavior === 0x62 && x === exit.x + 1 && y === exit.y) return exit;
     else if (behavior === 0x63 && x === exit.x - 1 && y === exit.y) return exit;
   };
   return null;
+};
+
+function switchToConnectedMapByPosition(map, x, y) {
+  let connections = map.connections;
+  let dir = -1;
+  if (y >= map.height && hasConnection(connections, DIR.DOWN)) dir = DIR.DOWN;
+  else if (y < 0 && hasConnection(connections, DIR.UP)) dir = DIR.UP;
+  else if (x < 0 && hasConnection(connections, DIR.LEFT)) dir = DIR.LEFT;
+  else if (x >= map.width && hasConnection(connections, DIR.RIGHT)) dir = DIR.RIGHT;
+  for (let ii = 0; ii < connections.length; ++ii) {
+    let con = connections[ii];
+    if (con.lType === dir) {
+      let nMap = `${con.bBank}:${con.bMap}`;
+      let newMap = rom.maps[nMap];
+      let nx = 0; let ny = 0;
+      if (dir === DIR.DOWN) {
+        nx = player.tx - con.lOffset;
+        ny = -1;
+      }
+      else if (dir === DIR.UP) {
+        nx = player.tx - con.lOffset;
+        ny = newMap.height;
+      }
+      else if (dir === DIR.LEFT) {
+        nx = newMap.width;
+        ny = player.ty - con.lOffset;
+      }
+      else if (dir === DIR.RIGHT) {
+        nx = -1;
+        ny = player.ty - con.lOffset;
+      }
+      if (isBlocked(rom.maps[nMap], nx, ny, player.facing)) continue;
+      player.x = player.tx = nx;
+      player.y = player.ty = ny;
+      console.log("Walked from map", currentMap, "to", nMap);
+      currentMap = nMap;
+      rom.loadMapWithConnections(con.bBank, con.bMap);
+      applyMapConnections(rom.maps[nMap]);
+      break;
+    }
+  };
+};
+
+function applyMapConnections(map) {
+  map.connections.map(con => {
+    let conMapId = con.bBank + ":" + con.bMap;
+    let conMap = rom.maps[conMapId];
+    switch (con.lType) {
+      case OFS.MAP_CONNECTION.LEFT:
+        conMap.x = map.x - conMap.width;
+        conMap.y = map.y + con.lOffset;
+      break;
+      case OFS.MAP_CONNECTION.UP:
+        conMap.x = map.x + con.lOffset;
+        conMap.y = map.y - conMap.height;
+      break;
+      case OFS.MAP_CONNECTION.RIGHT:
+        conMap.x = map.x + map.width;
+        conMap.y = map.y + con.lOffset;
+      break;
+      case OFS.MAP_CONNECTION.DOWN:
+        conMap.x = map.x + con.lOffset;
+        conMap.y = map.y + map.height;
+      break;
+    };
+  });
 };
 
 function isMoving(entity) {
@@ -649,24 +751,29 @@ function isMoving(entity) {
 
 let FACE_TIME = 8;
 
-function isBlocked(entity, dir) {
-  let x = entity.x | 0;
-  let y = entity.y | 0;
+function isBlocked(map, x, y, dir) {
   switch (dir) {
     case DIR.DOWN:  y += 1; break;
     case DIR.UP:    y -= 1; break;
     case DIR.LEFT:  x -= 1; break;
     case DIR.RIGHT: x += 1; break;
   };
-  let map = rom.maps[currentMap];
+  let connections = map.connections;
+  // blocked if we go out of map boundings
+  if (isOutOfMapBoundings(map, x, y)) return true;
   let index = getTileIndexFrom(map, x, y);
   let attr = map.attributes[index];
   let behavior = map.behavior[index];
   return (
-    (x < 0 || x >= map.width) ||
-    (y < 0 || y >= map.height) ||
-    (attr === 1 || attr === 0xd) &&
+    (attr !== 0xC && attr !== 0x0) &&
     (behavior !== 0x3b)
+  );
+};
+
+function isOutOfMapBoundings(map, x, y) {
+  return (
+    (x < 0 || x >= map.width) ||
+    (y < 0 || y >= map.height)
   );
 };
 
@@ -685,7 +792,8 @@ function getSpeed(entity) {
 };
 
 function moveEntity(entity, dir, duration) {
-  let blocked = isBlocked(entity, dir);
+  let map = rom.maps[currentMap];
+  let blocked = isBlocked(map, entity.x, entity.y, dir);
 
   // allow changing the walk direction
   // when we finished a walk task and stand on a tile
@@ -710,8 +818,8 @@ function moveEntity(entity, dir, duration) {
     let exit = getExitTileAt(facedTile.x, facedTile.y);
     if (exit !== null) {
       let id = exit.bank + ":" + exit.map;
-      rom.maps = {};
-      rom.fetchMap(exit.bank, exit.map);
+      rom.loadMapWithConnections(exit.bank, exit.map);
+      console.log(`Warped from map ${currentMap} to ${id}`);
       currentMap = id;
       // set player to given warp position
       let warp = rom.maps[currentMap].events.exits[exit.warp];
@@ -750,6 +858,21 @@ function moveEntity(entity, dir, duration) {
     entity.vx = (entity.tx - entity.x) * speed;
     entity.waitMove = 0;
   }
+
+  // switches to another map
+  if (entity === player && blocked) {
+    let map = rom.maps[currentMap];
+    let connections = map.connections;
+    let tile = getFacedTilePosition(entity.facing, entity.tx, entity.ty);
+    if (
+      (tile.x < 0 || tile.x >= map.width) ||
+      (tile.y < 0 || tile.y >= map.height)
+    ) {
+      switchToConnectedMapByPosition(map, tile.x, tile.y);
+      blocked = true;
+    }
+  }
+
 };
 
 let keys = {};

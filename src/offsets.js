@@ -574,8 +574,9 @@ export const OFFSETS = {
 };
 
 export const DIR = {
-  DOWN: 0,
-  UP: 1,
-  LEFT: 2,
-  RIGHT: 3
+  NULL: 0,
+  DOWN: 1,
+  UP: 2,
+  LEFT: 3,
+  RIGHT: 4
 };

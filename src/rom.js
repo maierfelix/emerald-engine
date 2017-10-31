@@ -20,6 +20,7 @@ import {
   readPalette,
   readPixels,
   intToPointer,
+  decodePixels,
   decodePalette
 } from "./rom-read";
 
@@ -62,6 +63,7 @@ export default class Rom {
       overworlds: {}
     };
     this.maps = {};
+    this.animations = {};
     this.bankPointers = [];
     this.mapInBanksCount = [];
     return new Promise((resolve) => {
@@ -128,8 +130,6 @@ export default class Rom {
       this.mapInBanksCount[ii] = OFS.MAPS_IN_BANK[ii];
       this.bankPointers[ii] = OFS.MAP_BANK_POINTERS[ii];
     };
-    this.fetchMap(0, 9);
-    //this.fetchMap(0, 19);
   }
   fetchMap(bBank, bMap) {
     let id = bBank + ":" + bMap;
@@ -138,31 +138,31 @@ export default class Rom {
       (this.maps[id] = this.generateMap(bBank, bMap))
     );
   }
-  loadWorldMap(bBank, bMap) {
+  loadMapWithConnections(bBank, bMap) {
     let map = this.fetchMap(bBank, bMap);
     if (map.loaded) return;
     map.loaded = true;
     map.connections.map(con => {
       let conMap = this.fetchMap(con.bBank, con.bMap);
       switch (con.lType) {
-        case OFS.MAP_CONNECTION.LEFT:
-          conMap.x = map.x - conMap.width;
-          conMap.y = map.y + con.lOffset;
+        case OFS.MAP_CONNECTION.DOWN:
+          conMap.x = map.x + con.lOffset;
+          conMap.y = map.y + map.height;
         break;
         case OFS.MAP_CONNECTION.UP:
           conMap.x = map.x + con.lOffset;
           conMap.y = map.y - conMap.height;
         break;
+        case OFS.MAP_CONNECTION.LEFT:
+          conMap.x = map.x - conMap.width;
+          conMap.y = map.y + con.lOffset;
+        break;
         case OFS.MAP_CONNECTION.RIGHT:
           conMap.x = map.x + map.width;
           conMap.y = map.y + con.lOffset;
         break;
-        case OFS.MAP_CONNECTION.DOWN:
-          conMap.x = map.x + con.lOffset;
-          conMap.y = map.y + map.height;
-        break;
       };
-      this.loadWorldMap(con.bBank, con.bMap);
+      this.fetchMap(con.bBank, con.bMap);
     });
   }
   generateMap(bank, map) {
@@ -193,6 +193,9 @@ export default class Rom {
     offset = intToPointer(pConnect);
     let pNumConnections = readPointer(buffer, offset); offset += 0x4;
     let pData = readPointer(buffer, offset); offset += 0x4;
+
+    // NULL check, no map connections
+    if (pConnect === 0x0) pNumConnections = 0;
 
     let connections = [];
     for (let ii = 0; ii < pNumConnections; ++ii) {
@@ -316,10 +319,7 @@ export default class Rom {
     let majorTileset = this.readTilesetHeader(pMajorTileset, mapHeaderPointer);
     let minorTileset = this.readTilesetHeader(pMinorTileset, mapHeaderPointer);
 
-    // e.g. used to find secondary tileset relative animations
-    let tileset = majorTileset.number + ":" + minorTileset.number;
-
-    console.log(`Loading ${mapName} [${mapWidth}x${mapHeight}], [${connections.length}] at ${toHex(pMap)}, TS [${tileset}]`);
+    console.log(`Loading ${mapName} [${mapWidth}x${mapHeight}], [${connections.length}] at ${toHex(pMap)}`);
 
     let mainPalCount = OFS.MAIN_TS_PAL_COUNT;
     let mainHeight = OFS.MAIN_TS_HEIGHT;
@@ -330,249 +330,7 @@ export default class Rom {
     let localBlocks = OFS.LOCAL_TS_SIZE;
 
     // # RENDER MAP TILESETS [PRIMARY, SECONDARY]
-    let tileData = null;
-    (() => {
-
-      let offset = 0;
-      let tileSize = 16;
-      let width = mapWidth * tileSize;
-      let height = mapHeight * tileSize;
-
-      let majorPalettes = 96;
-
-      let ctx = createCanvasBuffer(128, 2560).ctx;
-
-      let paldata = [];
-
-      // # READ PALETTE
-      offset = minorTileset.palettePtr;
-      for (let ii = 0; ii < 208; ++ii) {
-        let palette = readShort(buffer, offset); offset += 0x2;
-        paldata[ii] = palette;
-      };
-
-      offset = majorTileset.palettePtr;
-      for (let ii = 0; ii < 96; ++ii) {
-        let palette = readShort(buffer, offset); offset += 0x2;
-        paldata[ii] = palette;
-      };
-
-      //this.paletteHook(paldata);
-
-      // # READ TILESET
-      let blockLimits = [512, 512];
-      let tilesetSize = [0x4000, 0x5000];
-      let tilesetImageOffsets = [ majorTileset.tilesetImgPtr, minorTileset.tilesetImgPtr ];
-
-      function decode(data) {
-        let out = [];
-        for (let ii = 0; ii < data.length; ++ii) {
-          out.push((data[ii] % 0x10) & 0x7f);
-          out.push((data[ii] / 0x10) & 0x7f);
-        };
-        return out;
-      };
-
-      let tiles = [];
-      for (let ii = 0; ii < 2; ++ii) {
-        offset = tilesetImageOffsets[ii];
-        let bytes = readBytes(buffer, offset, tilesetSize[ii]);
-        let data = decode(LZ77(bytes, 0));
-        for (let jj = 0; jj < data.length; ++jj) tiles.push(data[jj]);
-        if (ii === 0 && tiles.length < 0x8000) {
-          for (let ii = 0; ii < 640; ii++) { tiles.push(0x0); };
-        }
-      };
-
-      // # DECODE PALETTES
-      let palettes = [];
-      for (let ii = 0; ii < 256; ++ii) {
-        palettes[ii] = decodePalette(paldata[ii]);
-      };
-
-      // # DRAW TILESET
-      let tilesetBlockDataOffset = [ majorTileset.blocksPtr, minorTileset.blocksPtr ];
-      let tilesetBehaveDataOffset = [ majorTileset.behavePtr, minorTileset.behavePtr ];
-      let x = 0; let y = 0;
-      let posX = [0, 8, 0, 8];
-      let posY = [0, 0, 8, 8];
-
-      // checks if a tile lies inside a
-      // tileset animation offset range
-      function getTileAnimation(offset) {
-        let animations = OFS.TILESET_PRIMARY_ANIMATIONS;
-        let sanimations = OFS.TILESET_SECONDARY_ANIMATIONS;
-        // primary animations
-        for (let ii = 0; ii < animations.length; ++ii) {
-          let anim = animations[ii];
-          let start = anim.offset;
-          let end = start + anim.size;
-          if (offset >= start && offset < end) return anim;
-        };
-        // secondary non-special animations
-        for (let ii = 0; ii < sanimations.length; ++ii) {
-          let anim = sanimations[ii];
-          if (anim.tileset !== tileset) continue;
-          if (anim.interval !== void 0) continue;
-          let start = anim.offset;
-          let end = start + anim.size;
-          if (offset >= start && offset < end) return anim;
-        };
-        // secondary special animations
-        for (let ii = 0; ii < sanimations.length; ++ii) {
-          let anim = sanimations[ii];
-          if (anim.tileset !== tileset) continue;
-          if (anim.interval === void 0) continue;
-          for (let jj = 0; jj < anim.animations.length; ++jj) {
-            let start = anim.offset + ((jj % 8) * anim.interval);
-            let end = start + anim.size;
-            if (offset >= start && offset < end) return anim;
-          };
-        };
-        return null;
-      };
-
-      let self = this;
-      function getAnimationTileImg(anim, tileIndex, palIndex, flipX, flipY) {
-        let frames = [];
-        let index = (tileIndex - anim.offset);
-        let tileset = (anim.tileset ? minorTileset : majorTileset).palettePtr;
-        let palette = tileset + (palIndex * 0x20);
-        let tileFrame = index % 0x4;
-        let tileX = (index / 0x4) | 0;
-        let length = anim.animations.length;
-        for (let ii = 0; ii < length; ++ii) {
-          let index = 0;
-          let offset = 0;
-          // special animation
-          if (anim.interval !== void 0) {
-            index = (tileIndex - anim.offset) % 0x4;
-            offset = anim.animations[((length - ii) + tileX) % length];
-          // default animation
-          } else {
-            offset = anim.animations[ii];
-            index = (tileIndex - anim.offset);
-          }
-          let pal = readPalette(self.buffer, palette, true);
-          let tile = readPixels(self.buffer, offset + (index * 0x20), pal, 0x8, 0x8, true);
-          let buffer = createCanvasBuffer(0x8, 0x8).ctx;
-          buffer.putImageData(tile, 0, 0);
-          if (flipX) {
-            let img = createCanvasBuffer(0x8, 0x8).ctx;
-            img.scale(-1, 1);
-            img.drawImage(buffer.canvas, 0, 0, -0x8, 0x8);
-            buffer = img;
-          }
-          if (flipY) {
-            let img = createCanvasBuffer(0x8, 0x8).ctx;
-            img.scale(1, -1);
-            img.drawImage(buffer.canvas, 0, 0, 0x8, -0x8);
-            buffer = img;
-          }
-          //buffer.globalAlpha = (ii / 10);
-          //buffer.fillRect(0, 0, 8, 8);
-          frames.push(buffer);
-        };
-        return frames;
-      };
-
-      let bganimations = [];
-      let fganimations = [];
-
-      let cw = ctx.canvas.width; let ch = ctx.canvas.height;
-      let backgroundImage = new ImageData(cw, ch);
-      let foregroundImage = new ImageData(cw, ch);
-      let backgroundPixels = backgroundImage.data;
-      let foregroundPixels = foregroundImage.data;
-      let offset2 = 0;
-      let behaviorData = new Uint8Array(cw * ch);
-      let backgroundData = new Uint8Array(cw * ch);
-      for (let ts = 0; ts < 2; ++ts) {
-        offset = tilesetBlockDataOffset[ts];
-        offset2 = tilesetBehaveDataOffset[ts];
-        for (let ii = 0; ii < blockLimits[ts]; ++ii) {
-          for (let ly = 0; ly < 2; ++ly) { // 2, bg, fg
-            let isBackground = ly === 0;
-            let isForeground = ly === 1;
-            let bytes = readBytes(buffer, offset2 + ii * 2, 2);
-            let behavior = bytes[0];
-            let background = bytes[1];
-            for (let tt = 0; tt < 4; ++tt) { // 4 tile based
-              let tile = readWord(buffer, offset); offset += 0x2;
-              let tileIndex = tile & 0x3FF;
-              let flipX = (tile & 0x400) >> 10;
-              let flipY = (tile & 0x800) >> 11;
-              let palIndex = (tile & 0xF000) >> 12;
-              let tileSeeker = tileIndex * 64;
-              if (tileSeeker + 64 > tiles.length) continue;
-              let dx = x * tileSize + posX[tt];
-              let dy = y * tileSize + posY[tt];
-              if (behavior > 0) {
-                behaviorData[dy * cw + dx] = behavior;
-              }
-              if (background > 0) {
-                backgroundData[dy * cw + dx] = background;
-              }
-              let anim = getTileAnimation(tileIndex);
-              // tile is animated
-              if (anim !== null) {
-                let data = getAnimationTileImg(anim, tileIndex, palIndex, flipX, flipY);
-                let animLayer = isForeground ? fganimations : bganimations;
-                let offset = anim.offset;
-                animLayer.push({
-                  x: x, y: y,
-                  data,
-                  layer: ly,
-                  tile: offset,
-                  index: tt,
-                  interval: anim.interval || -1
-                });
-              }
-              let xx = 0; let yy = 0;
-              for (let px = 0; px < 64; ++px) {
-                let pixel = tiles[tileSeeker + px];
-                if (pixel > 0) {
-                  let color = palettes[pixel + (palIndex * 16)];
-                  let ddx = (dx + (flipX > 0 ? (-xx + 7) : xx));
-                  let ddy = (dy + (flipY > 0 ? (-yy + 7) : yy));
-                  let index = 4 * (ddy * cw + ddx);
-                  if (isBackground) {
-                    backgroundPixels[index + 0] = color.r;
-                    backgroundPixels[index + 1] = color.g;
-                    backgroundPixels[index + 2] = color.b;
-                    backgroundPixels[index + 3] = 0xff;
-                  } else {
-                    foregroundPixels[index + 0] = color.r;
-                    foregroundPixels[index + 1] = color.g;
-                    foregroundPixels[index + 2] = color.b;
-                    foregroundPixels[index + 3] = 0xff;
-                  }
-                }
-                xx++; if (xx === 8) { xx = 0; yy++; }
-              };
-            };
-          };
-          if ((++x) === 8) { x = 0; y++; }
-        };
-      };
-
-      let bg = createCanvasBuffer(128, 2560).ctx;
-      let fg = createCanvasBuffer(128, 2560).ctx;
-
-      bg.putImageData(backgroundImage, 0, 0);
-      fg.putImageData(foregroundImage, 0, 0);
-      //document.body.appendChild(ctx.canvas);
-      tileData = {
-        behavior: behaviorData,
-        background: backgroundData,
-        layers: {
-          background: bg,
-          foreground: fg
-        },
-        animations: [ bganimations, fganimations ],
-        canvas: ctx.canvas
-      };
-    })();
+    let tileData = this.createTileset(mapWidth, mapHeight, minorTileset, majorTileset);
 
     let tileSize = 16;
 
@@ -595,81 +353,9 @@ export default class Rom {
     ];
 
     // # BORDER TILE
-    let bw = borderWidth;
-    let bh = borderHeight;
-    let borderTile = createCanvasBuffer(bw * tileSize, bh * tileSize);
-    offset = borderTilePtr;
-    for (let ll = 0; ll < layers.length; ++ll) {
-      let tileset = layerData[ll];
-      for (let ii = 0; ii < bw * bh; ++ii) {
-        let xx = (ii % bw) | 0;
-        let yy = (ii / bw) | 0;
-        let value = readShort(buffer, offset + ii * 2);
-        let tile = value & 0x3ff;
-        let srcX = (tile % 8) * tileSize;
-        let srcY = ((tile / 8) | 0) * tileSize;
-        let destX = xx * tileSize;
-        let destY = yy * tileSize;
-        borderTile.ctx.drawImage(
-          tileset.canvas,
-          srcX, srcY,
-          tileSize, tileSize,
-          destX, destY,
-          tileSize, tileSize
-        );
-      };
-    };
+    let border = this.createBorderMap(mapWidth, mapHeight, borderTilePtr, layerData, connections);
 
-    // # BORDER MAP
-    let padding = 8;
-    let halfpad = padding / 2;
-    let mw = mapWidth + (padding * 2);
-    let mh = mapHeight + (padding * 2);
-    let border = createCanvasBuffer(mw * tileSize, mh * tileSize);
-    // just fill everything with the border tile
-    for (let ii = 0; ii < mw * mh; ++ii) {
-      let xx = (ii % mw) | 0;
-      let yy = (ii / mw) | 0;
-      border.ctx.drawImage(
-        borderTile.canvas,
-        0, 0,
-        32, 32,
-        (xx * 32), (yy * 32),
-        32, 32
-      );
-    };
-    // clear the border parts where it slices a connection
-    if (hasConnection(connections, DIR.DOWN)) {
-      border.ctx.clearRect(0, (mh * tileSize) - (halfpad * 32), (mapWidth * 32), (halfpad * 32));
-    }
-    if (hasConnection(connections, DIR.UP)) {
-      border.ctx.clearRect(0, 0, (mapWidth * 32), (halfpad * 32));
-    }
-    if (hasConnection(connections, DIR.LEFT)) {
-      border.ctx.clearRect(0, 0, (halfpad * 32), (mapHeight * 32));
-    }
-    if (hasConnection(connections, DIR.RIGHT)) {
-      border.ctx.clearRect((mw * tileSize) - (halfpad * 32), 0, (halfpad * 32), (mapHeight * 32));
-    }
-
-    function getAnimationAt(layer, x, y, index) {
-      let animations = tileData.animations[layer];
-      for (let ii = 0; ii < animations.length; ++ii) {
-        let anim = animations[ii];
-        if (anim.x === x && anim.y === y && anim.index === index && anim.layer === layer) return ii;
-      };
-      return -1;
-    };
-
-    let frameCounts = [];
-
-    for (let ii = 0; ii < tileData.animations[1].length; ++ii) {
-      let anim = tileData.animations[1][ii];
-      let frameCount = anim.data.length;
-      if (!(frameCounts.includes(frameCount))) frameCounts.push(frameCount);
-    };
-
-    console.log(frameCounts);
+    let frameBuffers = {};
 
     // # RENDER MAP
     offset = mapTilesPtr;
@@ -692,14 +378,31 @@ export default class Rom {
         for (let jj = 0; jj < 4; ++jj) {
           let x = (jj % 2) | 0;
           let y = (jj / 2) | 0;
-          let pos = getAnimationAt(ll, (tile % 8) | 0, (tile / 8) | 0, jj);
+          let pos = this.getAnimationAt(tileData, ll, (tile % 8) | 0, (tile / 8) | 0, jj);
           if (pos !== -1) {
-            animations[ll].push({
-              index: pos,
-              layer: ll,
-              x: (xx * 16) + (x * 8),
-              y: (yy * 16) + (y * 8)
-            });
+            let anim = tileData.animations[ll][pos];
+            let frames = anim.data.length;
+            // allocate framebuffer
+            if (!frameBuffers[ll]) frameBuffers[ll] = {};
+            if (!frameBuffers[ll][frames]) {
+              frameBuffers[ll][frames] = [];
+              for (let kk = 0; kk < frames; ++kk) {
+                let frame = createCanvasBuffer(mapWidth * 16, mapHeight * 16).ctx;
+                frameBuffers[ll][frames].push(frame);
+              };
+            }
+            for (let kk = 0; kk < frames; ++kk) {
+              let frameBuffer = frameBuffers[ll][frames][kk];
+              let mx = (xx * 16) + (x * 8);
+              let my = (yy * 16) + (y * 8);
+              frameBuffer.drawImage(
+                anim.data[kk].canvas,
+                0, 0,
+                8, 8,
+                mx, my,
+                8, 8
+              );
+            };
           }
         };
         // block covered by hero
@@ -757,21 +460,318 @@ export default class Rom {
       background,
       attributes,
       doors: doors,
-      animations: animations,
-      animationData: tileData.animations,
+      animations: frameBuffers,
       connections: connections,
       loaded: false, // anti recursion
       x: 0, y: 0
     };
 
   }
-  paletteHook(palettes) {
-    for (let ii = 0; ii < 256; ii++) {
-      let r = (0x1E & palettes[ii]) | 0;
-      let b = ((0x1E << 0x5) & palettes[ii]) | 0;
-      let g = ((0x1E << 0xA) & palettes[ii]) | 0;
-      //palettes[ii] = (r | b | g) & 0xff;
+  getAnimationAt(tileData, layer, x, y, index) {
+    let animations = tileData.animations[layer];
+    for (let ii = 0; ii < animations.length; ++ii) {
+      let anim = animations[ii];
+      if (anim.x === x && anim.y === y && anim.index === index && anim.layer === layer) return ii;
+    };
+    return -1;
+  }
+  createTileset(mapWidth, mapHeight, minorTileset, majorTileset) {
+    let buffer = this.buffer;
+    let offset = 0;
+    let tileSize = 16;
+    let width = mapWidth * tileSize;
+    let height = mapHeight * tileSize;
+
+    let majorPalettes = 96;
+
+    let ctx = createCanvasBuffer(128, 2560).ctx;
+
+    let paldata = [];
+
+    // e.g. used to find secondary tileset relative animations
+    let tileset = majorTileset.number + ":" + minorTileset.number;
+
+    // # READ PALETTE
+    offset = minorTileset.palettePtr;
+    for (let ii = 0; ii < 208; ++ii) {
+      let palette = readShort(buffer, offset); offset += 0x2;
+      paldata[ii] = palette;
+    };
+
+    offset = majorTileset.palettePtr;
+    for (let ii = 0; ii < 96; ++ii) {
+      let palette = readShort(buffer, offset); offset += 0x2;
+      paldata[ii] = palette;
+    };
+
+    // # READ TILESET
+    let blockLimits = [512, 512];
+    let tilesetSize = [0x4000, 0x5000];
+    let tilesetImageOffsets = [ majorTileset.tilesetImgPtr, minorTileset.tilesetImgPtr ];
+
+    let tiles = [];
+    for (let ii = 0; ii < 2; ++ii) {
+      offset = tilesetImageOffsets[ii];
+      let bytes = readBytes(buffer, offset, tilesetSize[ii]);
+      let data = decodePixels(LZ77(bytes, 0));
+      for (let jj = 0; jj < data.length; ++jj) tiles.push(data[jj]);
+      if (ii === 0 && tiles.length < 0x8000) {
+        for (let ii = 0; ii < 640; ii++) { tiles.push(0x0); };
+      }
+    };
+
+    // # DECODE PALETTES
+    let palettes = [];
+    for (let ii = 0; ii < 256; ++ii) {
+      palettes[ii] = decodePalette(paldata[ii]);
+    };
+
+    // # DRAW TILESET
+    let tilesetBlockDataOffset = [ majorTileset.blocksPtr, minorTileset.blocksPtr ];
+    let tilesetBehaveDataOffset = [ majorTileset.behavePtr, minorTileset.behavePtr ];
+    let x = 0; let y = 0;
+    let posX = [0, 8, 0, 8];
+    let posY = [0, 0, 8, 8];
+
+    let bganimations = [];
+    let fganimations = [];
+
+    let cw = ctx.canvas.width; let ch = ctx.canvas.height;
+    let backgroundImage = new ImageData(cw, ch);
+    let foregroundImage = new ImageData(cw, ch);
+    let backgroundPixels = backgroundImage.data;
+    let foregroundPixels = foregroundImage.data;
+    let offset2 = 0;
+    let behaviorData = new Uint8Array(cw * ch);
+    let backgroundData = new Uint8Array(cw * ch);
+    for (let ts = 0; ts < 2; ++ts) {
+      offset = tilesetBlockDataOffset[ts];
+      offset2 = tilesetBehaveDataOffset[ts];
+      for (let ii = 0; ii < blockLimits[ts]; ++ii) {
+        for (let ly = 0; ly < 2; ++ly) { // 2, bg, fg
+          let isBackground = ly === 0;
+          let isForeground = ly === 1;
+          let bytes = readBytes(buffer, offset2 + ii * 2, 2);
+          let behavior = bytes[0];
+          let background = bytes[1];
+          for (let tt = 0; tt < 4; ++tt) { // 4 tile based
+            let tile = readWord(buffer, offset); offset += 0x2;
+            let tileIndex = tile & 0x3FF;
+            let flipX = (tile & 0x400) >> 10;
+            let flipY = (tile & 0x800) >> 11;
+            let palIndex = (tile & 0xF000) >> 12;
+            let tileSeeker = tileIndex * 64;
+            if (tileSeeker + 64 > tiles.length) continue;
+            let dx = x * tileSize + posX[tt];
+            let dy = y * tileSize + posY[tt];
+            if (behavior > 0) {
+              behaviorData[dy * cw + dx] = behavior;
+            }
+            if (background > 0) {
+              backgroundData[dy * cw + dx] = background;
+            }
+            let anim = this.getTileAnimation(tileIndex, tileset);
+            // tile is animated
+            if (anim !== null) {
+              let data = this.getAnimationTileImg(anim, tileIndex, palIndex, flipX, flipY, minorTileset, majorTileset);
+              let animLayer = isForeground ? fganimations : bganimations;
+              let offset = anim.offset;
+              animLayer.push({
+                x: x, y: y,
+                data,
+                layer: ly,
+                tile: offset,
+                index: tt,
+                interval: anim.interval || -1
+              });
+            }
+            let xx = 0; let yy = 0;
+            for (let px = 0; px < 64; ++px) {
+              let pixel = tiles[tileSeeker + px];
+              if (pixel > 0) {
+                let color = palettes[pixel + (palIndex * 16)];
+                let ddx = (dx + (flipX > 0 ? (-xx + 7) : xx));
+                let ddy = (dy + (flipY > 0 ? (-yy + 7) : yy));
+                let index = 4 * (ddy * cw + ddx);
+                if (isBackground) {
+                  backgroundPixels[index + 0] = color.r;
+                  backgroundPixels[index + 1] = color.g;
+                  backgroundPixels[index + 2] = color.b;
+                  backgroundPixels[index + 3] = 0xff;
+                } else {
+                  foregroundPixels[index + 0] = color.r;
+                  foregroundPixels[index + 1] = color.g;
+                  foregroundPixels[index + 2] = color.b;
+                  foregroundPixels[index + 3] = 0xff;
+                }
+              }
+              xx++; if (xx === 8) { xx = 0; yy++; }
+            };
+          };
+        };
+        if ((++x) === 8) { x = 0; y++; }
+      };
+    };
+
+    let bg = createCanvasBuffer(128, 2560).ctx;
+    let fg = createCanvasBuffer(128, 2560).ctx;
+
+    bg.putImageData(backgroundImage, 0, 0);
+    fg.putImageData(foregroundImage, 0, 0);
+    //document.body.appendChild(ctx.canvas);
+    return {
+      behavior: behaviorData,
+      background: backgroundData,
+      layers: {
+        background: bg,
+        foreground: fg
+      },
+      animations: [ bganimations, fganimations ],
+      canvas: ctx.canvas
+    };
+  }
+  createBorderMap(mapWidth, mapHeight, borderTilePtr, layerData, connections) {
+    let buffer = this.buffer;
+    let bw = 2; let bh = 2;
+    let tileSize = 16;
+    let borderTile = createCanvasBuffer(bw * tileSize, bh * tileSize);
+    let offset = borderTilePtr;
+    for (let ll = 0; ll < 2; ++ll) {
+      let tileset = layerData[ll];
+      for (let ii = 0; ii < bw * bh; ++ii) {
+        let xx = (ii % bw) | 0;
+        let yy = (ii / bw) | 0;
+        let value = readShort(buffer, offset + ii * 2);
+        let tile = value & 0x3ff;
+        let srcX = (tile % 8) * tileSize;
+        let srcY = ((tile / 8) | 0) * tileSize;
+        let destX = xx * tileSize;
+        let destY = yy * tileSize;
+        borderTile.ctx.drawImage(
+          tileset.canvas,
+          srcX, srcY,
+          tileSize, tileSize,
+          destX, destY,
+          tileSize, tileSize
+        );
+      };
+    };
+    let padding = 8;
+    let halfpad = padding / 2;
+    let mw = mapWidth + (padding * 2);
+    let mh = mapHeight + (padding * 2);
+    let border = createCanvasBuffer(mw * tileSize, mh * tileSize);
+    // just fill everything with the border tile
+    for (let ii = 0; ii < mw * mh; ++ii) {
+      let xx = (ii % mw) | 0;
+      let yy = (ii / mw) | 0;
+      border.ctx.drawImage(
+        borderTile.canvas,
+        0, 0,
+        32, 32,
+        (xx * 32), (yy * 32),
+        32, 32
+      );
+    };
+    // clear the border parts where it slices a connection
+    if (hasConnection(connections, DIR.DOWN)) {
+      border.ctx.clearRect(0, (mh * tileSize) - (halfpad * 32), (mapWidth * 32), (halfpad * 32));
     }
+    if (hasConnection(connections, DIR.UP)) {
+      border.ctx.clearRect(0, 0, (mapWidth * 32), (halfpad * 32));
+    }
+    if (hasConnection(connections, DIR.LEFT)) {
+      border.ctx.clearRect(0, 0, (halfpad * 32), (mapHeight * 32));
+    }
+    if (hasConnection(connections, DIR.RIGHT)) {
+      border.ctx.clearRect((mw * tileSize) - (halfpad * 32), 0, (halfpad * 32), (mapHeight * 32));
+    }
+    return border;
+  }
+  getAnimationTileImg(anim, tileIndex, palIndex, flipX, flipY, minorTileset, majorTileset) {
+    let frames = [];
+    let index = (tileIndex - anim.offset);
+    let tileset = (anim.tileset ? minorTileset : majorTileset).palettePtr;
+    let palette = tileset + (palIndex * 0x20);
+    let tileFrame = index % 0x4;
+    let tileX = (index / 0x4) | 0;
+    let length = anim.animations.length;
+    let isFlipped = flipX || flipY;
+    for (let ii = 0; ii < length; ++ii) {
+      let index = 0;
+      let offset = 0;
+      // special animation
+      if (anim.interval !== void 0) {
+        index = (tileIndex - anim.offset) % 0x4;
+        offset = anim.animations[((length - ii) + tileX) % length];
+      // default animation
+      } else {
+        offset = anim.animations[ii];
+        index = (tileIndex - anim.offset);
+      }
+      let location = (offset + (index * 0x20));
+      // try to grab a cached tile version
+      // only cache unflipped tiles
+      let cached = this.animations[location] || null;
+      if (cached !== null && !isFlipped) {
+        frames.push(cached);
+        continue;
+      }
+      let pal = readPalette(this.buffer, palette, true);
+      let tile = readPixels(this.buffer, location, pal, 0x8, 0x8, true);
+      let buffer = createCanvasBuffer(0x8, 0x8).ctx;
+      buffer.putImageData(tile, 0, 0);
+      if (flipX) {
+        let img = createCanvasBuffer(0x8, 0x8).ctx;
+        img.scale(-1, 1);
+        img.drawImage(buffer.canvas, 0, 0, -0x8, 0x8);
+        buffer = img;
+      }
+      if (flipY) {
+        let img = createCanvasBuffer(0x8, 0x8).ctx;
+        img.scale(1, -1);
+        img.drawImage(buffer.canvas, 0, 0, 0x8, -0x8);
+        buffer = img;
+      }
+      // cache the tile for future access
+      if (!isFlipped) this.animations[location] = buffer;
+      frames.push(buffer);
+    };
+    return frames;
+  }
+  // checks if a tile lies inside a
+  // tileset animation offset range
+  getTileAnimation(offset, tileset) {
+    let animations = OFS.TILESET_PRIMARY_ANIMATIONS;
+    let sanimations = OFS.TILESET_SECONDARY_ANIMATIONS;
+    // primary animations
+    for (let ii = 0; ii < animations.length; ++ii) {
+      let anim = animations[ii];
+      let start = anim.offset;
+      let end = start + anim.size;
+      if (offset >= start && offset < end) return anim;
+    };
+    // secondary non-special animations
+    for (let ii = 0; ii < sanimations.length; ++ii) {
+      let anim = sanimations[ii];
+      if (anim.tileset !== tileset) continue;
+      if (anim.interval !== void 0) continue;
+      let start = anim.offset;
+      let end = start + anim.size;
+      if (offset >= start && offset < end) return anim;
+    };
+    // secondary special animations
+    for (let ii = 0; ii < sanimations.length; ++ii) {
+      let anim = sanimations[ii];
+      if (anim.tileset !== tileset) continue;
+      if (anim.interval === void 0) continue;
+      for (let jj = 0; jj < anim.animations.length; ++jj) {
+        let start = anim.offset + ((jj % 8) * anim.interval);
+        let end = start + anim.size;
+        if (offset >= start && offset < end) return anim;
+      };
+    };
+    return null;
   }
   readTilesetHeader(offset, tilesetHeader) {
     let buffer = this.buffer;
