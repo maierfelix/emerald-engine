@@ -20,36 +20,20 @@ export const OFFSETS = {
   ICON_POINTER_TBL: 0x57BCA8,
   ICON_PAL_TABLE: 0x57C388,
   ICON_PALS: 0xDDE1F8,
-  FIELD_EFFECT_NAME: {
-    GRASS_STEP: 0,
-    WATER_STEP: 1,
-    ASHE_STEP: 2,
-    SURF_BLOB: 3,
-    MAP_ARROW: 4,
-    SAND_STEP: 5,
-    DEEP_SAND_STEP: 6
-  },
   DOOR_ANIM_HEADER: 0x497174,
   FIELD_EFFECT_HEADER: 0x5059F8,
-  FIELD_EFFECT_PAL: [
-    0x4F77B8,
-    0x4F77D8,
-    0x4FACB8,
-    0x4FBAD8,
-    0x0,
-    0x0,
-    0x4F6E98,
-    0x4AD918
-  ],
   FIELD_EFFECT_IMGS: [
-    // id, palIdx w, h
-    [4,  1,  16,  80], // grass step
-    [5,  1,  16,  80], // water ripple step
-    [6,  1,  16,  80], // ashe step
-    [7,  7,  32,  96], // surf blob
-    [8,  1,  16,  64], // map arrows
-    [11, 0,  16,  32], // sand step
-    [23, 0,  16,  32], // deep sand step
+    // id, w, h
+    [4,  16, 80,  0x4F77D8], // tall grass
+    [5,  16, 80,  0x4F77D8], // ripple
+    [6,  16, 80,  0x4F77D8], // ash
+    [7,  32, 96,  0x4AD918], // surf blob
+    [8,  16, 64,  0x4987F8], // arrow
+    [9,  16, 64,  0x4F77B8], // ground dust
+    [11, 16, 32,  0x4F77B8], // sand footprint
+    [13, 16, 32,  0x4F77B8], // splash
+    [15, 16, 32,  0x4F77D8], // long grass
+    [23, 16, 32,  0x4F77B8], // deepsand footprint
   ],
   OVERWORLD_COUNT: 244,
   OVERWORLD_BANK: 0x509954,

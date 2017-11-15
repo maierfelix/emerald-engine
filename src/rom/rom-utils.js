@@ -1,6 +1,6 @@
 import {
   assert
-} from "./utils";
+} from "../utils";
 
 import {
   readByte,

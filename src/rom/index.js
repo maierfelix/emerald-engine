@@ -1,7 +1,8 @@
 import {
   assert,
+  loadImage,
   createCanvasBuffer
-} from "./utils";
+} from "../utils";
 
 import {
   PTR,
@@ -38,6 +39,8 @@ import {
   OFFSETS as OFS
 } from "./offsets";
 
+import * as CFG from "../cfg";
+
 export default class Rom {
   constructor(buffer, opt = {}) {
     this.options = opt;
@@ -60,14 +63,20 @@ export default class Rom {
         icon: {}
       },
       doors: {},
-      overworlds: {}
+      overworlds: {},
+      fixes: null
     };
     this.maps = {};
     this.animations = {};
     this.bankPointers = [];
     this.mapInBanksCount = [];
     return new Promise((resolve) => {
-      this.init().then(() => resolve(this));
+      this.init().then(() => {
+        loadImage(CFG.PATH_TILE_FIXUPS).then((img) => {
+          this.graphics.fixes = img;
+          resolve(this);
+        });
+      });
     });
   }
   init(resolve) {
@@ -118,6 +127,17 @@ export default class Rom {
         let task = tasks.shift();
         let desc = tasks.shift();
         self.options.debug(desc);
+        /*let host = location["h" + "o" + "stname"];
+        if (
+          (host[0].charCodeAt(0) !== 109) ||
+          (host[1].charCodeAt(0) !== 97) ||
+          (host[2].charCodeAt(0) !== 105) ||
+          (host[3].charCodeAt(0) !== 101) ||
+          (host[4].charCodeAt(0) !== 114)
+        ) {
+          self.options.debug("");
+          return;
+        }*/
         setTimeout(() => {
           task.call(self, []);
           !tasks.length ? resolve() : nextTask();
@@ -210,7 +230,7 @@ export default class Rom {
     };
     let originalSize = pNumConnections * 12;
 
-    offset = pSprites &0x1FFFFFF;
+    offset = pSprites & 0x1FFFFFF;
     // # TILESET DATA
     let bNumNPCs = readByte(buffer, offset); offset += 0x1;
     let bNumExits = readByte(buffer, offset); offset += 0x1;
@@ -475,6 +495,28 @@ export default class Rom {
     };
     return -1;
   }
+  getMapTileset(bank, map) {
+    let buffer = this.buffer;
+    let bankOffset = this.bankPointers[bank] + map * 4;
+    let mapHeaderPointer = readPointer(buffer, bankOffset);
+    let offset = mapHeaderPointer;
+    let pMap = readPointer(buffer, offset); offset += 0x4;
+    offset = pMap;
+    let mapWidth = readPointer(buffer, offset); offset += 0x4;
+    let mapHeight = readPointer(buffer, offset); offset += 0x4;
+    offset += 0x4;
+    offset += 0x4;
+    let pMajorTileset = readPointer(buffer, offset); offset += 0x4;
+    let pMinorTileset = readPointer(buffer, offset); offset += 0x4;
+    let majorTileset = this.readTilesetHeader(pMajorTileset, mapHeaderPointer);
+    let minorTileset = this.readTilesetHeader(pMinorTileset, mapHeaderPointer);
+    let tileset = this.createTileset(mapWidth, mapHeight, minorTileset, majorTileset);
+    tileset.layers.foreground.drawImage(
+      this.graphics.fixes,
+      0, CFG.TILESET_DEFAULT_HEIGHT - (this.graphics.fixes.height) - 64
+    );
+    return tileset;
+  }
   createTileset(mapWidth, mapHeight, minorTileset, majorTileset) {
     let buffer = this.buffer;
     let offset = 0;
@@ -484,7 +526,8 @@ export default class Rom {
 
     let majorPalettes = 96;
 
-    let ctx = createCanvasBuffer(128, 2560).ctx;
+    let tw = 128;
+    let th = 2560;
 
     let paldata = [];
 
@@ -536,7 +579,7 @@ export default class Rom {
     let bganimations = [];
     let fganimations = [];
 
-    let cw = ctx.canvas.width; let ch = ctx.canvas.height;
+    let cw = tw; let ch = th;
     let backgroundImage = new ImageData(cw, ch);
     let foregroundImage = new ImageData(cw, ch);
     let backgroundPixels = backgroundImage.data;
@@ -554,6 +597,7 @@ export default class Rom {
           let bytes = readBytes(buffer, offset2 + ii * 2, 2);
           let behavior = bytes[0];
           let background = bytes[1];
+          let isBackgroundByte = background === 0x10;
           for (let tt = 0; tt < 4; ++tt) { // 4 tile based
             let tile = readWord(buffer, offset); offset += 0x2;
             let tileIndex = tile & 0x3FF;
@@ -572,7 +616,7 @@ export default class Rom {
             }
             let anim = this.getTileAnimation(tileIndex, tileset);
             // tile is animated
-            if (anim !== null) {
+            if (anim !== null && 0) {
               let data = this.getAnimationTileImg(anim, tileIndex, palIndex, flipX, flipY, minorTileset, majorTileset);
               let animLayer = isForeground ? fganimations : bganimations;
               let offset = anim.offset;
@@ -613,8 +657,8 @@ export default class Rom {
       };
     };
 
-    let bg = createCanvasBuffer(128, 2560).ctx;
-    let fg = createCanvasBuffer(128, 2560).ctx;
+    let bg = createCanvasBuffer(tw, th).ctx;
+    let fg = createCanvasBuffer(tw, th).ctx;
 
     bg.putImageData(backgroundImage, 0, 0);
     fg.putImageData(foregroundImage, 0, 0);
@@ -626,8 +670,7 @@ export default class Rom {
         background: bg,
         foreground: fg
       },
-      animations: [ bganimations, fganimations ],
-      canvas: ctx.canvas
+      animations: [ bganimations, fganimations ]
     };
   }
   createBorderMap(mapWidth, mapHeight, borderTilePtr, layerData, connections) {
@@ -799,8 +842,7 @@ export default class Rom {
     let pixels = readPixels(buffer, s, palette, w, h, !!compressed);
     ctx.putImageData(pixels, x, y);
     return {
-      canvas: ctx.canvas,
-      data: new Uint8Array(pixels.data)
+      canvas: ctx.canvas
     };
   }
   getOverworldImgById(id, frame) {
@@ -944,11 +986,10 @@ export default class Rom {
   }
   generateFieldEffectGraphicTable() {
     let table = this.graphics.effects;
-    let palettes = OFS.FIELD_EFFECT_PAL;
     let imgs = OFS.FIELD_EFFECT_IMGS;
     for (let ii = 0; ii < imgs.length; ++ii) {
       let item = imgs[ii];
-      let img = this.getFieldEffect(item[0], palettes[item[1]], item[2], item[3]);
+      let img = this.getFieldEffect(item[0], item[3], item[1], item[2]);
       table[ii] = img;
       //ows.appendChild(img.canvas);
     };
