@@ -5,6 +5,7 @@ import {
   rnd64,
   roundTo,
   scaledCosine,
+  getRelativeTile,
   createCanvasBuffer,
   JSONTilesetToCanvas
 } from "../utils";
@@ -20,6 +21,9 @@ export default class TerrainGenerator {
     this.map = null;
     this.perlin = null;
     this.tileset = null;
+    this.options = {
+      showGrid: false
+    };
     this.mapEl = $("#tg-map");
     this.mapCtx = this.mapEl.getContext("2d");
     this.setup();
@@ -39,7 +43,7 @@ export default class TerrainGenerator {
       $("#tg-ui").appendChild(tileset.canvas);
       this.tileset = tileset.canvas;
       this.addListeners();
-      $("#tg-generate").click();
+      this.generateTerrain(CFG.TERRAIN_DEFAULT_WIDTH, CFG.TERRAIN_DEFAULT_HEIGHT, CFG.TERRAIN_DEFAULT_SEED);
     });
   }
   addListeners() {
@@ -49,6 +53,10 @@ export default class TerrainGenerator {
     $("#tg-seed-generate").onclick = (e) => {
       let seed = parseInt(prompt(`Enter a terrain seed number:`)) || 0;
       this.generateTerrain(CFG.TERRAIN_DEFAULT_WIDTH, CFG.TERRAIN_DEFAULT_HEIGHT, seed);
+    };
+    $("#tg-show-grid").onclick = (e) => {
+      this.options.showGrid = !this.options.showGrid;
+      $("#tg-show-grid").checked = this.options.showGrid;
     };
   }
   resize() {
@@ -67,14 +75,38 @@ export default class TerrainGenerator {
     this.clear();
     if (this.map !== null) {
       let scale = 1.0;
-      this.mapCtx.drawImage(
+      let ctx = this.mapCtx;
+      ctx.drawImage(
         this.map,
         0, 0,
         this.map.width, this.map.height,
         0, 0,
         this.map.width * scale, this.map.height * scale
       );
+      if (this.options.showGrid) this.drawGrid(ctx);
     }
+  }
+  drawGrid(ctx) {
+    let scale = 1.0;
+    let canvas = ctx.canvas;
+    let width = canvas.width;
+    let height = canvas.height;
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = `rgba(0,0,0,0.5)`;
+
+    let size = CFG.BLOCK_SIZE * scale;
+    ctx.beginPath();
+    for (let xx = 0; xx < width; xx += size) {
+      ctx.moveTo(xx, 0);
+      ctx.lineTo(xx, height);
+    };
+    for (let yy = 0; yy < height; yy += size) {
+      ctx.moveTo(0, yy);
+      ctx.lineTo(width, yy);
+    };
+    ctx.stroke();
+    ctx.closePath();
   }
   generateTerrain(width, height, seed) {
     // generate perlin base
@@ -99,232 +131,259 @@ export default class TerrainGenerator {
       width, height
     );
     let data = new Uint8Array(width * height);
+    let heights = new Uint8Array(width * height);
     let inc = 0.1;
     let modifier = 1.5;
     let yOff = 0;
+    this.data = data;
+    this.heights = heights;
+    this.width = width;
+    this.height = height;
+    this.terrain = terrain;
     for (let y = 0; y < height; y++) {
       let xOff = 0;
       for (let x = 0; x < width; x++) {
         let r = this.noise(xOff, yOff) * 255 / modifier;
         xOff += inc;
-        this.fillTerrain(this.tileset, terrain, data, width, x, y, r);
+        this.fillTerrain(x, y, r);
       }
       yOff += inc;
     };
-    this.data = data;
-    this.width = width;
-    this.height = height;
-    this.terrain = terrain;
-    this.fixupTerrain();
-    this.drawTerrain();
-    this.autoTileTerrain();
+    //this.smoothTerrain();
+    let lastFix = this.fixupTerrain();
+    while (true) {
+      let fix = this.fixupTerrain();
+      if (fix === lastFix || fix <= 0) break;
+      lastFix = fix;
+    };
+    this.floodTerrain();
+    this.autoTileTerrain(0);
+    this.autoTileTerrain(1);
+    this.autoTileTerrain(2);
+    this.autoTileTerrain(3);
     this.map = terrain.canvas;
-  } 
-  fillTerrain(tileset, terrain, data, width, x, y, r) {
-    let index = ((y * width) + x) | 0;
+  }
+  floodTerrain() {
+    for (let ii = 0; ii < this.width * this.height; ++ii) {
+      let x = (ii % this.width) | 0;
+      let y = (ii / this.width) | 0;
+      let tt = this.data[ii] | 0;
+      let tile = this.getTile(x, y);
+      let level = this.heights[ii] | 0;
+      if (level === 2) this.data[ii] = CFG.TERRAIN_TILES.STONE_GRASS.id;
+      if (level === 3) this.data[ii] = CFG.TERRAIN_TILES.STONE_SAND.id;
+    };
+  }
+  autoTileTerrain(level) {
+    this.heightLevel = level;
+    let scale = CFG.BLOCK_SIZE;
+    for (let ii = 0; ii < this.width * this.height; ++ii) {
+      let x = (ii % this.width) | 0;
+      let y = (ii / this.width) | 0;
+      let tile = this.getTile(x, y);
+      let auto = this.getAutoTileFrom(tile);
+      if (auto.level !== level) continue;
+      if (auto.edges !== "") {
+        this.drawTile(x, y, tile.type);
+        this.drawAutoTile(x, y, tile.type, auto.edgeType, auto.edges);
+      } else {
+        this.drawTile(x, y, tile.type);
+      }
+    };
+  }
+  fillTerrain(x, y, r) {
+    let index = ((y * this.width) + x) | 0;
     let scale = 16;
+    this.heights[index] = 0;
+    // light water
+    if (r < 65 && r >= 55) {
+      this.data[index] = CFG.TERRAIN_TILES.WATER.id;
+    }
     // stone
-    if (r >= 70) data[index] = 3;
-    // sand
-    else if (r >= 50 && r < 70) data[index] = 4;
-    // Light water
-    else if (r >= 40 && r < 50) data[index] = 2;
-    // Deep water
-    else data[index] = 1;
+    else if (r >= 65) {
+      this.data[index] = CFG.TERRAIN_TILES.STONE.id;
+      this.heights[index] = 1;
+      if (r >= 85) this.heights[index] = 2;
+      if (r >= 100) this.heights[index] = 3;
+    }
+    // water
+    else this.data[index] = CFG.TERRAIN_TILES.WATER.id;
   }
   fixupTerrain() {
-    for (let ii = 0; ii < this.data.length; ++ii) {
+    let scale = CFG.BLOCK_SIZE;
+    let fixed = 0;
+    for (let ii = 0; ii < this.width * this.height; ++ii) {
       let x = (ii % this.width) | 0;
       let y = (ii / this.width) | 0;
-      let tile = this.data[ii] | 0;
-      let connCount = this.getConnectionCount(x, y);
-      if (connCount <= 1) this.data[ii] = 1;
+      let tile = this.getTile(x, y);
+      let auto = this.getAutoTileFrom(tile);
+      if (auto.edges !== "" && !CFG.TERRAIN_SHEET_EDGES[auto.edges]) {
+        this.data[y * this.width + x] = CFG.TERRAIN_TILES.WATER.id;
+        fixed++;
+      }
     };
+    return fixed;
   }
-  getConnectionCount(tx, ty) {
-    let baseTile = this.data[ty * this.width + tx];
-    let count = 0;
-    if (this.data[ty * this.width + (tx - 1)] === baseTile) count++;
-    if (this.data[ty * this.width + (tx + 1)] === baseTile) count++;
-    if (this.data[(ty - 1) * this.width + tx] === baseTile) count++;
-    if (this.data[(ty + 1) * this.width + tx] === baseTile) count++;
-    return count;
-  }
-  /*getConnectionCount(data, width, tx, ty) {
-    let baseTile = data[ty * width + tx];
-    // 3x3 grid around cx, cy
-    let count = 0;
-    let length = data.length;
-    for (let ii = 0; ii < 9; ++ii) {
-      let xx = (ii % 3) | 0;
-      let yy = (ii / 3) | 0;
-      let x = (tx - 1) + xx;
-      let y = (ty - 1) + yy;
-      let index = y * width + x;
-      if (x < 0 || y < 0) continue;
-      if (x === tx && y === ty) continue;
-      if (index < 0 || index > length) continue;
-      let tile = data[index];
-      if (tile <= 0) continue;
-      if (baseTile === tile) count++;
-      //if (baseTile === 2) data[index] = 3;
-    };
-    return count;
-  }*/
-  drawTerrain() {
+  smoothTerrain() {
     let scale = CFG.BLOCK_SIZE;
-    for (let ii = 0; ii < this.data.length; ++ii) {
+    for (let ii = 0; ii < this.width * this.height; ++ii) {
       let x = (ii % this.width) | 0;
       let y = (ii / this.width) | 0;
-      let tile = this.data[ii] | 0;
-      if (tile === 1) {
-        this.terrain.drawImage(
-          this.tileset,
-          0 * scale, 0 * scale,
-          scale, scale,
-          x * scale, y * scale,
-          scale, scale
-        );
-      }
-      else if (tile === 2) {
-        this.terrain.drawImage(
-          this.tileset,
-          2 * scale, 1 * scale,
-          scale, scale,
-          x * scale, y * scale,
-          scale, scale
-        );
-      }
-      else if (tile === 3) {
-        this.terrain.drawImage(
-          this.tileset,
-          0 * scale, 4 * scale,
-          scale, scale,
-          x * scale, y * scale,
-          scale, scale
-        );
-      }
-      else if (tile === 4) {
-        this.terrain.drawImage(
-          this.tileset,
-          0 * scale, 12 * scale,
-          scale, scale,
-          x * scale, y * scale,
-          scale, scale
-        );
+      let tile = this.getTile(x, y);
+      let auto = this.getAutoTileFrom(tile);
+      if (auto.edges !== "" && auto.edges.length >= 2 && tile.type === 3) {
+        let tt = 1;
+        this.data[y * this.width + x] = tt;
+        this.data[y * this.width + x - 1] = tt;
+        this.data[y * this.width + x + 1] = tt;
+        this.data[(y - 1) * this.width + x] = tt;
+        this.data[(y - 1) * this.width + x - 1] = tt;
+        this.data[(y - 1) * this.width + x + 1] = tt;
+        this.data[(y + 1) * this.width + x] = tt;
+        this.data[(y + 1) * this.width + x - 1] = tt;
+        this.data[(y + 1) * this.width + x + 1] = tt;
       }
     };
   }
-  drawTile(x, y, type, edgeType, edges) {
-    let coords = {
-      "NW": [0,0],
-      "N+W": [4,1],
-      "N": [1,0],
-      "NE": [2,0],
-      "N+E": [3,1],
-      "E": [2,1],
-      "SE": [2,2],
-      "S+E": [3,0],
-      "S": [1,2],
-      "SW": [0,2],
-      "S+W": [4,0],
-      "W": [0,1]
-    };
-    if (!coords[edges]) return;
-    let pos = coords[edges];
-    if (type === 2) {
-      pos[0] += 1;
-      pos[1] += 0;
-    }
-    if (type === 3) {
-      pos[0] += 1;
-      pos[1] += 4;
-    }
-    if (type === 4) {
-      pos[0] += 1;
-      pos[1] += 12;
-    }
+  drawAutoTile(x, y, type, edgeType, edges) {
+    if (!CFG.TERRAIN_SHEET_EDGES[edges]) return;
+    let pos = CFG.TERRAIN_SHEET_EDGES[edges];
+    let tile = this.getTile(x, y);
+    let sheetPos = this.getTileSheetByType(tile.type);
     let scale = CFG.BLOCK_SIZE;
-    if (type > 1) {
-      //console.log(`x:${x} y:${y} type:${type}`, edgeType, coords[edges]);
-
+    if (type === CFG.TERRAIN_TILES.WATER.id) {
+      this.drawTile(x, y, type);
+    }
+    else {
+      // draw bottom tile
+      this.drawBottomAutoTile(x, y, type, edgeType);
       this.terrain.drawImage(
         this.tileset,
-        pos[0] * scale, pos[1] * scale,
+        (pos.x + 1) * scale, (pos.y + sheetPos.offset) * scale,
         scale, scale,
         x * scale, y * scale,
         scale, scale
       );
     }
   }
+  drawBottomAutoTile(x, y, loTile, hiTile) {
+    let scale = CFG.BLOCK_SIZE;
+    let sheetPos = this.getTileSheetByType(hiTile);
+    this.terrain.drawImage(
+      this.tileset,
+      0 * scale, sheetPos.offset * scale,
+      scale, scale,
+      x * scale, y * scale,
+      scale, scale
+    );
+  }
+  drawTile(x, y, type) {
+    let scale = CFG.BLOCK_SIZE;
+    let sheetPos = this.getTileSheetByType(type);
+    let tile = this.getTile(x, y);
+    if (type > 0) {
+      this.terrain.drawImage(
+        this.tileset,
+        0 * scale, sheetPos.offset * scale,
+        scale, scale,
+        x * scale, y * scale,
+        scale, scale
+      );
+    }
+  }
+  getTileSheetByType(type) {
+    let tiles = CFG.TERRAIN_TILES;
+    for (let key in tiles) {
+      let tt = tiles[key];
+      if (tt.id === type) return tt;
+    };
+    return null;
+  }
   getTile(x, y) {
     if ((x >= 0 && x < this.width) && (y >= 0 && y < this.height)) {
-      let type = this.data[y * this.width + x];
-      return { x, y, type };
+      let index = (y * this.width + x) | 0;
+      let type = this.data[index] | 0;
+      let level = this.heights[index] | 0;
+      return { x, y, type, level };
     }
     return null;
   }
-  autoTileTerrain() {
-    let scale = CFG.BLOCK_SIZE;
-    for (let ii = 0; ii < this.width * this.height; ++ii) {
-      let x = (ii % this.width) | 0;
-      let y = (ii / this.width) | 0;
+  getAutoTileFrom(tile) {
 
-      let tile = this.getTile(x, y);
-      let edges = "";
-      let edgeType;
+    let edges = "";
+    let edgeType;
 
-      let n = this.getTile(tile.x, tile.y - 1);
-      let s = this.getTile(tile.x, tile.y + 1);
-      let e = this.getTile(tile.x + 1, tile.y);
-      let w = this.getTile(tile.x - 1, tile.y);
+    let n = this.getTile(tile.x, tile.y - 1);
+    let s = this.getTile(tile.x, tile.y + 1);
+    let e = this.getTile(tile.x + 1, tile.y);
+    let w = this.getTile(tile.x - 1, tile.y);
 
-      let nw = this.getTile(tile.x - 1, tile.y - 1);
-      let ne = this.getTile(tile.x + 1, tile.y - 1);
-      let se = this.getTile(tile.x + 1, tile.y + 1);
-      let sw = this.getTile(tile.x - 1, tile.y + 1);
+    let nw = this.getTile(tile.x - 1, tile.y - 1);
+    let ne = this.getTile(tile.x + 1, tile.y - 1);
+    let se = this.getTile(tile.x + 1, tile.y + 1);
+    let sw = this.getTile(tile.x - 1, tile.y + 1);
 
-      if (n !== null && tile.type !== n.type) {
-        edges += "N";
-        edgeType = n.type;
+    let count = 0;
+
+    let hl = this.heightLevel;
+
+    if (n && (!this.sameTileTypes(n, tile) || (n.level < tile.level))) {
+      edges += "N";
+      edgeType = n.type;
+      count++;
+    }
+    if (s && (!this.sameTileTypes(s, tile) || (s.level < tile.level))) {
+      edges += "S";
+      edgeType = s.type;
+      count++;
+    }
+    if (e && (!this.sameTileTypes(e, tile) || (e.level < tile.level))) {
+      edges += "E";
+      edgeType = e.type;
+      count++;
+    }
+    if (w && (!this.sameTileTypes(w, tile) || (w.level < tile.level))) {
+      edges += "W";
+      edgeType = w.type;
+      count++;
+    }
+
+    if (edges === "") {
+      if (nw && (!this.sameTileTypes(nw, tile) || (nw.level < tile.level))) {
+        edges = "N+W";
+        edgeType = nw.type;
+        count++;
       }
-      if (s !== null && tile.type !== s.type) {
-        edges += "S";
-        edgeType = s.type;
+      else if (ne && (!this.sameTileTypes(ne, tile) || (ne.level < tile.level))) {
+        edges = "N+E";
+        edgeType = ne.type;
+        count++;
       }
-      if (e !== null && tile.type !== e.type) {
-        edges += "E";
-        edgeType = e.type;
+      if (se && (!this.sameTileTypes(se, tile) || (se.level < tile.level))) {
+        edges = "S+E";
+        edgeType = se.type;
+        count++;
       }
-      if (w !== null && tile.type != w.type) {
-        edges += "W";
-        edgeType = w.type;
-      }
-
-      if (edges === "") {
-        if (nw !== null && tile.type !== nw.type) {
-          edges = "N+W";
-          edgeType = nw.type;
-        }
-        if (ne !== null && tile.type !== ne.type) {
-          edges = "N+E";
-          edgeType = ne.type;
-        }
-        if (se !== null && tile.type !== se.type) {
-          edges = "S+E";
-          edgeType = se.type;
-        }
-        if (sw !== null && tile.type !== sw.type) {
-          edges = "S+W";
-          edgeType = sw.type;
-        }
+      else if (sw && (!this.sameTileTypes(sw, tile) || (sw.level < tile.level))) {
+        edges = "S+W";
+        edgeType = sw.type;
+        count++;
       }
 
-      if (edges !== "") {
-        this.drawTile(x, y, tile.type, edgeType, edges);
-      }
+    }
 
-    };
+    return { edges, edgeType, count, level: tile.level };
+
+  }
+  sameTileTypes(a, b) {
+    let sheetA = this.getTileSheetByType(a.type);
+    let sheetB = this.getTileSheetByType(b.type);
+    return (
+      (a.type === b.type) ||
+      (sheetA.kind === b.type) ||
+      (sheetB.kind === a.type) ||
+      (sheetA.kind === sheetB.kind)
+    );
   }
   noise(x, y, z) {
     y = y || 0;
@@ -334,9 +393,9 @@ export default class TerrainGenerator {
     var PERLIN_YWRAP = 1<<PERLIN_YWRAPB;
     var PERLIN_ZWRAPB = 8;
     var PERLIN_ZWRAP = 1<<PERLIN_ZWRAPB;
-    var PERLIN_SIZE = 4095 * 2;
+    var PERLIN_SIZE = 4095;
 
-    var perlin_octaves = 4;
+    var perlin_octaves = 3;
     var perlin_amp_falloff = 0.5;
 
     var perlin = this.perlin.data;

@@ -2,38 +2,106 @@
 
 <div id="ows"></div>
 
+<div id="rom_drop">
+Please drag a ROM file into here (Emerald, USA, 1.0)
+</div>
+
 <div class="ui">
   <div id="map-ui-id" class="map-label">Littleroot Town</div>
-
   <div class="ui-party-pkmn-container">
-
     <div class="party-pkmn-outer">
       <div class="party-pkmn-inner">
         <img src="http://pokedex.p-pokemon.com/images/sprites/petit_pkmn/1.gif" />
       </div>
     </div>
-
     <div class="party-pkmn-outer">
       <div class="party-pkmn-inner">
         <img src="http://pokedex.p-pokemon.com/images/sprites/petit_pkmn/4.gif" />
       </div>
     </div>
-
     <div class="party-pkmn-outer">
       <div class="party-pkmn-inner">
         <img src="http://pokedex.p-pokemon.com/images/sprites/petit_pkmn/7.gif" />
       </div>
     </div>
-
   </div>
 </div>
 
-<canvas id="canvas"></canvas>
+<div id="ts-ui">
+  <div class="ts-top-head">
+    <button id="ts-switch" class="ts-btn">Switch Tileset</button>
+    <div class="ts-import-btn-wrapper">
+      <button class="ts-import-btn">Import Tileset</button>
+      <input id="ts-import" type="file" title=" " alt=" " />
+    </div>
+    <button id="ts-export" class="ts-btn">Export Tileset</button>
+    <div id="ts-rom-notice" class="top-head-notice">Loading ROM...</div>
+    <img id="layer-btn-1" src="./layers-1.png" />
+    <img id="layer-btn-2" src="./layers-2.png" />
+    <img id="layer-btn-3" src="./layers-3.png" />
+    <img id="layer-btn-0" src="./layers-0.png" />
+    <img id="layer-btn-4" src="./layers-4.png" />
+    <label class="ts-checkbox">
+      <input id="ts-flip-y" type="checkbox">
+      <span></span>
+      Flip Y
+    </label>
+    <label class="ts-checkbox">
+      <input id="ts-flip-x" type="checkbox">
+      <span></span>
+      Flip X
+    </label>
+  </div>
+  <div id="ts-layers-wrapper">
+    <div id="final-layer-wrapper-title">ROM Tileset</div>
+    <canvas id="ts-layers"></canvas>
+  </div>
+  <div id="ts-final-layer-wrapper">
+    <div id="final-layer-wrapper-title">Final Tileset</div>
+    <canvas id="ts-final-0"></canvas>
+    <canvas id="ts-final-1"></canvas>
+    <canvas id="ts-final-2"></canvas>
+    <canvas id="ts-final-3"></canvas>
+  </div>
+</div>
+
+<div id="tg-ui">
+  <div class="ts-top-head">
+    <div class="ts-import-btn-wrapper">
+      <button class="ts-import-btn">Import Tileset</button>
+      <input id="tg-ts-import" type="file" title=" " alt=" " />
+    </div>
+    <button id="tg-generate" class="ts-btn">Random Terrain</button>
+    <button id="tg-seed-generate" class="ts-btn">Seed Terrain</button>
+    <div id="tg-terrain-seed" class="top-head-notice"></div>
+    <label class="ts-checkbox tg-grid-btn">
+      <input id="tg-show-grid" type="checkbox">
+    <span></span> Grid </label>
+  </div>
+  <canvas id="tg-map"></canvas>
+</div>
+
+<div id="map-ui"></div>
+
+<div id="engine-ui">
+  <div class="ts-top-head" style="">
+    <label class="ts-checkbox">
+      <input id="ts-flip-x" type="checkbox">
+      <span></span> Grid
+    </label>
+  </div>
+  <div class="engine-right-menu">
+    <canvas id="engine-tileset"></canvas>
+  </div>
+  <canvas id="engine-map"></canvas>
+</div>
 
 <link href="style.css" rel="stylesheet" type="text/css">
 
 <script type="text/javascript" src="../dist/bundle-browser.js"></script>
 
+<!--
 <script>
 (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='./stats.min.js';document.head.appendChild(script);})()
 </script>
+-->

@@ -39,9 +39,24 @@ export function scaledCosine(i) {
   return 0.5 * (1.0 - Math.cos(i * Math.PI));
 };
 
+export function zoomScale(n) {
+  return (
+    n >= 0 ? n + 1 :
+    n < 0 ? -(n) + 1 :
+    n + 1
+  );
+};
+
 export function rnd64() {
   let max = Number.MAX_SAFE_INTEGER;
   return Math.floor((Math.random() * max) - (max / 2));
+};
+
+export function getRelativeTile(x, y, scale) {
+  let dim = CFG.BLOCK_SIZE * scale;
+  let xx = (Math.ceil(x / dim) * CFG.BLOCK_SIZE) - CFG.BLOCK_SIZE;
+  let yy = (Math.ceil(y / dim) * CFG.BLOCK_SIZE) - CFG.BLOCK_SIZE;
+  return { x: xx, y: yy };
 };
 
 export function createCanvasBuffer(width, height) {
@@ -108,6 +123,53 @@ export function loadImage(path) {
     img.onload = () => resolve(img);
     img.src = path;
   });
+};
+
+export function loadJSONFile(path) {
+  return new Promise(resolve => {
+    fetch(path).then(resp => resp.json()).then(resolve);
+  });
+};
+
+export function drawGrid(ctx, scale, x, y, width, height) {
+  let ww = width * scale;
+  let hh = height * scale;
+
+  ctx.lineWidth = 0.5;
+  ctx.strokeStyle = `rgba(0,0,0,0.4)`;
+
+  let size = CFG.BLOCK_SIZE * scale;
+  ctx.beginPath();
+  for (let xx = x % size; xx < ww; xx += size) {
+    ctx.moveTo(xx, 0);
+    ctx.lineTo(xx, hh);
+  };
+  for (let yy = y % size; yy < hh; yy += size) {
+    ctx.moveTo(0, yy);
+    ctx.lineTo(ww, yy);
+  };
+  ctx.stroke();
+  ctx.closePath();
+};
+
+export function getNormalizedSelection(dx, dy, sx, sy) {
+  let x1 = sx;
+  let y1 = sy;
+  let x2 = (dx - sx);
+  let y2 = (dy - sy);
+  if (x2 < 0) {
+    x1 = x1 + x2;
+    x2 = x1 - x2;
+  } else {
+    x2 = x1 + x2;
+  }
+  if (y2 < 0) {
+    y1 = y1 + y2;
+    y2 = y1 - y2;
+  } else {
+    y2 = y1 + y2;
+  }
+  return { x: x1, y: y1, w: x2, h: y2 };
 };
 
 export function JSONTilesetToCanvas(rom, json) {

@@ -3,7 +3,9 @@ import * as CFG from "../cfg";
 import {
   $,
   roundTo,
-  createCanvasBuffer
+  getRelativeTile,
+  createCanvasBuffer,
+  getNormalizedSelection
 } from "../utils";
 
 export default class TilesetEditor {
@@ -125,12 +127,6 @@ export default class TilesetEditor {
   getCurrentTilesetId() {
     return this.currentTs[0] + ":" + this.currentTs[1];
   }
-  getRelativeTile(x, y, scale) {
-    let dim = CFG.BLOCK_SIZE * scale;
-    let xx = (Math.ceil(x / dim) * CFG.BLOCK_SIZE) - CFG.BLOCK_SIZE;
-    let yy = (Math.ceil(y / dim) * CFG.BLOCK_SIZE) - CFG.BLOCK_SIZE;
-    return { x: xx, y: yy };
-  }
   isSelectedTileEmpty() {
     let selection = this.selection.layers;
     let tileBuffer = this.getTileFromTileset(
@@ -147,10 +143,11 @@ export default class TilesetEditor {
     let downLayers = false;
     window.oncontextmenu = (e) => { if (e.target instanceof HTMLCanvasElement) e.preventDefault(); };
     elLayers.onmousedown = (e) => {
+      if (e.which !== 1) return;
       downLayers = true;
       let mx = e.offsetX;
       let my = e.offsetY;
-      let tile = this.getRelativeTile(mx, my, CFG.TILESET_LAYER_SCALE);
+      let tile = getRelativeTile(mx, my, CFG.TILESET_LAYER_SCALE);
       let selection = this.selection.layers;
       selection.x = tile.x; selection.y = tile.y;
       selection.sx = tile.x; selection.sy = tile.y;
@@ -159,34 +156,25 @@ export default class TilesetEditor {
       elLayers.onmousemove.call(this, e);
       //this.resetFlipState();
     };
-    elLayers.onmouseup = (e) => { downLayers = false; };
+    elLayers.onmouseup = (e) => {
+      if (e.which !== 1) return;
+      downLayers = false;
+    };
     elLayers.onmousemove = (e) => {
       if (!downLayers) return;
       this.resetLastTileDraw();
       let mx = e.offsetX;
       let my = e.offsetY;
-      let tile = this.getRelativeTile(mx, my, CFG.TILESET_LAYER_SCALE);
+      let tile = getRelativeTile(mx, my, CFG.TILESET_LAYER_SCALE);
       let selection = this.selection.layers;
-      let x1 = selection.sx;
-      let y1 = selection.sy;
-      let x2 = (tile.x - selection.sx);
-      let y2 = (tile.y - selection.sy);
-      if (x2 < 0) {
-        x1 = x1 + x2;
-        x2 = x1 - x2;
-      } else {
-        x2 = x1 + x2;
-      }
-      if (y2 < 0) {
-        y1 = y1 + y2;
-        y2 = y1 - y2;
-      } else {
-        y2 = y1 + y2;
-      }
-      selection.x = x1;
-      selection.y = y1;
-      selection.w = x2;
-      selection.h = y2;
+      let sel = getNormalizedSelection(
+        tile.x, tile.y,
+        selection.sx, selection.sy
+      );
+      selection.x = sel.x;
+      selection.y = sel.y;
+      selection.w = sel.w;
+      selection.h = sel.h;
       //this.resetFlipState();
     };
     elFinal.onmousedown = (e) => {
@@ -200,7 +188,7 @@ export default class TilesetEditor {
       let my = e.offsetY;
       if (this.activeLayer === 3) {
         let isEmptyTile = this.isSelectedTileEmpty();
-        let tile = this.getRelativeTile(mx, my, CFG.TILESET_FINAL_SCALE);
+        let tile = getRelativeTile(mx, my, CFG.TILESET_FINAL_SCALE);
         this.drawCollisionTileAt(
           tile.x, tile.y,
           isEmptyTile
@@ -369,7 +357,7 @@ export default class TilesetEditor {
     let tsId = this.getCurrentTilesetId();
     let sw = (selection.w - selection.x) + CFG.BLOCK_SIZE;
     let sh = (selection.h - selection.y) + CFG.BLOCK_SIZE;
-    let dstTile = this.getRelativeTile(x, y, CFG.TILESET_FINAL_SCALE);
+    let dstTile = getRelativeTile(x, y, CFG.TILESET_FINAL_SCALE);
     let length = (sw * sh) / CFG.BLOCK_SIZE;
     let dataLayer = this.data[tsId][this.activeLayer];
     // only draw if necessary
@@ -552,7 +540,6 @@ export default class TilesetEditor {
     };
     ctx.stroke();
     ctx.closePath();
-
   }
   drawLayers() {
     let bg = this.layers.background;

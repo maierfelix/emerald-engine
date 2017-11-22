@@ -616,7 +616,7 @@ export default class Rom {
             }
             let anim = this.getTileAnimation(tileIndex, tileset);
             // tile is animated
-            if (anim !== null && 0) {
+            if (anim !== null) {
               let data = this.getAnimationTileImg(anim, tileIndex, palIndex, flipX, flipY, minorTileset, majorTileset);
               let animLayer = isForeground ? fganimations : bganimations;
               let offset = anim.offset;
