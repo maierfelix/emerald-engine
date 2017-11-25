@@ -3,7 +3,7 @@
 <div id="ows"></div>
 
 <div id="rom_drop">
-Please drag a ROM file into here (Emerald, USA, 1.0)
+  <div>Please drag a ROM file into here (Emerald, USA, 1.0)</div>
 </div>
 
 <div class="ui">
@@ -84,15 +84,129 @@ Please drag a ROM file into here (Emerald, USA, 1.0)
 <div id="map-ui"></div>
 
 <div id="engine-ui">
-  <div class="ts-top-head" style="">
-    <label class="ts-checkbox">
-      <input id="ts-flip-x" type="checkbox">
-      <span></span> Grid
-    </label>
+  <div class="ts-top-head">
+    <button class="ts-btn">🌍 Publish</button>
+    <button class="ts-btn">💾 Save</button>
+    <button class="ts-btn">⚙️ Settings</button>
+    <button class="ts-btn-invisible"></button>
+    <button class="ts-btn">🎨 Switch Tileset</button>
+    <button class="ts-btn-invisible"></button>
+    <button class="ts-btn ts-btn-arrow">🡐</button>
+    <button class="ts-btn ts-btn-arrow">🡒</button>
+    <button class="ts-btn-invisible ts-btn-head-fix"></button>
+    <div class="ts-top-head-item">
+      <label>Map:</label>
+      <select class="ts-btn ts-btn-select">
+        <option>Littleroot Town</option>
+        <option>Oldale Town</option>
+        <option>Mauville City</option>
+      </select>
+    </div>
   </div>
-  <div class="engine-right-menu">
-    <canvas id="engine-tileset"></canvas>
+  <div class="ts-top-head engine-menu-top-right">
+    <button id="engine-ui-mode-ts" class="ts-btn">🗻 Tiles</button>
+    <button id="engine-ui-mode-obj" class="ts-btn">🚐 Objects</button>
+    <button id="engine-ui-mode-opt" class="ts-btn">🔩 Options</button>
   </div>
+  <div id="engine-ui-ts">
+    <div class="ts-top-head engine-menu-middle-right">
+      <img id="engine-layer-btn-1" src="./layers-1.png" />
+      <img id="engine-layer-btn-2" src="./layers-2.png" />
+      <img id="engine-layer-btn-3" src="./layers-3.png" />
+      <img id="engine-layer-btn-0" src="./layers-0.png" />
+      <img id="engine-layer-btn-5" src="./layers-5.png" />
+      <img id="engine-layer-btn-4" src="./layers-4.png" />
+    </div>
+    <div class="engine-right-menu">
+      <canvas id="engine-tileset"></canvas>
+    </div>
+  </div>
+  <div id="engine-ui-obj">
+    <div class="engine-right-menu">
+      <div class="engine-right-menu-item engine-abs-item-center">
+        <button class="ts-btn">Create entity</button>
+      </div>
+      <!-- General entity position -->
+      <div class="engine-right-menu-item engine-abs-item">
+        <label>Position:</label>
+        <input type="text" class="ts-btn sm" placeholder="X:" />
+        <input type="text" class="ts-btn sm" placeholder="Y:" />
+      </div>
+      <div class="engine-right-menu-item">
+        <label>Type:</label>
+        <select id="engine-ui-obj-type" class="ts-btn ts-btn-select">
+          <option>Person</option>
+          <option>Warp</option>
+          <option>Script</option>
+          <option>Sign</option>
+        </select>
+      </div>
+      <!-- PERSON menu -->
+      <div id="engine-ui-obj-person">
+        <div class="engine-right-menu-item">
+          <label>Sprite:</label>
+          <input type="text" class="ts-btn sm" placeholder="Id:" />
+        </div>
+        <div class="engine-right-menu-item">
+          <label>Behavior:</label>
+          <select class="ts-btn ts-btn-select">
+            <option>None</option>
+            <option>Look around</option>
+            <option>Look down</option>
+            <option>Look up</option>
+            <option>Look left</option>
+            <option>Look right</option>
+            <option>Walk around</option>
+          </select>
+        </div>
+      </div>
+      <!-- WARP menu -->
+      <div id="engine-ui-obj-warp">
+        <div class="engine-right-menu-item">
+          <label>Map:</label>
+          <input type="text" class="ts-btn sm" placeholder="Id:" />
+        </div>
+        <div class="engine-right-menu-item">
+          <label>Target:</label>
+          <input type="text" class="ts-btn sm" placeholder="X:" />
+          <input type="text" class="ts-btn sm" placeholder="Y:" />
+        </div>
+      </div>
+      <!-- SCRIPT menu -->
+      <div id="engine-ui-obj-script">
+        <input type="text" class="ts-btn" />
+      </div>
+      <!-- SIGN menu -->
+      <div id="engine-ui-obj-sign">
+        <div class="engine-right-menu-item">
+          <label>Type:</label>
+          <select class="ts-btn ts-btn-select">
+            <option>Text</option>
+            <option>Hero is facing up</option>
+            <option>Hero is facing down</option>
+            <option>Hero is facing left</option>
+            <option>Hero is facing right</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="engine-ui-opt">
+    <div class="engine-right-menu">
+      <div class="engine-right-menu-item">
+        <label>Weather:</label>
+        <select class="ts-btn ts-btn-select">
+          <option>None</option>
+          <option>Sunny</option>
+          <option>Rainy</option>
+          <option>Stormy</option>
+          <option>Foggy</option>
+          <option>Haily</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <!--<div class="engine-menu-bottom"></div>-->
   <canvas id="engine-map"></canvas>
 </div>
 

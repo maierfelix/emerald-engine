@@ -76,47 +76,6 @@ export function setImageSmoothing(ctx, state) {
   ctx.oImageSmoothingEnabled = state;
 };
 
-export function readBinaryFile(path) {
-  return new Promise((resolve) => {
-    if (IS_NODE) {
-      let data = require("fs").readFileSync(path);
-      return resolve(data);
-    }
-    fetch("../" + path)
-    .then(resp => resp.arrayBuffer())
-    .then(res => resolve(new Uint8Array(res)));
-  });
-};
-
-export function readCachedFile(path) {
-  return new Promise((resolve) => {
-    let db = null;
-    let req = indexedDB.open("ROMFile", IDBVersion);
-    req.onsuccess = (e) => {
-      db = req.result;
-      let tra = db.transaction(["ROMData"], "readwrite");
-      tra.objectStore("ROMData").get("key").onsuccess = (e) => {
-        let result = e.target.result;
-        if (!result) {
-          console.log(`No cached ROM file`);
-          readBinaryFile(path).then((buffer) => {
-            let tra = db.transaction(["ROMData"], "readwrite");
-            tra.objectStore("ROMData").put(buffer, "key");
-            resolve(buffer);
-          });
-        } else {
-          console.log(`Found a cached ROM file`);
-          resolve(result);
-        }
-      };
-    };
-    req.onupgradeneeded = (e) => {
-      db = req.result;
-      db.createObjectStore("ROMData");
-    };
-  });
-};
-
 export function loadImage(path) {
   return new Promise(resolve => {
     let img = new Image();
@@ -210,4 +169,70 @@ export function JSONTilesetToCanvas(rom, json) {
     };
   };
   return buffer;
+};
+
+export function readBinaryFile(path) {
+  return new Promise((resolve) => {
+    if (IS_NODE) {
+      let data = require("fs").readFileSync(path);
+      return resolve(data);
+    }
+    fetch("../" + path)
+    .then(resp => resp.arrayBuffer())
+    .then(res => resolve(new Uint8Array(res)));
+  });
+};
+
+export function readCachedFile(path) {
+  return new Promise((resolve, reject) => {
+    let db = null;
+    let req = indexedDB.open("ROMFile", IDBVersion);
+    req.onsuccess = (e) => {
+      db = req.result;
+      let tra = db.transaction(["ROMData"], "readwrite");
+      tra.objectStore("ROMData").get("key").onsuccess = (e) => {
+        let result = e.target.result;
+        if (!result) {
+          console.log(`No cached ROM file`);
+        } else {
+          console.log(`Found a cached ROM file`);
+        }
+        resolve({ db, result, cached: !!result });
+      };
+    };
+    req.onupgradeneeded = (e) => {
+      db = req.result;
+      db.createObjectStore("ROMData");
+    };
+  });
+};
+
+export function showROMInputDialog(db) {
+  let el = rom_drop;
+  el.style.display = "block";
+  return new Promise((resolve) => {
+    el.ondragover = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    };
+    el.ondrop = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      let file = e.dataTransfer.files[0];
+      let name = file.name;
+      let ext = name.substr(name.lastIndexOf("."), name.length);
+      if (ext !== ".gba") console.warn(`Invalid ROM file extension!`);
+      let reader = new FileReader();
+      reader.onload = (e) => {
+        let buffer = reader.result;
+        let view = new Uint8Array(buffer);
+        let tra = db.transaction(["ROMData"], "readwrite");
+        tra.objectStore("ROMData").put(view, "key");
+        el.style.display = "none";
+        resolve(view);
+      };
+      reader.readAsArrayBuffer(file);
+    };
+  });
 };

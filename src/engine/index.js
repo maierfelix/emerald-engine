@@ -13,6 +13,8 @@ import extend from "../extend";
 import * as _init from "./init";
 import * as _camera from "./camera";
 
+import * as _ui_modes from "./ui/modes";
+
 import * as _render_map from "./render/map";
 import * as _render_grid from "./render/grid";
 import * as _render_events from "./render/events";
@@ -42,6 +44,8 @@ export default class Engine {
     this.selection = {
       tileset: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 }
     };
+    this.mode = -1;
+    this.objMode = -1;
     this.player = null;
     this.currentMap = null;
     this.currentTileset = null;
@@ -127,6 +131,8 @@ Engine.prototype.useTileset = function(tileset) {
 
 extend(Engine, _init);
 extend(Engine, _camera);
+
+extend(Engine, _ui_modes);
 
 extend(Engine, _render_map);
 extend(Engine, _render_grid);

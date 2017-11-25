@@ -42,6 +42,7 @@ export function mouseMove(e) {
 };
 
 export function mouseClick(e) {
+  if (e.which === 2) e.preventDefault();
   if (e.which !== 3) return;
   if (e.target !== this.map) return;
   let x = e.clientX;

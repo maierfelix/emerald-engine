@@ -13,6 +13,8 @@ import {
 export function setup() {
   this.addListeners();
   this.resize();
+  this.setUIMode("ts");
+  this.setUIObjMode(0);
   this.loadDefaultMap();
 };
 
@@ -32,6 +34,8 @@ export function addListeners() {
   window.addEventListener("mousedown", (e) => this.mouseClick(e));
   window.addEventListener("mouseup", (e) => this.mouseUp(e));
   window.addEventListener("contextmenu", (e) => this.mouseContext(e));
+  this.addUIButtonListeners();
+  this.addUIObjListeners();
   let self = this;
   // update loop
   (function update() {
@@ -39,6 +43,20 @@ export function addListeners() {
     this.update();
   }).call(this);
   this.addTilesetListeners();
+};
+
+export function addUIButtonListeners() {
+  $("#engine-ui-mode-ts").onclick = () => this.setUIMode("ts");
+  $("#engine-ui-mode-obj").onclick = () => this.setUIMode("obj");
+  $("#engine-ui-mode-opt").onclick = () => this.setUIMode("opt");
+};
+
+export function addUIObjListeners() {
+  let el = $("#engine-ui-obj-type");
+  el.onchange = (e) => {
+    let index = el.selectedIndex;
+    this.setUIObjMode(index);
+  };
 };
 
 export function addTilesetListeners() {

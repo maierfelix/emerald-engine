@@ -34,3 +34,7 @@ export function drawTileset(tileset) {
     ww | 0, hh | 0
   );
 };
+
+export function drawTilesetSelectionPreview() {
+  
+};

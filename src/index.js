@@ -1,6 +1,7 @@
 import {
   readBinaryFile,
-  readCachedFile
+  readCachedFile,
+  showROMInputDialog
 } from "./utils";
 
 import Rom from "./rom/";
@@ -12,6 +13,8 @@ import TerrainGenerator from "./terrain-generator/";
 // check browser compatibility
 console.assert(
   (typeof Worker !== "undefined") &&
+  (typeof FileReader !== "undefined") &&
+  (typeof IDBDatabase !== "undefined") &&
   (typeof WebGLRenderingContext !== "undefined")
 );
 
@@ -26,8 +29,9 @@ location.search.split("?").map((search) => {
   mode = value;
 });
 
-readCachedFile("rom.gba").then((buffer) => {
-  new Rom(buffer, { debug: () => {} }).then((rom) => {
+function initStage(db, buffer) {
+  new Rom(buffer, { debug: () => {} })
+  .then((rom) => {
     let instance = null;
     switch (mode) {
       case "terrain-generator":
@@ -47,10 +51,29 @@ readCachedFile("rom.gba").then((buffer) => {
       console.warn(`No active instance`);
       return;
     }
-    console.log(instance);
     (function draw() {
       requestAnimationFrame(draw);
       instance.draw();
     })();
+  })
+  .catch((e) => {
+    console.warn(`ROM file is invalid or broken!`);
+    let tra = db.transaction(["ROMData"], "readwrite");
+    tra.objectStore("ROMData").delete("key");
+    init();
   });
-});
+};
+
+function init() {
+  readCachedFile("rom.gba")
+  .then((obj) => {
+    let { db, result, cached } = obj;
+    if (!cached) {
+      showROMInputDialog(db).then(buffer => initStage(db, buffer));
+    } else {
+      initStage(db, result);
+    }
+  });
+};
+
+init();

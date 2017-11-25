@@ -47,6 +47,12 @@ img {
   display: none;
 }
 
+#rom_drop > div {
+  position: absolute;
+  left: calc(50% - 175px);
+  top: calc(50% - 12px);
+}
+
 #ts-ui {
   display: none;
 }
@@ -57,6 +63,9 @@ img {
   overflow-x: hidden;
   background: rgba(87,87,87,0.5);
   height: 100%;
+  position: absolute;
+  right: 0px;
+  top: 48px;
 }
 
 #ts-final {
@@ -69,21 +78,28 @@ img {
   border-bottom: 1px solid black;
   text-align: center;
   user-select: none;
+  position: absolute;
+  width: 100%;
 }
 
 .ts-top-head > img {
   margin-top: 6px;
   cursor: pointer;
   padding: 2px;
+  width: 28px;
+  margin-top: 8px;
 }
 
 #ts-final-layer-wrapper {
-  width: 530px;
+  width: 525px;
   height: 100%;
   overflow-y: scroll;
   overflow-x: hidden;
   background: rgba(87,87,87,0.5);
-  position: relative;
+  position: absolute;
+  top: 48px;
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
 }
 
 #ts-final-layer-wrapper > canvas {
@@ -105,6 +121,8 @@ img {
   color: white;
   font-weight: 300;
   font-size: 18px;
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
 }
 
 .ts-btn {
@@ -119,6 +137,24 @@ img {
   margin-left: 6px;
   outline-color: rgba(255,255,255,0.25);
   cursor: pointer;
+}
+
+.ts-btn-active {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.1);
+  outline-color: rgba(0,0,0,0);
+}
+
+.ts-btn-invisible {
+  float: left;
+  margin-top: 10px;
+  padding: 6px;
+  border: 1px solid rgba(0,0,0,0.5);
+  font-size: 12px;
+  margin-left: 6px;
+  cursor: default;
+  opacity: 0;
+  width: 32px;
 }
 
 ::-webkit-file-upload-button {
@@ -219,6 +255,12 @@ label span {
   color: rgba(255,255,255,0.5);
 }
 
+.ts-btn-arrow {
+  font-size: 21px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
 .tg-grid-btn {
   float: left;
   padding-left: 10px;
@@ -244,10 +286,12 @@ label span {
 .engine-right-menu {
   position: absolute;
   width: auto;
+  top: 96px;
   right: 0px;
   height: 100%;
-  background: rgba(49, 49, 50, 1);
+  background: rgba(49, 49, 50, 0.98);
   border-left: 1px solid black;
+  border-top: 1px solid black;
   text-align: center;
   user-select: none;
   overflow-y: scroll;
@@ -264,8 +308,73 @@ label span {
   background: #313132;
 }
 
-#engine-ui > .ts-top-head {
-  background: rgb(49, 49, 50);
+.engine-menu-top {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  width: 100%;
+  height: 48px;
+}
+
+.engine-menu-top-right {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  width: 270px;
+  height: 48px;
+  border-left: 1px solid black;
+  border-top: 1px solid black;
+}
+
+.engine-menu-middle-right {
+  position: absolute;
+  top: 48px;
+  right: 0px;
+  width: 270px;
+  height: 48px;
+  border-left: 1px solid black;
+  border-top: 1px solid black;
+}
+
+.engine-menu-bottom {
+  bottom: 0px;
+  height: 176px;
+  position: absolute;
+  right: 0px;
+  width: 100%;
+  background: rgba(49, 49, 50, 0.98);
+  border-top: 1px solid black;
+}
+
+.engine-menu-middle-right > img {
+  width: 26px;
+  margin-top: 8px;
+}
+
+.engine-abs-item-center {
+  display: flex;
+  justify-content: center;
+  border-bottom: 1px solid black;
+  padding-bottom: 10px;
+}
+
+.engine-abs-item {
+  border-bottom: 1px solid black;
+  padding-bottom: 10px;
+}
+
+.ts-top-head {
+  background: rgba(49, 49, 50, 0.98);
+}
+
+#engine-ui-obj > .engine-right-menu {
+  width: 270px;
+  top: 48px;
+}
+
+#engine-ui-opt > .engine-right-menu {
+  width: 270px;
+  top: 48px;
 }
 
 #tg-ui {
@@ -274,6 +383,68 @@ label span {
 
 #engine-ui {
   display: none;
+}
+
+.sm {
+  width: 48px;
+}
+
+.md {
+  width: 96px;
+}
+
+.lg {
+  width: 128px;
+}
+
+.xl {
+  width: 192px;
+}
+
+.ts-btn-head-fix {
+  float: right;
+  width: 270px;
+}
+
+.ts-top-head-item {
+  float: right;
+  padding-right: 6px;
+}
+
+.engine-right-menu-item > label, .ts-top-head-item > label {
+  float: left;
+  padding: 5px;
+  margin: 0;
+  margin-left: 6px;
+  margin-top: 10px;
+  color: rgba(255,255,255,0.85);
+  font-size: 12px;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,0.02);
+  background: rgba(255,255,255,0.01);
+}
+
+.engine-right-menu-item {
+  float: left;
+  width: 100%;
+}
+
+.ts-btn-select {
+  -webkit-appearance: button;
+}
+
+.ts-btn-select > option {
+  background: rgba(0,0,0,0.8);
+}
+
+.ts-btn-select > option:hover {
+  background: rgba(0,0,0,0.8);
+  outline-color: red;
+}
+
+.ts-btn-select > option:checked {
+  background: rgba(0,0,0,0.8);
+  outline-color: red;
 }
 
 .map-label {
