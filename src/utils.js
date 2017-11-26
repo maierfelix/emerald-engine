@@ -26,6 +26,11 @@ export function assert(truth) {
   if (!truth) throw new Error("Assert exception!");
 };
 
+let uidx = 0;
+export function uid() {
+  return ++uidx;
+};
+
 export function cloneObject(obj) {
   return JSON.parse(JSON.stringify(obj));
 };

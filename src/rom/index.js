@@ -954,9 +954,12 @@ export default class Rom {
   }
   generatePkmnNameTable() {
     let table = this.names.pkmns;
+    let id = 1;
     for (let ii = 1; ii <= OFS.PKMN_COUNT; ++ii) {
       let name = this.getPkmnNameById(ii);
-      table[ii] = name;
+      if (name === "?") continue;
+      table[id] = name;
+      id++;
     };
   }
   generatePkmnGraphicTable() {

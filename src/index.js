@@ -51,6 +51,7 @@ function initStage(db, buffer) {
       console.warn(`No active instance`);
       return;
     }
+    console.log(instance);
     (function draw() {
       requestAnimationFrame(draw);
       instance.draw();

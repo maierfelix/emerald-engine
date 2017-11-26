@@ -16,6 +16,7 @@ export function zoom(e) {
   let zd = zoomScale(this.cz) - zoomScale(oscale);
   this.cx -= sx * zd;
   this.cy -= sy * zd;
+  this.setUIMousePosition(x, y);
 };
 
 export function mouseWheel(e) {
@@ -34,11 +35,15 @@ export function mouseMove(e) {
   let x = e.clientX;
   let y = e.clientY;
   if (e.target !== this.map) return;
-  if (!this.drag.down) return;
-  this.cx -= (this.drag.px - x) | 0;
-  this.cy -= (this.drag.py - y) | 0;
-  this.drag.px = x | 0;
-  this.drag.py = y | 0;
+  if (this.drag.down) {
+    this.cx -= (this.drag.px - x) | 0;
+    this.cy -= (this.drag.py - y) | 0;
+    this.drag.px = x | 0;
+    this.drag.py = y | 0;
+  }
+  this.mx = x;
+  this.my = y;
+  this.setUIMousePosition(x, y);
 };
 
 export function mouseClick(e) {

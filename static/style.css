@@ -197,6 +197,20 @@ input[type=file] {
   cursor: pointer;
 }
 
+.ts-checkbox > div {
+  float: right;
+  margin-top: -3px;
+  padding-left: 4px;
+}
+
+.engine-right-menu-item > .ts-checkbox {
+  padding: 7px;
+}
+
+.danger {
+  color: rgba(229, 143, 143, 0.85) !important;
+}
+
 label input {
   visibility: hidden;
   display: block;
@@ -219,6 +233,10 @@ label span {
 
 [type=checkbox]:checked + span {
   background: rgba(255,255,255,0.75);
+}
+
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
 }
 
 .ts-import-btn-wrapper {
@@ -286,7 +304,7 @@ label span {
 .engine-right-menu {
   position: absolute;
   width: auto;
-  top: 96px;
+  top: 144px;
   right: 0px;
   height: 100%;
   background: rgba(49, 49, 50, 0.98);
@@ -336,6 +354,16 @@ label span {
   border-top: 1px solid black;
 }
 
+.engine-menu-bottom-right {
+  position: absolute;
+  top: 96px;
+  right: 0px;
+  width: 270px;
+  height: 48px;
+  border-left: 1px solid black;
+  border-top: 1px solid black;
+}
+
 .engine-menu-bottom {
   bottom: 0px;
   height: 176px;
@@ -363,6 +391,17 @@ label span {
   padding-bottom: 10px;
 }
 
+.engine-abs-item-label {
+  display: flex;
+  justify-content: center;
+  border-bottom: 1px solid rgba(128,128,128,0.2);
+  padding-bottom: 0px;
+}
+
+.engine-abs-item-label > label {
+  font-size: 10px;
+}
+
 .ts-top-head {
   background: rgba(49, 49, 50, 0.98);
 }
@@ -383,6 +422,10 @@ label span {
 
 #engine-ui {
   display: none;
+}
+
+.ssm {
+  width: 34px;
 }
 
 .sm {
@@ -411,7 +454,7 @@ label span {
   padding-right: 6px;
 }
 
-.engine-right-menu-item > label, .ts-top-head-item > label {
+.engine-right-menu-item > label, .ts-top-head-item > label, .engine-ui-encount-wrapper > label {
   float: left;
   padding: 5px;
   margin: 0;
@@ -424,9 +467,45 @@ label span {
   background: rgba(255,255,255,0.01);
 }
 
+.engine-ui-encount-btn-close {
+  float: right;
+  margin-right: 6px;
+  padding: 6px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.engine-ui-encount-icon {
+  width: 32px;
+  height: 52px;
+  float: left;
+}
+
+.engine-ui-encount-icon:hover {
+  background: rgba(255,255,255,0.0075);
+}
+
+.engine-ui-encount-icon > canvas {
+  padding-top: 6px;
+}
+
+.engine-ui-encount-wrapper {
+  position: relative;
+  float: left;
+}
+
 .engine-right-menu-item {
   float: left;
   width: 100%;
+}
+
+.engine-ui-encount-item {
+  width: 100%;
+  float: left;
+  border: 1px solid rgba(255,255,255,0.02);
+  background: rgba(255,255,255,0.01);
+  padding-bottom: 8px;
+  margin-top: 4px;
 }
 
 .ts-btn-select {

@@ -81,11 +81,16 @@ export const ENGINE_BOX_TYPES = {
 export const ENGINE_MODE_TS = 1;
 export const ENGINE_MODE_OBJ = 2;
 export const ENGINE_MODE_OPT = 3;
-export const ENGINE_DEFAULT_MODE = "ts";
 
 export const ENGINE_OBJ_MODE = {
   0: "PERSON",
   1: "WARP",
   2: "SCRIPT",
   3: "SIGN"
+};
+
+export const ENGINE_ENCOUNTER_MODE = {
+  0: "GRASS",
+  1: "WATER",
+  2: "FISHING"
 };

@@ -12,12 +12,14 @@ import extend from "../extend";
 
 import * as _init from "./init";
 import * as _camera from "./camera";
+import * as _listeners from "./listeners";
 
 import * as _ui_modes from "./ui/modes";
 
 import * as _render_map from "./render/map";
 import * as _render_grid from "./render/grid";
 import * as _render_events from "./render/events";
+import * as _render_preview from "./render/preview";
 import * as _render_tileset from "./render/tileset";
 import * as _render_border_map from "./render/map-border";
 
@@ -30,6 +32,8 @@ export default class Engine {
     this.cx = 0;
     this.cy = 0;
     this.cz = 2.0;
+    this.mx = 0;
+    this.my = 0;
     this.map = $("#engine-map");
     this.tileset = $("#engine-tileset");
     this.tsCtx = this.tileset.getContext("2d");
@@ -44,9 +48,13 @@ export default class Engine {
     this.selection = {
       tileset: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 }
     };
+    this.preview = {
+      tileset: null
+    };
     this.mode = -1;
     this.objMode = -1;
     this.player = null;
+    this.maps = [];
     this.currentMap = null;
     this.currentTileset = null;
     this.events = [
@@ -129,8 +137,46 @@ Engine.prototype.useTileset = function(tileset) {
   setImageSmoothing(this.tsCtx, false);
 };
 
+Engine.prototype.bufferTilesetSelection = function() {
+  let sel = this.selection.tileset;
+  let xx = sel.x;
+  let yy = sel.y;
+  let ww = (sel.w - xx + CFG.BLOCK_SIZE);
+  let hh = (sel.h - yy + CFG.BLOCK_SIZE);
+  let buffer = createCanvasBuffer(ww, hh);
+  buffer.ctx.drawImage(
+    this.currentTileset,
+    xx, yy,
+    ww, hh,
+    0, 0,
+    ww, hh
+  );
+  return buffer.canvas;
+};
+
+Engine.prototype.getPkmnNameList = function() {
+  let names = this.rom.names.pkmns;
+  let length = Object.keys(names).length;
+  let list = new Array(length);
+  for (let ii = 1; ii <= length; ++ii) {
+    let name = names[ii];
+    list[ii] = name;
+  };
+  return list;
+};
+
+Engine.prototype.getEventEntityByPosition = function(x, y) {
+  let events = this.events;
+  for (let ii = 0; ii < events.length; ++ii) {
+    let event = events[ii];
+    if (event.x === x && event.y === y) return event;
+  };
+  return null;
+};
+
 extend(Engine, _init);
 extend(Engine, _camera);
+extend(Engine, _listeners);
 
 extend(Engine, _ui_modes);
 
@@ -138,4 +184,5 @@ extend(Engine, _render_map);
 extend(Engine, _render_grid);
 extend(Engine, _render_events);
 extend(Engine, _render_tileset);
+extend(Engine, _render_preview);
 extend(Engine, _render_border_map);
