@@ -1,20 +1,20 @@
 import * as CFG from "../../cfg";
 
-export function drawMapEvents(map) {
+export function drawMapObjects(map) {
   let ctx = this.ctx;
-  let events = this.events;
-  for (let ii = 0; ii < events.length; ++ii) {
-    let entity = events[ii];
+  let objects = map.objects;
+  for (let ii = 0; ii < objects.length; ++ii) {
+    let object = objects[ii];
     let scale = CFG.BLOCK_SIZE * this.cz;
-    let x = this.cx + (entity.x * scale);
-    let y = this.cy + (entity.y * scale);
-    let width = entity.width * scale;
-    let height = entity.height * scale;
+    let x = this.cx + (map.x + object.x * scale);
+    let y = this.cy + (map.y + object.y * scale);
+    let width = object.width * scale;
+    let height = object.height * scale;
     this.drawTextBox(
       x, y,
       width, height,
-      entity.kind.label,
-      entity.kind.color
+      object.kind.label,
+      object.kind.color
     );
   };
 };

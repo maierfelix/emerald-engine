@@ -8,11 +8,12 @@ import {
 export function drawTileset(tileset) {
   if (tileset === null) return;
   let ctx = this.tsCtx;
+  let canvas = tileset.canvas;
   let scale = CFG.ENGINE_TILESET_SCALE;
-  let width = CFG.TILESET_DEFAULT_WIDTH;
-  let height = CFG.TILESET_DEFAULT_HEIGHT;
+  let width = ctx.canvas.width;
+  let height = ctx.canvas.height;
   ctx.drawImage(
-    tileset,
+    canvas,
     0, 0,
     width, height,
     0, 0,

@@ -1,8 +1,8 @@
 import json from "rollup-plugin-json";
 
 export default {
-  entry: "src/index.js",
-  moduleName: "iroh",
+  input: "src/index.js",
+  name: "emerald_engine",
   external: [],
   plugins: [
     json()

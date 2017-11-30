@@ -6,6 +6,17 @@
   <div>Please drag a ROM file into here (Emerald, USA, 1.0)</div>
 </div>
 
+<div id="ui-modal-loading" class="ui-modal-loading">
+  <div id="ui-modal-loading-spinner"></div>
+  <div id="ui-modal-loading-ball"></div>
+  <div id="ui-modal-loading-title">Loading something awesome...</div>
+  <div class="ui-modal-loading-bg"></div>
+</div>
+
+<div class="ui-modal" id="ui-modal-ts_bundle">
+  <div class="ui-modal-window"></div>
+</div>
+
 <div class="ui">
   <div id="map-ui-id" class="map-label">Littleroot Town</div>
   <div class="ui-party-pkmn-container">
@@ -86,22 +97,20 @@
 <div id="engine-ui">
   <div class="ts-top-head">
     <button class="ts-btn">🌍 Publish</button>
-    <button class="ts-btn">💾 Save</button>
-    <button class="ts-btn">⚙️ Settings</button>
+    <button id="engine-ui-map-save" class="ts-btn">💾 Save</button>
+    <button id="engine-ui-settings" class="ts-btn">⚙️ Settings</button>
     <button class="ts-btn-invisible"></button>
-    <button class="ts-btn">🎨 Switch Tileset</button>
     <button class="ts-btn-invisible"></button>
-    <button class="ts-btn ts-btn-arrow">🡐</button>
-    <button class="ts-btn ts-btn-arrow">🡒</button>
     <button class="ts-btn-invisible ts-btn-head-fix"></button>
+    <button class="ts-btn ts-btn-add-map">+</button>
     <div class="ts-top-head-item">
-      <label>Map:</label>
-      <select class="ts-btn ts-btn-select">
-        <option>Littleroot Town</option>
-        <option>Oldale Town</option>
-        <option>Mauville City</option>
-      </select>
+      <label id="engine-ui-cmap-name" class="ts-btn">🌄 Littleroot Town</label>
     </div>
+    <div class="ts-top-head-item">
+      <label id="engine-ui-cts-name" class="ts-btn"></label>
+      <select id="engine-ui-cts-subts" class="ts-btn ts-btn-select"></select>
+    </div>
+    <button class="ts-btn-invisible" style="float: right;"></button>
     <div class="ts-top-head-item">
       <label id="engine-ui-mx">X: 0</label>
       <label id="engine-ui-my">Y: 0</label>
@@ -117,23 +126,23 @@
       <img id="engine-layer-btn-1" src="./layers-1.png" />
       <img id="engine-layer-btn-2" src="./layers-2.png" />
       <img id="engine-layer-btn-3" src="./layers-3.png" />
-      <img id="engine-layer-btn-0" src="./layers-0.png" />
-      <img id="engine-layer-btn-5" src="./layers-5.png" />
-      <img id="engine-layer-btn-4" src="./layers-4.png" />
+      <img id="engine-layer-btn-4" src="./layers-0.png" />
+      <img id="engine-layer-btn-5" src="./layers-4.png" />
     </div>
     <div class="ts-top-head engine-menu-bottom-right">
+      <label>AutoTile</label>
       <label class="ts-checkbox">
         <input type="checkbox">
         <span></span>
-        <div>AutoTile</div>
+        <div></div>
       </label>
     </div>
-    <div class="engine-right-menu">
+    <div class="engine-right-menu" style="height: calc(100% - 144px);">
       <canvas id="engine-tileset"></canvas>
     </div>
   </div>
   <div id="engine-ui-obj">
-    <div class="engine-right-menu">
+    <div class="engine-right-menu" style="height: calc(100% - 48px);">
       <div class="engine-right-menu-item engine-abs-item-center">
         <button class="ts-btn">Create entity</button>
       </div>
@@ -209,7 +218,7 @@
     </div>
   </div>
   <div id="engine-ui-opt">
-    <div class="engine-right-menu">
+    <div class="engine-right-menu" style="height: calc(100% - 48px);">
       <div class="engine-right-menu-item engine-abs-item-label"><label>Map Settings:</label></div>
       <div class="engine-right-menu-item">
         <label>Name:</label>
@@ -253,6 +262,9 @@
         </select>
       </div>
       <div class="engine-right-menu-item engine-abs-item-label"><label class="danger">Danger Zone:</label></div>
+      <div class="engine-right-menu-item  engine-abs-item-center engine-item-no-outer">
+        <button class="ts-btn">Remove Map</button>
+      </div>
       <div class="engine-right-menu-item engine-abs-item-center">
         <input type="number" class="ts-btn sm" placeholder="W:" />
         <input type="number" class="ts-btn sm" placeholder="H:" />

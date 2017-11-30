@@ -2,7 +2,10 @@ import * as CFG from "../cfg";
 
 import {
   $,
+  GET,
   drawGrid,
+  loadJSONFile,
+  loadImageAsCanvas,
   setImageSmoothing,
   createCanvasBuffer,
   JSONTilesetToCanvas
@@ -10,14 +13,16 @@ import {
 
 import extend from "../extend";
 
+import Map from "./map/index";
+
 import * as _init from "./init";
 import * as _camera from "./camera";
+import * as _tileset from "./tileset";
 import * as _listeners from "./listeners";
 
 import * as _ui_modes from "./ui/modes";
 
 import * as _render_map from "./render/map";
-import * as _render_grid from "./render/grid";
 import * as _render_events from "./render/events";
 import * as _render_preview from "./render/preview";
 import * as _render_tileset from "./render/tileset";
@@ -42,20 +47,26 @@ export default class Engine {
     this.height = 0;
     this.frames = 0;
     this.drag = {
-      down: false,
+      ldown: false,
+      rdown: false,
       px: 0, py: 0
     };
     this.selection = {
+      entity: null,
       tileset: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 }
     };
     this.preview = {
       tileset: null
     };
     this.mode = -1;
+    this.tsMode = -1;
     this.objMode = -1;
+    this.modalMode = null;
     this.player = null;
     this.maps = [];
+    this.bundles = {};
     this.currentMap = null;
+    this.currentBundle = null;
     this.currentTileset = null;
     this.events = [
       {
@@ -97,6 +108,7 @@ Engine.prototype.draw = function() {
   //this.drawMapBorder(map);
   this.drawMap(map);
   this.drawTileset(tileset);
+  drawGrid(this.ctx, this.cz, this.cx, this.cy, this.width, this.height);
   this.frames++;
 };
 
@@ -114,6 +126,11 @@ Engine.prototype.resize = function(e) {
   setImageSmoothing(this.ctx, false);
 };
 
+Engine.prototype.initUI = function() {
+  $("#engine-ui").style.display = "block";
+  document.body.style.background = `#2c2d2e`;
+};
+
 Engine.prototype.loadMap = function(id) {
   return null;
 };
@@ -122,36 +139,17 @@ Engine.prototype.loadMapFromROM = function(bank, map) {
   return this.rom.fetchMap(bank, map);
 };
 
-Engine.prototype.loadTilesetFromROM = function(bank, map) {
-  return this.rom.getMapTileset(bank, map);
-};
-
-Engine.prototype.useTileset = function(tileset) {
-  let scale = CFG.ENGINE_TILESET_SCALE;
-  let ts = JSONTilesetToCanvas(this.rom, tileset).canvas;
-  let width = CFG.TILESET_DEFAULT_WIDTH;
-  let height = CFG.TILESET_DEFAULT_HEIGHT;
-  this.currentTileset = ts;
-  this.tileset.width = (width + 1) * scale;
-  this.tileset.height = height * scale;
-  setImageSmoothing(this.tsCtx, false);
-};
-
-Engine.prototype.bufferTilesetSelection = function() {
-  let sel = this.selection.tileset;
-  let xx = sel.x;
-  let yy = sel.y;
-  let ww = (sel.w - xx + CFG.BLOCK_SIZE);
-  let hh = (sel.h - yy + CFG.BLOCK_SIZE);
-  let buffer = createCanvasBuffer(ww, hh);
-  buffer.ctx.drawImage(
-    this.currentTileset,
-    xx, yy,
-    ww, hh,
-    0, 0,
-    ww, hh
-  );
-  return buffer.canvas;
+Engine.prototype.loadMapFromServer = function(name) {
+  return new Promise(resolve => {
+    GET(`../data/maps/${name}.json`).then(res => {
+      let json = JSON.parse(res);
+      let bundles = json.data;
+      let map = new Map(this).fromJSON(json);
+      this.resolveBundleList(bundles).then(() => {
+        resolve(map);
+      });
+    });
+  });
 };
 
 Engine.prototype.getPkmnNameList = function() {
@@ -176,12 +174,12 @@ Engine.prototype.getEventEntityByPosition = function(x, y) {
 
 extend(Engine, _init);
 extend(Engine, _camera);
+extend(Engine, _tileset);
 extend(Engine, _listeners);
 
 extend(Engine, _ui_modes);
 
 extend(Engine, _render_map);
-extend(Engine, _render_grid);
 extend(Engine, _render_events);
 extend(Engine, _render_tileset);
 extend(Engine, _render_preview);

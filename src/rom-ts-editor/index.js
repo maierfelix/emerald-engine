@@ -8,7 +8,7 @@ import {
   getNormalizedSelection
 } from "../utils";
 
-export default class TilesetEditor {
+export default class ROMTilesetEditor {
   /**
    * @param {Rom} rom - The ROM file to use
    */

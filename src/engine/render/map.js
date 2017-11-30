@@ -8,49 +8,80 @@ import {
 export function drawMap(map) {
   if (map === null) return;
   let ctx = this.ctx;
-  let dx = this.cx;
-  let dy = this.cy;
+  let sx = 0;
+  let sy = 0;
+  let sw = map.width * CFG.BLOCK_SIZE;
+  let sh = map.height * CFG.BLOCK_SIZE;
+  let dx = this.cx + map.x;
+  let dy = this.cy + map.y;
   let dw = (map.width * CFG.BLOCK_SIZE) * this.cz;
   let dh = (map.height * CFG.BLOCK_SIZE) * this.cz;
-  let bg = map.texture[0].canvas;
-  let bgb = map.texture[1].canvas;
-  let fg = map.texture[2].canvas;
-  ctx.drawImage(
-    bg,
-    0, 0,
-    map.width * CFG.BLOCK_SIZE, map.height * CFG.BLOCK_SIZE,
-    dx, dy,
-    dw, dh
-  );
-  this.drawMapAnimations(map, 0);
-  ctx.drawImage(
-    fg,
-    0, 0,
-    map.width * CFG.BLOCK_SIZE, map.height * CFG.BLOCK_SIZE,
-    dx, dy,
-    dw, dh
-  );
-  ctx.drawImage(
-    bgb,
-    0, 0,
-    map.width * CFG.BLOCK_SIZE, map.height * CFG.BLOCK_SIZE,
-    dx, dy,
-    dw, dh
-  );
-  this.drawMapAnimations(map, 1);
-  this.drawMapEvents(map);
-  drawGrid(this.ctx, this.cz, this.cx, this.cy, this.width, this.height);
+  this.drawMapTileBased(map);
+  /*this.drawMapTexture(0, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);
+  this.drawMapTexture(1, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);
+  this.drawMapTexture(2, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);*/
+  this.drawMapObjects(map);
   this.drawMousePreview();
-  this.drawMapSizeBorder();
-  //this.drawMapResizeButton();
+  this.drawMapSizeBorder(map);
 };
 
-export function drawMapSizeBorder() {
+export function drawMapTileBased(map) {
   let ctx = this.ctx;
-  let map = this.currentMap;
+  let bundles = map.data;
+  for (let bundleId in bundles) {
+    let bundle = bundles[bundleId];
+    for (let tsId in bundle) {
+      let tileset = bundle[tsId];
+      let texture = this.bundles[bundleId].tilesets[tsId].canvas;
+      for (let ll in tileset) {
+        let data = tileset[ll];
+        // alpha stuff
+        {
+          let tsMode = this.tsMode - 1;
+          if ((ll - 1 | 0) !== tsMode && tsMode !== 3) ctx.globalAlpha = 0.4;
+        }
+        let size = map.width * map.height;
+        for (let ii = 0; ii < size; ++ii) {
+          let xx = (ii % map.width) | 0;
+          let yy = (ii / map.width) | 0;
+          let tile = (data[ii] - 1) | 0;
+          if ((tile + 1) === 0) continue;
+          let sx = (tile % 8) | 0;
+          let sy = (tile / 8) | 0;
+          ctx.drawImage(
+            texture,
+            sx * CFG.BLOCK_SIZE, sy * CFG.BLOCK_SIZE,
+            CFG.BLOCK_SIZE, CFG.BLOCK_SIZE,
+            this.cx + (xx * CFG.BLOCK_SIZE) * this.cz, this.cy + (yy * CFG.BLOCK_SIZE) * this.cz,
+            CFG.BLOCK_SIZE * this.cz, CFG.BLOCK_SIZE * this.cz
+          );
+        };
+        // alpha stuff
+        { ctx.globalAlpha = 1.0; }
+      };
+    };
+  };
+};
+
+export function drawMapTexture(index, textures, sx, sy, sw, sh, dx, dy, dw, dh) {
+  let ctx = this.ctx;
+  let tsMode = this.tsMode - 1;
+  if (index !== tsMode && tsMode !== 3) ctx.globalAlpha = 0.4;
+  ctx.drawImage(
+    textures[index].canvas,
+    sx, sy,
+    sw, sh,
+    dx, dy,
+    dw, dh
+  );
+  ctx.globalAlpha = 1.0;
+};
+
+export function drawMapSizeBorder(map) {
+  let ctx = this.ctx;
   let scale = this.cz;
-  let xx = this.cx;
-  let yy = this.cy;
+  let xx = this.cx + map.x;
+  let yy = this.cy + map.y;
   let ww = (map.width * CFG.BLOCK_SIZE) * scale;
   let hh = (map.height * CFG.BLOCK_SIZE) * scale;
   let lw = 1.0 * this.cz;
@@ -60,43 +91,4 @@ export function drawMapSizeBorder() {
     xx - lw, yy - lw,
     ww + (lw * 2), hh + (lw * 2)
   );
-};
-
-export function drawMapResizeButton() {
-  let ctx = this.ctx;
-  let map = this.currentMap;
-  let scale = this.cz;
-  let xx = this.cx + (map.width * CFG.BLOCK_SIZE) * scale;
-  let yy = this.cy + (map.height * CFG.BLOCK_SIZE) * scale;
-  let ww = (CFG.BLOCK_SIZE / 2) * scale;
-  let hh = (CFG.BLOCK_SIZE / 2) * scale;
-  ctx.fillStyle = `rgba(106,106,106,0.25)`;
-  ctx.fillRect(
-    xx, yy,
-    ww, hh
-  );
-  ctx.font = `${10 * scale}px Open sans`;
-  ctx.fillStyle = `rgba(128,128,128,0.65)`;
-  ctx.fillText(`🡖`, xx, this.cy + ((map.height * CFG.BLOCK_SIZE) + CFG.BLOCK_SIZE / 2) * scale);
-  ctx.fillText(`🡔`, xx, this.cy + ((map.height * CFG.BLOCK_SIZE) + CFG.BLOCK_SIZE / 2) * scale);
-};
-
-export function drawMapAnimations(map, ts) {
-  let ctx = this.ctx;
-  let dx = this.cx;
-  let dy = this.cy;
-  let frames = (this.frames / (1e3 / 60)) | 0;
-  let dw = (map.width * CFG.BLOCK_SIZE) * this.cz;
-  let dh = (map.height * CFG.BLOCK_SIZE) * this.cz;
-  let anims = map.animations[ts];
-  for (let frm in anims) {
-    let frame = anims[frm][frames % (frm | 0)].canvas;
-    ctx.drawImage(
-      frame,
-      0, 0,
-      map.width * CFG.BLOCK_SIZE, map.height * CFG.BLOCK_SIZE,
-      dx, dy,
-      dw, dh
-    );
-  };
 };

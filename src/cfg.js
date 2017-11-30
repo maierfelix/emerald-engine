@@ -78,6 +78,14 @@ export const ENGINE_BOX_TYPES = {
   }
 };
 
+export const ENGINE_TS_SERVER_LOC = `http://${location.host}:9000`;
+
+export const ENGINE_BUNDLE_PICK_DELAY = 750;
+export const ENGINE_DEFAULT_LOADING_MSG = `Loading something awesome...`;
+
+export const ENGINE_CAMERA_MIN_SCALE = 1.15;
+export const ENGINE_CAMERA_MAX_SCALE = 10.95;
+
 export const ENGINE_MODE_TS = 1;
 export const ENGINE_MODE_OBJ = 2;
 export const ENGINE_MODE_OPT = 3;
@@ -93,4 +101,12 @@ export const ENGINE_ENCOUNTER_MODE = {
   0: "GRASS",
   1: "WATER",
   2: "FISHING"
+};
+
+export const ENGINE_TS_LAYERS = {
+  BG: 1,
+  BGB: 2,
+  FG: 3,
+  PREVIEW: 4,
+  COLLISION: 5
 };

@@ -5,20 +5,24 @@ import {
   loadJSONFile
 } from "../utils";
 
+import Map from "./map/index";
+
 export function setup() {
   this.addListeners();
   this.resize();
   this.setUIMode("ts");
-  this.setUIObjMode(1);
+  this.setUIObjMode(0);
   this.setUIEncounterMode(0);
+  this.setUIActiveTilesetLayer(1);
   this.loadDefaultMap();
 };
 
 export function loadDefaultMap() {
-  loadJSONFile("../tileset.json").then(json => {
-    this.useTileset(json);
-    this.currentMap = this.loadMapFromROM(0, 19);
-    $("#engine-ui").style.display = "block";
-    document.body.style.background = `#2c2d2e`;
+  this.loadTilesetBundleFromServer("dawn").then(tileset => {
+    this.useTilesetBundle(tileset);
+    this.loadMapFromServer("littleroot-town").then(map => {
+      this.currentMap = map;
+      this.initUI();
+    });
   });
 };

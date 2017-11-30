@@ -7,7 +7,7 @@ import {
 import Rom from "./rom/";
 import Engine from "./engine/";
 import MapEditor from "./map-editor/";
-import TilesetEditor from "./ts-editor/";
+import ROMTilesetEditor from "./rom-ts-editor/"
 import TerrainGenerator from "./terrain-generator/";
 
 // check browser compatibility
@@ -37,8 +37,8 @@ function initStage(db, buffer) {
       case "terrain-generator":
         instance = new TerrainGenerator(rom);
       break;
-      case "tileset-editor":
-        instance = new TilesetEditor(rom, 0, 9);
+      case "rom-tileset-editor":
+        instance = new ROMTilesetEditor(rom, 0, 9);
       break;
       case "game-engine":
         instance = new Engine(rom);
@@ -58,6 +58,7 @@ function initStage(db, buffer) {
     })();
   })
   .catch((e) => {
+    console.error(e);
     console.warn(`ROM file is invalid or broken!`);
     let tra = db.transaction(["ROMData"], "readwrite");
     tra.objectStore("ROMData").delete("key");

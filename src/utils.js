@@ -89,9 +89,62 @@ export function loadImage(path) {
   });
 };
 
+export function loadImageAsCanvas(path) {
+  return new Promise(resolve => {
+    loadImage(path).then(img => {
+      let buffer = createCanvasBuffer(img.width, img.height).ctx;
+      buffer.drawImage(
+        img,
+        0, 0,
+        img.width, img.height,
+        0, 0,
+        img.width, img.height
+      );
+      resolve(buffer.canvas);
+    });
+  });
+};
+
+export function createCanvasFromBase64(data) {
+  return new Promise(resolve => {
+    let img = new Image();
+    img.onload = (e) => {
+      let buffer = createCanvasBuffer(img.width, img.height).ctx;
+      buffer.drawImage(img,
+        0, 0,
+        img.width, img.height,
+        0, 0,
+        img.width, img.height
+      );
+      resolve(buffer.canvas);
+    };
+    img.src = data;
+  });
+};
+
 export function loadJSONFile(path) {
   return new Promise(resolve => {
     fetch(path).then(resp => resp.json()).then(resolve);
+  });
+};
+
+export function GET(url, delay = 0) {
+  return new Promise(resolve => {
+    let xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.responseType = "text";
+    xhr.onload = (e) => {
+      if (xhr.readyState === xhr.DONE) {
+        if (xhr.status === 200) resolve(xhr.responseText);
+      }
+    };
+    if (delay > 0) {
+      setTimeout(() => {
+        xhr.send(null);
+      }, delay);
+    } else {
+      xhr.send(null);
+    }
   });
 };
 
@@ -114,6 +167,44 @@ export function drawGrid(ctx, scale, x, y, width, height) {
   };
   ctx.stroke();
   ctx.closePath();
+};
+
+export function getPixelUsageData(canvas, scale) {
+  let ctx = canvas.getContext("2d");
+  let width = canvas.width / scale;
+  let height = canvas.height / scale;
+  let size = (width * height);
+  let data = new Uint8Array(size);
+  for (let ii = 0; ii < size; ++ii) {
+    let xx = (ii % width) | 0;
+    let yy = (ii / width) | 0;
+    let tile = ctx.getImageData(
+      xx * scale, yy * scale,
+      scale, scale
+    );
+    data[ii] = !isEmptyImageData(tile) | 0;
+  };
+  return data;
+};
+
+export function typedArrayToArray(typed) {
+  let length = typed.length | 0;
+  let array = new Array(length);
+  for (let ii = 0; ii < length; ++ii) {
+    array[ii] = typed[ii] | 0;
+  };
+  return array;
+};
+
+export function isEmptyImageData(imgData) {
+  let data = imgData.data;
+  let length = data.length | 0;
+  let count = 0;
+  for (let ii = 0; ii < length; ++ii) {
+    let index = ii * 4;
+    if (data[index + 3] > 0) ++count;
+  };
+  return count <= 0;
 };
 
 export function getNormalizedSelection(dx, dy, sx, sy) {
@@ -240,4 +331,10 @@ export function showROMInputDialog(db) {
       reader.readAsArrayBuffer(file);
     };
   });
+};
+
+export function getNodeChildIndex(node) {
+  let index = 0;
+  while((node = node.previousSibling) !== null) ++index;
+  return index;
 };

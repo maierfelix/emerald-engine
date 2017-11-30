@@ -10,9 +10,16 @@ export function addListeners() {
   window.addEventListener("resize", (e) => this.resize(e));
   window.addEventListener("mousewheel", (e) => this.mouseWheel(e));
   window.addEventListener("mousemove", (e) => this.mouseMove(e));
-  window.addEventListener("mousedown", (e) => this.mouseClick(e));
+  window.addEventListener("mousedown", (e) => {
+    this.mouseClick(e);
+    // ui modal
+    if (this.modalMode) {
+      if (e.target === $("#ui-modal-ts_bundle")) this.closeUIModal();
+    }
+  });
   window.addEventListener("mouseup", (e) => this.mouseUp(e));
   window.addEventListener("contextmenu", (e) => this.mouseContext(e));
+  window.addEventListener("keydown", (e) => this.keyDown(e));
   this.addUIButtonListeners();
   this.addUIObjListeners();
   this.addUIEncounterListeners();
@@ -23,9 +30,22 @@ export function addListeners() {
     this.update();
   }).call(this);
   this.addTilesetListeners();
+  this.addTilesetLayerListeners();
+  this.addTilesetBundleListener();
+  this.addSubTilesetListener();
+};
+
+export function keyDown(e) {
+  let key = e.key;
+  switch (key) {
+    case "Escape":
+      this.closeUIModal();
+    break;
+  };
 };
 
 export function addUIButtonListeners() {
+  $("#engine-ui-map-save").onclick = () => this.onUIMapSave();
   $("#engine-ui-mode-ts").onclick = () => this.setUIMode("ts");
   $("#engine-ui-mode-obj").onclick = () => this.setUIMode("obj");
   $("#engine-ui-mode-opt").onclick = () => this.setUIMode("opt");
@@ -71,7 +91,7 @@ export function addTilesetListeners() {
     if (e.which !== 1) return;
     down = false;
     this.preview.tileset = null;
-    this.preview.tileset = this.bufferTilesetSelection();
+    this.preview.tileset = this.bufferTilesetSelection(this.selection.tileset);
   };
   el.onmouseout = (e) => {
     el.onmouseup.call(this, e);
@@ -91,4 +111,22 @@ export function addTilesetListeners() {
     selection.w = sel.w;
     selection.h = sel.h;
   };
+};
+
+export function addTilesetLayerListeners() {
+  $("#engine-layer-btn-1").onclick = (e) => this.setUIActiveTilesetLayer(1);
+  $("#engine-layer-btn-2").onclick = (e) => this.setUIActiveTilesetLayer(2);
+  $("#engine-layer-btn-3").onclick = (e) => this.setUIActiveTilesetLayer(3);
+  $("#engine-layer-btn-4").onclick = (e) => this.setUIActiveTilesetLayer(4);
+  $("#engine-layer-btn-5").onclick = (e) => this.setUIActiveTilesetLayer(5);
+};
+
+export function addTilesetBundleListener() {
+  let el = $(`#engine-ui-cts-name`);
+  el.onclick = (e) => this.showUIModal("TS_BUNDLE");
+};
+
+export function addSubTilesetListener() {
+  let el = $(`#engine-ui-cts-subts`);
+  el.onchange = (e) => this.onUISubTilesetChange(el.selectedIndex);
 };

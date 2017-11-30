@@ -62,7 +62,7 @@ img {
   overflow-y: scroll;
   overflow-x: hidden;
   background: rgba(87,87,87,0.5);
-  height: 100%;
+  height: calc(100% - 48px);
   position: absolute;
   right: 0px;
   top: 48px;
@@ -92,7 +92,7 @@ img {
 
 #ts-final-layer-wrapper {
   width: 525px;
-  height: 100%;
+  height: calc(100% - 48px);
   overflow-y: scroll;
   overflow-x: hidden;
   background: rgba(87,87,87,0.5);
@@ -139,10 +139,18 @@ img {
   cursor: pointer;
 }
 
+.ts-btn:hover {
+  background: rgba(255,255,255,0.0075);
+}
+
 .ts-btn-active {
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.1);
   outline-color: rgba(0,0,0,0);
+}
+
+.ts-btn-active:hover {
+  background: rgba(255,255,255,0.1) !important;
 }
 
 .ts-btn-invisible {
@@ -203,7 +211,15 @@ input[type=file] {
   padding-left: 4px;
 }
 
+.ts-checkbox:hover {
+  background: rgba(255,255,255,0.05) !important;
+}
+
 .engine-right-menu-item > .ts-checkbox {
+  padding: 7px;
+}
+
+.engine-menu-bottom-right > .ts-checkbox {
   padding: 7px;
 }
 
@@ -382,13 +398,18 @@ input[type=number]::-webkit-inner-spin-button {
 .engine-abs-item-center {
   display: flex;
   justify-content: center;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid rgba(128,128,128,0.2);
   padding-bottom: 10px;
 }
 
 .engine-abs-item {
   border-bottom: 1px solid black;
   padding-bottom: 10px;
+}
+
+.engine-item-no-outer {
+  border: none;
+  padding-bottom: 0px;
 }
 
 .engine-abs-item-label {
@@ -404,6 +425,10 @@ input[type=number]::-webkit-inner-spin-button {
 
 .ts-top-head {
   background: rgba(49, 49, 50, 0.98);
+}
+
+label.ts-btn:hover {
+  background: rgba(255,255,255,0.05) !important;
 }
 
 #engine-ui-obj > .engine-right-menu {
@@ -422,6 +447,7 @@ input[type=number]::-webkit-inner-spin-button {
 
 #engine-ui {
   display: none;
+  user-select: none;
 }
 
 .ssm {
@@ -454,7 +480,16 @@ input[type=number]::-webkit-inner-spin-button {
   padding-right: 6px;
 }
 
-.engine-right-menu-item > label, .ts-top-head-item > label, .engine-ui-encount-wrapper > label {
+.ts-btn-add-map {
+  float: right;
+  margin-right: 6px;
+}
+
+.engine-right-menu-item > label,
+.ts-top-head-item > label,
+.engine-menu-bottom-right > label,
+.engine-ui-encount-wrapper > label,
+.ui-modal-item > label {
   float: left;
   padding: 5px;
   margin: 0;
@@ -465,6 +500,71 @@ input[type=number]::-webkit-inner-spin-button {
   text-transform: uppercase;
   border: 1px solid rgba(255,255,255,0.02);
   background: rgba(255,255,255,0.01);
+}
+
+.ui-modal-item {
+  background: rgba(255,255,255,0.05);
+  padding: 22px;
+  border: 1px solid rgba(255,255,255,0.05);
+  text-align: center;
+  width: auto;
+  height: auto;
+  min-height: 132px;
+  position: relative;
+  float: none;
+  margin-top: 22px;
+}
+
+.ui-modal-item > ul {
+  list-style: none;
+  float: left;
+  padding: 0;
+  background: rgba(255,255,255,0.05);
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.ui-modal-item > * {
+  margin: 8px !important;
+  padding: 8px !important;
+  margin-right: 0px !important;
+  padding-right: 0px !important;
+  margin-left: 0px !important;
+  padding-left: 0px !important;
+}
+
+.ui-modal-item > .ui-modal-item-title {
+  color: rgba(255,255,255,0.75);
+  border: 1px solid rgba(255,255,255,0.05);
+  width: 100%;
+}
+
+.ui-modal-item > .ui-modal-item-desc {
+  float: left;
+  width: 100%;
+  cursor: default;
+  color: rgba(255,255,255,0.75);
+  border: 1px solid rgba(255,255,255,0.05);
+  font-size: 13px;
+  background: rgba(255,255,255,0.05);
+}
+
+.ui-modal-item > .ui-modal-item-choose {
+  width: 100%;
+}
+
+.ui-modal-window {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ui-modal-item-body {
+  width: 142px;
+  height: auto;
+  padding: 18px;
+  position: absolute;
+  background: rgba(255,255,255,0.05);
 }
 
 .engine-ui-encount-btn-close {
@@ -508,6 +608,10 @@ input[type=number]::-webkit-inner-spin-button {
   margin-top: 4px;
 }
 
+.engine-ui-encount-item:hover {
+  background: rgba(255,255,255,0.025);
+}
+
 .ts-btn-select {
   -webkit-appearance: button;
 }
@@ -540,6 +644,126 @@ input[type=number]::-webkit-inner-spin-button {
   font-family: "Open Sans";
   background: rgba(0,0,0,0.7);
   border: 1px solid rgba(0,0,0,0.475);
+}
+
+.ui-modal {
+  position: absolute;
+  user-select: none;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background: rgba(0,0,0,0.95);
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.ui-modal-window {
+  width: auto;
+  height: auto;
+  min-height: 380px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  position: absolute;
+  display: block;
+  padding: 22px;
+}
+
+.ui-modal > .ui-modal-window {
+  width: 430px;
+  height: 75%;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  position: absolute;
+}
+
+.ui-modal-loading {
+  opacity: 1;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+  height: 100%;
+  display: none;
+  background: rgba(0,0,0,0.375);
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  z-index: 99999;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.2s;
+}
+
+.ui-modal-loading-bg {
+  width: 100%;
+  position: absolute;
+  height: 210px;
+  top: calc(50% - 90px);
+  left: 0px;
+  background: rgba(0,0,0,0.325);
+  z-index: -1;
+}
+
+#ui-modal-loading-ball {
+  position: absolute;
+  opacity: 0.9;
+}
+
+#ui-modal-loading-title {
+  position: absolute;
+  color: rgba(255,255,255,0.8);
+  text-transform: uppercase;
+  padding-top: 80px;
+}
+
+#ui-modal-loading-ball > canvas {
+  width: 32px;
+  -webkit-animation: pulsate 0.5s ease-out infinite;
+  animation: pulsate 0.5s ease-out infinite;
+}
+
+#ui-modal-loading-spinner {
+  opacity: 0.75;
+  border: 4px solid rgba(215,215,215,0.75);
+  border-radius: 50%;
+  border-top: 4px solid rgba(175,175,175,0.75);
+  width: 36px;
+  height: 36px;
+  -webkit-animation: spin 0.5s linear infinite;
+  animation: spin 0.5s linear infinite;
+}
+
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@-webkit-keyframes pulsate {
+  0% { -webkit-transform: scale(1.0, 1.0); }
+  50% { -webkit-transform: scale(0.75, 0.75); }
+  100% { -webkit-transform: scale(1.0, 1.0); }
+}
+@keyframes pulsate {
+  0% { transform: scale(1.0, 1.0); }
+  50% { transform: scale(0.75, 0.75); }
+  100% { transform: scale(1.0, 1.0); }
 }
 
 .ui-party-pkmn-container {
