@@ -11,7 +11,10 @@ config.output = {
 config.external = [
   "fs",
   "url",
-  "http"
+  "http",
+  "mysql",
+  "prompt",
+  "uuid/v4"
 ];
 config.plugins = [
   json(),

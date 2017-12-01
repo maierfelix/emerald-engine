@@ -50,6 +50,7 @@ Map.prototype.fromJSON = function(json) {
   assert(json.height !== void 0);
   this.data = json.data;
   this.resize(json.width, json.height);
+  this.refreshMapTexture();
   return this;
 };
 

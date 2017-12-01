@@ -16,10 +16,10 @@ export function drawMap(map) {
   let dy = this.cy + map.y;
   let dw = (map.width * CFG.BLOCK_SIZE) * this.cz;
   let dh = (map.height * CFG.BLOCK_SIZE) * this.cz;
-  this.drawMapTileBased(map);
-  /*this.drawMapTexture(0, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);
+  //this.drawMapTileBased(map);
+  this.drawMapTexture(0, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);
   this.drawMapTexture(1, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);
-  this.drawMapTexture(2, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);*/
+  this.drawMapTexture(2, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);
   this.drawMapObjects(map);
   this.drawMousePreview();
   this.drawMapSizeBorder(map);
@@ -31,10 +31,10 @@ export function drawMapTileBased(map) {
   for (let bundleId in bundles) {
     let bundle = bundles[bundleId];
     for (let tsId in bundle) {
-      let tileset = bundle[tsId];
-      let texture = this.bundles[bundleId].tilesets[tsId].canvas;
-      for (let ll in tileset) {
-        let data = tileset[ll];
+      let ts = bundle[tsId];
+      let tileset = this.bundles[bundleId].tilesets[tsId].canvas;
+      for (let ll in ts) {
+        let data = ts[ll];
         // alpha stuff
         {
           let tsMode = this.tsMode - 1;
@@ -49,7 +49,7 @@ export function drawMapTileBased(map) {
           let sx = (tile % 8) | 0;
           let sy = (tile / 8) | 0;
           ctx.drawImage(
-            texture,
+            tileset,
             sx * CFG.BLOCK_SIZE, sy * CFG.BLOCK_SIZE,
             CFG.BLOCK_SIZE, CFG.BLOCK_SIZE,
             this.cx + (xx * CFG.BLOCK_SIZE) * this.cz, this.cy + (yy * CFG.BLOCK_SIZE) * this.cz,

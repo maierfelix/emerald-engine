@@ -4,6 +4,10 @@ import http from "http";
 
 import * as CFG from "../cfg";
 
+import {
+  send404
+} from "../utils";
+
 export default class TilesetServer {
   constructor() {
     this.tilesets = {};
@@ -12,33 +16,29 @@ export default class TilesetServer {
       TILESETS: {},
       TILESET_LIST: ``
     };
-    this.init();
-  }
-  init() {
-    console.log(`TilesetServer running at => 127.0.0.1:${CFG.TS_SERVER_PORT}`);
-    console.log(`CTRL + C to shutdown`);
     this.initTickers();
     this.refreshTilesetList();
-    http.createServer((req, resp) => {
-      this.processRequest(req, resp);
-    }).listen(CFG.TS_SERVER_PORT);
+    return new Promise(resolve => {
+      http.createServer((req, resp) => {
+        this.processHTTPRequest(req, resp);
+      }).listen(CFG.TS_SERVER_HTTP_PORT);
+      console.log(`[TilesetServer] => 127.0.0.1:${CFG.TS_SERVER_HTTP_PORT}`);
+      resolve(this);
+    });
   }
   initTickers() {
     setInterval(() => this.refreshTilesetList(), CFG.TS_SERVER_TS_LIST_REFRESH);
   }
-  processRequest(req, resp) {
+  processHTTPRequest(req, resp) {
     let queries = url.parse(req.url, true).query;
-    for (let key in queries) {
-      if (key === "cmd") {
-        this.processRequestCommand(queries[key], resp);
-        return;
-      }
-    };
+    if (queries.cmd) {
+      this.processHTTPRequestQuery(queries.cmd, resp);
+      return;
+    }
     // nothing to process
-    resp.writeHead(404, CFG.TS_SERVER_RESP_TYPE);
-    resp.end();
+    send404(resp);
   }
-  processRequestCommand(query, resp) {
+  processHTTPRequestQuery(query, resp) {
     resp.setHeader(`Access-Control-Allow-Origin`, `http://localhost`);
     resp.setHeader(`Access-Control-Allow-Methods`, `GET`);
     resp.setHeader(`Access-Control-Allow-Headers`, `X-Requested-With,content-type`);
@@ -54,13 +54,13 @@ export default class TilesetServer {
       }
       break;
       default:
-        resp.write(`Invalid Command!`);
+        resp.writeHead(404, CFG.HTTP_SERVER_RESP_TYPE);
       break;
     };
     resp.end();
   }
   refreshTilesetList() {
-    console.log(`Refreshing tileset list...`);
+    console.log(`[TilesetServer] Refreshing tileset list...`);
     // JSON FILES
     let files = fs.readdirSync(CFG.TS_SERVER_TILESET_DIR);
     let names = [];
@@ -102,7 +102,6 @@ export default class TilesetServer {
   refreshTilesetListCache(obj) {
     this.cache.TILESET_LIST = ``;
     let bundles = JSON.parse(JSON.stringify(obj));
-    console.log(`Refreshing tileset list cache...`);
     for (let bnd in bundles) {
       let bundle = bundles[bnd];
       let json = {};

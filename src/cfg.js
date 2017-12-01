@@ -78,10 +78,17 @@ export const ENGINE_BOX_TYPES = {
   }
 };
 
-export const ENGINE_TS_SERVER_LOC = `http://${location.host}:9000`;
+export const ENGINE_UI_COLORS = {
+  DEFAULT: `rgba(255,255,255,0.8)`,
+  ERROR: `rgba(255,128,128,0.8)`
+};
 
-export const ENGINE_BUNDLE_PICK_DELAY = 750;
-export const ENGINE_DEFAULT_LOADING_MSG = `Loading something awesome...`;
+export const ENGINE_TS_SERVER_LOC = `http://${location.host}:9000`;
+export const ENGINE_LOGIN_SERVER_LOC = `http://${location.host}:9001`;
+
+export const ENGINE_SESSION_TIMEOUT = 2500;
+
+export const ENGINE_BUNDLE_PICK_DELAY = 350;
 
 export const ENGINE_CAMERA_MIN_SCALE = 1.15;
 export const ENGINE_CAMERA_MAX_SCALE = 10.95;

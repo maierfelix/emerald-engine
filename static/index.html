@@ -3,18 +3,43 @@
 <div id="ows"></div>
 
 <div id="rom_drop">
-  <div>Please drag a ROM file into here (Emerald, USA, 1.0)</div>
+  <div>Drag a ROM file into here (Emerald, USA, 1.0)</div>
 </div>
 
 <div id="ui-modal-loading" class="ui-modal-loading">
   <div id="ui-modal-loading-spinner"></div>
   <div id="ui-modal-loading-ball"></div>
   <div id="ui-modal-loading-title">Loading something awesome...</div>
+  <div id="ui-modal-loading-title-bottom"></div>
   <div class="ui-modal-loading-bg"></div>
 </div>
 
 <div class="ui-modal" id="ui-modal-ts_bundle">
   <div class="ui-modal-window"></div>
+</div>
+
+<div id="ui-init-screen" class="ui-init-screen">
+  <div class="ui-init-login" style="display: block;">
+    <div class="ui-init-login-wrapper">
+      <div>
+        <div style="float: left;">
+          <label class="ts-btn">Username</label>
+          <input id="ui-init-screen-username" type="text" class="ts-btn" style="text-transform: none;">
+        </div>
+        <div>
+          <label class="ts-btn">Password</label>
+          <input id="ui-init-screen-password" type="password" autocomplete="new-password" class="ts-btn" style="text-transform: none;">
+        </div>
+        <div>
+          <button id="ui-init-screen-btn-login" class="ts-btn" style="width: 100%;">Login</button>
+        </div>
+        <div>
+          <button id="ui-init-screen-btn-register" class="ts-btn" style="width: 100%;">Register</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="ui-init-screen-balls" class="ui-init-screen-ball-wrapper"></div>
 </div>
 
 <div class="ui">

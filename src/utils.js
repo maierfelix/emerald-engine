@@ -1,5 +1,7 @@
 import * as CFG from "./cfg";
 
+import md5 from "./md5";
+
 export const IS_NODE = typeof window === "undefined";
 export const IS_BROWSER = !IS_NODE;
 
@@ -29,6 +31,10 @@ export function assert(truth) {
 let uidx = 0;
 export function uid() {
   return ++uidx;
+};
+
+export function MD5(data) {
+  return md5(data);
 };
 
 export function cloneObject(obj) {
@@ -71,6 +77,22 @@ export function createCanvasBuffer(width, height) {
   let ctx = canvas.getContext("2d");
   setImageSmoothing(ctx, false);
   return { ctx, canvas };
+};
+
+export function cloneCanvas(canvas) {
+  let tmp = document.createElement("canvas");
+  tmp.width = canvas.width;
+  tmp.height = canvas.height;
+  let ctx = tmp.getContext("2d");
+  setImageSmoothing(ctx, false);
+  ctx.drawImage(
+    canvas,
+    0, 0,
+    canvas.width, canvas.height,
+    0, 0,
+    canvas.width, canvas.height
+  );
+  return tmp;
 };
 
 export function setImageSmoothing(ctx, state) {
@@ -303,38 +325,31 @@ export function readCachedFile(path) {
   });
 };
 
-export function showROMInputDialog(db) {
-  let el = rom_drop;
-  el.style.display = "block";
-  return new Promise((resolve) => {
-    el.ondragover = (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "copy";
-    };
-    el.ondrop = (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      let file = e.dataTransfer.files[0];
-      let name = file.name;
-      let ext = name.substr(name.lastIndexOf("."), name.length);
-      if (ext !== ".gba") console.warn(`Invalid ROM file extension!`);
-      let reader = new FileReader();
-      reader.onload = (e) => {
-        let buffer = reader.result;
-        let view = new Uint8Array(buffer);
-        let tra = db.transaction(["ROMData"], "readwrite");
-        tra.objectStore("ROMData").put(view, "key");
-        el.style.display = "none";
-        resolve(view);
-      };
-      reader.readAsArrayBuffer(file);
-    };
-  });
-};
-
 export function getNodeChildIndex(node) {
   let index = 0;
   while((node = node.previousSibling) !== null) ++index;
   return index;
+};
+
+window.ppTimer = null;
+export function loginIntoServer(login) {
+  let query = CFG.ENGINE_LOGIN_SERVER_LOC + `/?cmd=LOGIN&username=${login.user}&password=${login.pass}`;
+  return new Promise(resolve => {
+    GET(query).then(sessionId => {
+      clearInterval(ppTimer);
+      if (sessionId) {
+        let query = CFG.ENGINE_LOGIN_SERVER_LOC + `/?cmd=PING&username=${login.user}&sessionId=${sessionId}`;
+        window.ppTimer = setInterval(() => {
+          GET(query);
+        }, CFG.ENGINE_SESSION_TIMEOUT);
+        resolve({
+          user: login.user,
+          pass: login.pass,
+          session: sessionId
+        });
+      } else {
+        resolve(null);
+      }
+    });
+  });
 };

@@ -2,18 +2,20 @@ import * as CFG from "../cfg";
 
 import {
   $,
-  loadJSONFile
+  MD5,
+  GET
 } from "../utils";
 
 import Map from "./map/index";
 
-export function setup() {
+export function setup(login) {
   this.addListeners();
   this.resize();
   this.setUIMode("ts");
   this.setUIObjMode(0);
   this.setUIEncounterMode(0);
   this.setUIActiveTilesetLayer(1);
+  console.log(login);
   this.loadDefaultMap();
 };
 

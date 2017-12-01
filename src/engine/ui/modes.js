@@ -10,6 +10,11 @@ import {
   createCanvasBuffer
 } from "../../utils";
 
+import {
+  showLoadingModal,
+  closeLoadingModal
+} from "../../screens";
+
 export function resetUIModeButtons() {
   $("#engine-ui-mode-ts").setAttribute("class", "ts-btn");
   $("#engine-ui-mode-obj").setAttribute("class", "ts-btn");
@@ -201,9 +206,9 @@ export function showUIModal(kind) {
   switch (kind) {
     case "TS_BUNDLE": {
       let target = el.children[0];
-      this.showUILoadingModal(`Resolving Bundle List...`);
+      showLoadingModal(this.rom, `Resolving Bundle List...`);
       GET(CFG.ENGINE_TS_SERVER_LOC + `/?cmd=GET_TILESET_LIST`, CFG.ENGINE_BUNDLE_PICK_DELAY).then(res => {
-        this.closeUILoadingModal();
+        closeLoadingModal();
         // delayed opacity<->display hack
         setTimeout(() => el.style.opacity = 1.0, 250);
         target.innerHTML = ``;
@@ -215,10 +220,10 @@ export function showUIModal(kind) {
           let btn = node.querySelector(".ui-modal-item-choose");
           btn.onclick = (e) => {
             this.closeUIModal();
-            this.showUILoadingModal(`Loading ${name} bundle...`);
+            showLoadingModal(this.rom, `Loading ${name} bundle...`);
             setTimeout(() => {
               this.loadTilesetBundleFromServer(name).then(tileset => {
-                this.closeUILoadingModal();
+                closeLoadingModal();
                 this.useTilesetBundle(tileset);
               });
             }, CFG.ENGINE_BUNDLE_PICK_DELAY / 2);
@@ -228,31 +233,6 @@ export function showUIModal(kind) {
       });
     } break;
   };
-};
-
-export function showUILoadingModal(msg) {
-  msg = msg || CFG.ENGINE_DEFAULT_LOADING_MSG;
-  $(`#ui-modal-loading-title`).innerHTML = msg;
-  let rndBallIdx = (Math.random() * 12) + 1 | 0;
-  let elRndBall = this.rom.graphics.items[rndBallIdx].canvas;
-  let el = $(`#ui-modal-loading`);
-  el.style.display = "flex";
-  el.style.opacity = 0.0;
-  // delayed opacity<->display hack
-  setTimeout(() => el.style.opacity = 1.0, 10);
-  let elBall = $(`#ui-modal-loading-ball`);
-  let elSpinner = $(`#ui-modal-loading-spinner`);
-  let data = elRndBall.getContext("2d").getImageData(
-    9, 12,
-    1, 1
-  ).data;
-  let r = data[0];
-  let g = data[1];
-  let b = data[2];
-  elSpinner.style.border = `4px solid rgba(${r/2},${g/2},${b/2},1.0)`;
-  elSpinner.style.borderTop = `4px solid rgba(${r},${g},${b},1.0)`;
-  elBall.innerHTML = ``;
-  elBall.appendChild(elRndBall);
 };
 
 export function closeUIModal() {
@@ -266,21 +246,6 @@ export function closeUIModal() {
       }
     }, 210);
   }
-};
-
-export function closeUILoadingModal(forced) {
-  let el = $(`#ui-modal-loading`);
-  if (forced) {
-    el.style.opacity = 0.0;
-    el.style.display = "none";
-    return;
-  }
-  setTimeout(() => el.style.opacity = 0.0, 10);
-  setTimeout(() => {
-    if (parseFloat(el.style.opacity) <= 0) {
-      el.style.display = "none";
-    }
-  }, 210);
 };
 
 export function createUIModelItem(name, desc) {
