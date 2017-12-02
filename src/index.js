@@ -2,9 +2,9 @@ import {
   $,
   MD5,
   GET,
+  GET_JSON,
   readBinaryFile,
-  readCachedFile,
-  loginIntoServer
+  readCachedFile
 } from "./utils";
 
 import {
@@ -18,6 +18,8 @@ import {
 } from "./screens/index";
 
 import * as CFG from "./cfg";
+
+import SERVER_MSG from "./server-msg";
 
 import Rom from "./rom/";
 import MapEditor from "./engine/";
@@ -37,6 +39,8 @@ console.clear();
 class Engine {
   constructor() {
     this.mode = null;
+    this.ppTimer = null;
+    this.session = null;
     this.init();
   }
 };
@@ -64,6 +68,14 @@ Engine.prototype.init = function() {
       this.initStage(db, result);
     }
   });
+};
+
+Engine.prototype.initPingPong = function() {
+  let session = this.session;
+  let query = CFG.ENGINE_LOGIN_SERVER_LOC + `/?cmd=PING&username=${session.user}&sessionId=${session.id}`;
+  this.ppTimer = setInterval(() => {
+    GET(query);
+  }, CFG.ENGINE_SESSION_TIMEOUT);
 };
 
 Engine.prototype.setupInstance = function(login) {
@@ -98,27 +110,94 @@ Engine.prototype.showInitScreen = function() {
         let login = result.data;
         showLoadingModal(this.rom, `Authenticating...`);
         setTimeout(() => {
-          loginIntoServer(login).then((result) => {
-            if (result) {
+          this.loginIntoServer(login).then(json => {
+            if (json.id) {
               localStorage.setItem("emerald-user", login.user);
               setLoadingModalTitle(`Loading...`);
               setTimeout(() => {
                 $("#ui-init-screen").style.display = "none";
                 document.body.style.backgroundImage = ``;
                 closeLoadingModal();
-                resolve(result);
-              }, 500);
+                resolve(json);
+              }, CFG.ENGINE_INIT_SCREEN_SUCCESS_DELAY);
             } else {
               setLoadingModalTitleColor(CFG.ENGINE_UI_COLORS.ERROR);
-              setLoadingModalTitle(`Username or password is incorrect!`);
-              setLoadingModalBottom(`Please try logging in again.`);
+              setLoadingModalTitle(SERVER_MSG[json.kind][json.msg]);
               setTimeout(() => {
                 closeLoadingModal();
                 this.showInitScreen().then(resolve);
-              }, 1500);
+              }, CFG.ENGINE_INIT_SCREEN_ERROR_DELAY);
             }
           });
-        }, 500);
+        }, CFG.ENGINE_INIT_SCREEN_ACTION_DELAY);
+      }
+      else if (result.action === "REGISTER") {
+        let login = result.data;
+        showLoadingModal(this.rom, `Authenticating...`);
+        setTimeout(() => {
+          this.registerAccountIntoServer(login).then(json => {
+            if (json.id) {
+              setLoadingModalTitle(`Account was created successfully!`);
+              setTimeout(() => {
+                $("#ui-init-screen").style.display = "none";
+                document.body.style.backgroundImage = ``;
+                closeLoadingModal();
+                resolve(json);
+              }, CFG.ENGINE_INIT_SCREEN_SUCCESS_DELAY);
+            } else {
+              setLoadingModalTitleColor(CFG.ENGINE_UI_COLORS.ERROR);
+              setLoadingModalTitle(SERVER_MSG[json.kind][json.msg]);
+              setTimeout(() => {
+                closeLoadingModal();
+                this.showInitScreen().then(resolve);
+              }, CFG.ENGINE_INIT_SCREEN_ERROR_DELAY);
+            }
+          });
+        }, CFG.ENGINE_INIT_SCREEN_ACTION_DELAY);
+      }
+    });
+  });
+};
+
+Engine.prototype.loginIntoServer = function(login) {
+  let query = CFG.ENGINE_LOGIN_SERVER_LOC + `/?cmd=LOGIN&username=${login.user}&password=${login.pass}`;
+  return new Promise(resolve => {
+    GET_JSON(query).then(json => {
+      clearInterval(this.ppTimer);
+      if (json.kind === "STATUS" && json.msg === "CREATE_SESSION_TICKET") {
+        let sessionId = json.data;
+        let session = {
+          user: login.user,
+          pass: login.pass,
+          id: sessionId
+        };
+        this.session = session;
+        this.initPingPong();
+        resolve(session);
+      } else {
+        resolve(json);
+      }
+    });
+  });
+};
+
+Engine.prototype.registerAccountIntoServer = function(login) {
+  let query = CFG.ENGINE_LOGIN_SERVER_LOC + `/?cmd=REGISTER&username=${login.user}&password=${login.pass}&email=rofl@rofl.com`;
+  return new Promise(resolve => {
+    GET_JSON(query).then(json => {
+      clearInterval(this.ppTimer);
+      if (json.kind === "STATUS" && json.msg === "REGISTRATION_SUCCESSFUL") {
+        let sessionId = json.data;
+        let session = {
+          user: login.user,
+          pass: login.pass,
+          id: json.id
+        };
+        this.session = session;
+        this.initPingPong();
+        resolve(session);
+      } else {
+        resolve(json);
       }
     });
   });

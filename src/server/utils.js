@@ -76,3 +76,9 @@ export function sendInvalid(resp) {
   resp.write(``);
   resp.end();
 };
+
+export function sendObject(obj, resp) {
+  let json = JSON.stringify(obj);
+  resp.write(json);
+  resp.end();
+};

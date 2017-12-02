@@ -42,6 +42,8 @@ export function mouseMove(e) {
   if (e.target !== this.map) return;
   // left mouse move
   if (this.drag.ldown) {
+  // we're in map adding mode
+    if (this.newMap !== null) return;
     this.processUIMouseInput(e);
   }
   // right mouse move
@@ -83,6 +85,10 @@ export function mouseUp(e) {
   // left
   if (e.which === 1) {
     this.drag.ldown = false;
+    if (this.newMap !== null) {
+      let rel = this.getRelativeMapTile(x, y);
+      this.onUIPlaceNewMapAt(this.newMap, rel.x, rel.y);
+    }
   }
   // right
   if (e.which === 3) {

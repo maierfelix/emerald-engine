@@ -45,6 +45,7 @@ export function keyDown(e) {
 };
 
 export function addUIButtonListeners() {
+  $("#engine-ui-map-add").onclick = () => this.onUIMapAdd();
   $("#engine-ui-map-save").onclick = () => this.onUIMapSave();
   $("#engine-ui-mode-ts").onclick = () => this.setUIMode("ts");
   $("#engine-ui-mode-obj").onclick = () => this.setUIMode("obj");

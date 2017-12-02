@@ -5,6 +5,8 @@ import {
   GET,
   drawGrid,
   loadJSONFile,
+  rectIntersect,
+  getRelativeTile,
   loadImageAsCanvas,
   setImageSmoothing,
   createCanvasBuffer,
@@ -15,12 +17,15 @@ import extend from "../extend";
 
 import Map from "./map/index";
 
+import * as _map from "./map";
 import * as _init from "./init";
 import * as _camera from "./camera";
 import * as _tileset from "./tileset";
 import * as _listeners from "./listeners";
 
 import * as _ui_modes from "./ui/modes";
+import * as _ui_modal from "./ui/modal";
+import * as _ui_encounter from "./ui/encounter";
 
 import * as _render_map from "./render/map";
 import * as _render_events from "./render/events";
@@ -32,7 +37,7 @@ export default class MapEditor {
   /**
    * @param {Rom} rom - The ROM file to use
    */
-  constructor(rom, login) {
+  constructor(rom, session) {
     this.rom = rom;
     this.cx = 0;
     this.cy = 0;
@@ -53,14 +58,17 @@ export default class MapEditor {
     };
     this.selection = {
       entity: null,
+      map: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 },
       tileset: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 }
     };
     this.preview = {
       tileset: null
     };
+    this.session = session;
     this.mode = -1;
     this.tsMode = -1;
     this.objMode = -1;
+    this.newMap = null;
     this.modalMode = null;
     this.player = null;
     this.maps = [];
@@ -85,7 +93,7 @@ export default class MapEditor {
       }
     ];
     this.entities = [];
-    this.setup(login);
+    this.setup();
   }
 };
 
@@ -102,12 +110,13 @@ MapEditor.prototype.clear = function() {
 };
 
 MapEditor.prototype.draw = function() {
-  let map = this.currentMap;
   let tileset = this.currentTileset;
   this.clear();
-  //this.drawMapBorder(map);
-  this.drawMap(map);
+  this.drawMaps();
   this.drawTileset(tileset);
+  if (this.newMap !== null) {
+    this.drawMapPreview(this.newMap);
+  }
   drawGrid(this.ctx, this.cz, this.cx, this.cy, this.width, this.height);
   this.frames++;
 };
@@ -131,27 +140,6 @@ MapEditor.prototype.initUI = function() {
   document.body.style.background = `#2c2d2e`;
 };
 
-MapEditor.prototype.loadMap = function(id) {
-  return null;
-};
-
-MapEditor.prototype.loadMapFromROM = function(bank, map) {
-  return this.rom.fetchMap(bank, map);
-};
-
-MapEditor.prototype.loadMapFromServer = function(name) {
-  return new Promise(resolve => {
-    GET(`../data/maps/${name}.json`).then(res => {
-      let json = JSON.parse(res);
-      let bundles = json.data;
-      this.resolveBundleList(bundles).then(() => {
-        let map = new Map(this).fromJSON(json);
-        resolve(map);
-      });
-    });
-  });
-};
-
 MapEditor.prototype.getPkmnNameList = function() {
   let names = this.rom.names.pkmns;
   let length = Object.keys(names).length;
@@ -172,12 +160,15 @@ MapEditor.prototype.getEventEntityByPosition = function(x, y) {
   return null;
 };
 
+extend(MapEditor, _map);
 extend(MapEditor, _init);
 extend(MapEditor, _camera);
 extend(MapEditor, _tileset);
 extend(MapEditor, _listeners);
 
 extend(MapEditor, _ui_modes);
+extend(MapEditor, _ui_modal);
+extend(MapEditor, _ui_encounter);
 
 extend(MapEditor, _render_map);
 extend(MapEditor, _render_events);

@@ -485,6 +485,52 @@ label.ts-btn:hover {
   margin-right: 6px;
 }
 
+.engine-ui-btn-list {
+  position: absolute;
+  margin-left: 6px;
+  top: 38px;
+  left: auto;
+  width: 136px;
+  height: auto;
+  min-height: 28px;
+  background: rgba(49, 49, 50, 0.98);
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+  border-left: 1px solid rgba(255,255,255,0.02);
+  border-right: 1px solid rgba(255,255,255,0.02);
+}
+
+.engine-ui-btn-list > button {
+  position: relative;
+  float: left;
+  padding: 5px;
+  margin: 0;
+  margin-top: 2px;
+  width: 100%;
+  color: rgba(255,255,255,0.85);
+  font-size: 12px;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,0.02);
+  background: rgba(255,255,255,0.01);
+}
+
+.engine-ui-btn-list > button:hover {
+  background: rgba(255,255,255,0.05) !important;
+}
+
+#engine-ui-map-select {
+  float: left;
+  margin-top: 10px;
+  text-transform: uppercase;
+  background: rgba(0,0,0,0.1);
+  color: #fff;
+  padding: 6px;
+  border: 1px solid rgba(0,0,0,0.5);
+  font-size: 12px;
+  margin-left: 6px;
+  outline-color: rgba(255,255,255,0.25);
+  cursor: pointer;
+}
+
 .engine-right-menu-item > label,
 .ts-top-head-item > label,
 .engine-menu-bottom-right > label,
@@ -798,6 +844,7 @@ label.ts-btn:hover {
 }
 
 .ui-init-screen {
+  display: none;
   position: absolute;
   left: 0px;
   top: 0px;

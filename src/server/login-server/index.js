@@ -10,10 +10,12 @@ import * as CFG from "../cfg";
 
 import {
   send404,
+  sendObject,
   sendInvalid,
   validEmail,
   validUsername,
-  validPassword
+  validPassword,
+  getIPFromRequest
 } from "../utils";
 
 let SECRET_KEY = null;
@@ -36,14 +38,15 @@ export default class LoginServer {
     this.tickets = [];
     return new Promise(resolve => {
       this.initTickers();
-      this.promptSecretKey().then(() => {
+      SECRET_KEY = `iDO!MR:vm?#M4ElTg#([_BN'rjgRD"`;
+      /*this.promptSecretKey().then(() => {*/
         this.createMySQLConnection().then(() => {
           this.createHTTPConnection().then(() => {
             console.log(`[LoginServer] => 127.0.0.1:${CFG.LOGIN_SERVER_HTTP_PORT}`);
             resolve(this);
           });
         });
-      });
+      /*});*/
     });
   }
 };
@@ -78,19 +81,10 @@ LoginServer.prototype.updateSessionTimeouts = function() {
     let sessionTimeout = ticket.timeout;
     // session timed out, remove it
     if (now > sessionTimeout) {
-      console.log(`[LoginServer] ${ticket.user} timed out!`);
+      console.log(`[LoginServer] ${ticket.user} timed out`);
       tickets.splice(ii, 1);
     }
   };
-};
-
-LoginServer.prototype.isActiveSession = function(user, pass, ticket) {
-  return new Promise(resolve => {
-    this.isUserRegistered(user, pass).then((registered) => {
-      let isValid = registered && this.isActiveSessionTicket(ticket);
-      resolve(isValid);
-    });
-  });
 };
 
 LoginServer.prototype.createHTTPConnection = function() {
@@ -124,7 +118,7 @@ LoginServer.prototype.createMySQLConnection = function() {
 LoginServer.prototype.promptSecretKey = function() {
   return new Promise(resolve => {
     prompt.start();
-    prompt.message = `[LoginServer] SECRET KEY:`;
+    prompt.message = `[LoginServer] ENTER SECRET KEY:`;
     prompt.delimiter = ``;
     prompt.get([{
       name: ` `,
@@ -142,8 +136,7 @@ LoginServer.prototype.promptSecretKey = function() {
 LoginServer.prototype.processHTTPRequest = function(req, resp) {
   let queries = url.parse(req.url, true).query;
   if (queries.cmd) {
-    this.processHTTPRequestQuery(queries, resp);
-    return;
+    return this.processHTTPRequestQuery(queries, resp);
   }
   // nothing to process
   send404(resp);
@@ -183,39 +176,40 @@ LoginServer.prototype.processHTTPPingRequest = function(queries, resp) {
 LoginServer.prototype.processHTTPLoginRequest = function(queries, resp) {
   let user = queries.username;
   let pass = queries.password;
-  // validation failed, send 404
-  if (!validUsername(user) || !validPassword(pass)) return sendInvalid(resp);
+  // validation failed
+  if (!validUsername(user) || !validPassword(pass)) {
+    return sendObject({ kind: "ERROR", msg: "INVALID_LOGIN" }, resp);
+  }
   let query = `
     SELECT * FROM users
     WHERE username=? AND password=?
   `;
-  this.isUserRegistered(user, pass).then((registered) => {
+  this.isUserRegistered(user, pass).then(registered => {
     // user is not registered, abort
-    if (!registered) return sendInvalid(resp);
+    if (!registered) {
+      return sendObject({ kind: "ERROR", msg: "INVALID_LOGIN" }, resp);
+    }
     // user is already connected, abort
-    if (this.isUserAlreadyConnected(user)) return sendInvalid(resp);
-    // clear all previous tickets
-    this.removeExistingTicketsByUsername(user);
-    // use an earlier active ticket
+    if (this.isUserAlreadyConnected(user)) {
+      console.log(`[LoginServer] Parallel login detected for ${user}`);
+      return sendObject({ kind: "ERROR", msg: "ACCOUNT_IN_USE" }, resp);
+    }
+    console.log(`[LoginServer] ${user} logged in`);
     // generate a unique session ticket
     let ticket = this.createSessionTicket(user);
-    //console.log(`${username} logged in [${new Date().getHours()}:${new Date().getMinutes()}]`);
-    // register the session ticket on the game server
-    this.sendToGameServer(`CREATE_SESSION`, ticket).then((res) => {
-      // send the ticket id to the client
-      resp.write(ticket.id);
-      resp.end();
-    });
+    // send the ticket id to the client
+    sendObject({ kind: "STATUS", msg: "CREATE_SESSION_TICKET", data: ticket.id }, resp);
   });
 };
 
 LoginServer.prototype.isUserRegistered = function(user, pass) {
+  let encryPass = this.encryptStringSecretly(pass);
   let query = `
     SELECT * FROM users
     WHERE username=? AND password=?
   `;
   return new Promise(resolve => {
-    this.connection.query(query, [user, pass], (err, results, fields) => {
+    this.connection.query(query, [user, encryPass], (err, results, fields) => {
       if (err) console.log(err);
       resolve(results.length >= 1);
     });
@@ -232,24 +226,35 @@ LoginServer.prototype.processHTTPRegistrationRequest = function(queries, resp) {
   let user = queries.username;
   let pass = queries.password;
   // validate registration data
-  if (!validUsername(user) || !validPassword(pass) || !validEmail(email)) return sendInvalid(resp);
+  if (!validUsername(user)) {
+    return sendObject({ kind: "ERROR", msg: "BAD_USERNAME" }, resp);
+  }
+  if (!validPassword(pass)) {
+    return sendObject({ kind: "ERROR", msg: "BAD_PASSWORD" }, resp);
+  }
+  if (!validEmail(email)) {
+    return sendObject({ kind: "ERROR", msg: "BAD_EMAIL" }, resp);
+  }
+  let encryPass = this.encryptStringSecretly(pass);
   let query = `
     INSERT INTO users
     (id, username, password, email)
     VALUES (NULL, ?, ?, ?)
   `;
-  this.connection.query(query, [user, pass, email], (err, results, fields) => {
+  this.connection.query(query, [user, encryPass, email], (err, results, fields) => {
     if (err) {
-      sendInvalid(resp);
-    } else {
-      resp.write("Success!");
-      resp.end();
+      return sendObject({ kind: "ERROR", msg: "USERNAME_TAKEN" }, resp);
     }
+    console.log(`[LoginServer] ${user} registered`);
+    let ticket = this.createSessionTicket(user);
+    return sendObject({ kind: "STATUS", msg: "REGISTRATION_SUCCESSFUL", id: ticket.id }, resp);
   });
 };
 
 LoginServer.prototype.createSessionTicket = function(user) {
   let id = uuidv4();
+  // clear all previous tickets
+  this.removeExistingTicketsByUsername(user);
   if (!this.isActiveSessionTicket(id)) {
     let duration = +Date.now() + CFG.LOGIN_SERVER_TICKET_DURATION;
     let ticket = new Ticket(id, user, duration);
@@ -311,4 +316,18 @@ LoginServer.prototype.sendToGameServer = function(cmd, data) {
       resolve(resp);
     }).end();
   });
+};
+
+LoginServer.prototype.encryptStringSecretly = function(str) {
+  let cipher = crypto.createCipher(CFG.LOGIN_SERVER_ENCRYPTION_ALGO, SECRET_KEY);
+  let crypted = cipher.update(str, "utf-8", "hex");
+  crypted += cipher.final("hex");
+  return crypted;
+};
+
+LoginServer.prototype.decryptStringSecretly = function(str) {
+  let decipher = crypto.createDecipher(CFG.LOGIN_SERVER_ENCRYPTION_ALGO, SECRET_KEY);
+  let dec = decipher.update(str, "hex", "utf-8");
+  dec += decipher.final("utf-8");
+  return dec;
 };

@@ -8,14 +8,13 @@ import {
 
 import Map from "./map/index";
 
-export function setup(login) {
+export function setup() {
   this.addListeners();
   this.resize();
   this.setUIMode("ts");
   this.setUIObjMode(0);
   this.setUIEncounterMode(0);
   this.setUIActiveTilesetLayer(1);
-  console.log(login);
   this.loadDefaultMap();
 };
 

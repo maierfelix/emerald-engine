@@ -10,7 +10,6 @@ import {
 
 export default class DataServer {
   constructor() {
-    this.maps = {};
     this.tilesets = {};
     this.tilesetGraphics = {};
     this.cache = {
@@ -23,6 +22,7 @@ export default class DataServer {
       http.createServer((req, resp) => {
         this.processHTTPRequest(req, resp);
       }).listen(CFG.TS_SERVER_HTTP_PORT);
+      console.log(`[DataServer] => HTTP connection created`);
       console.log(`[DataServer] => 127.0.0.1:${CFG.TS_SERVER_HTTP_PORT}`);
       resolve(this);
     });
@@ -38,27 +38,38 @@ DataServer.prototype.initTickers = function() {
 
 DataServer.prototype.processHTTPRequest = function(req, resp) {
   let queries = url.parse(req.url, true).query;
-  if (queries.cmd) {
-    this.processHTTPRequestQuery(queries.cmd, resp);
+  if (queries.cmd && queries.user && queries.session) {
+    this.processHTTPRequestQuery(queries, resp);
     return;
   }
   // nothing to process
   send404(resp);
 };
 
-DataServer.prototype.processHTTPRequestQuery = function(query, resp) {
+DataServer.prototype.isValidSession = function(user, sessionId) {
+  let ticket = this.LoginServer.getTicketByUsername(user);
+  return (
+    ticket !== null && ticket.id === sessionId
+  );
+};
+
+DataServer.prototype.processHTTPRequestQuery = function(queries, resp) {
   resp.setHeader(`Access-Control-Allow-Origin`, `http://localhost`);
   resp.setHeader(`Access-Control-Allow-Methods`, `GET`);
   resp.setHeader(`Access-Control-Allow-Headers`, `X-Requested-With,content-type`);
-  let index = query.lastIndexOf(":");
-  let cmd = query.substr(0, index > 0 ? index : query.length);
-  let value = index > 0 ? query.substr(index + 1, query.length) : ``;
+  let cmd = queries.cmd;
+  let user = queries.user;
+  let session = queries.session;
   switch (cmd) {
-    case "GET_TILESET_LIST":
-      resp.write(this.getTilesetList());
+    case "GET_BUNDLE_LIST": {
+      let valid = this.isValidSession(user, session);
+      if (valid) resp.write(this.getTilesetList());
+    }
     break;
-    case "GET_TILESET": {
-      if (index > 0 && value.length) resp.write(this.getTileset(value));
+    case "GET_BUNDLE": {
+      let bundle = queries.bundle;
+      let valid = this.isValidSession(user, session);
+      if (valid) resp.write(this.getTileset(bundle));
     }
     break;
     default:
@@ -134,26 +145,14 @@ DataServer.prototype.getTileset = function(name) {
   return ``;
 };
 
-DataServer.prototype.addTileset = function() {
+DataServer.prototype.getMap = function() {
 
-};
-
-DataServer.prototype.deleteTileset = function() {
-
-};
-
-DataServer.prototype.updateTileset = function() {
-  
 };
 
 DataServer.prototype.addMap = function() {
 
 };
 
-DataServer.prototype.deleteMap = function() {
-
-};
-
-DataServer.prototype.updateMap = function() {
+DataServer.prototype.getUserMapList = function() {
 
 };

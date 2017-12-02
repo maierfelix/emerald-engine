@@ -62,8 +62,6 @@ export const TERRAIN_SHEET_EDGES = {
   "W":   { x: 0, y: 1 }
 };
 
-export const ENGINE_DEFAULT_MAP = [0, 9];
-
 export const ENGINE_TILESET_SCALE = 2.0;
 
 export const ENGINE_BOX_TEXT_COLOR = `rgba(255,255,255,0.625)`;
@@ -86,9 +84,12 @@ export const ENGINE_UI_COLORS = {
 export const ENGINE_TS_SERVER_LOC = `http://${location.host}:9000`;
 export const ENGINE_LOGIN_SERVER_LOC = `http://${location.host}:9001`;
 
-export const ENGINE_SESSION_TIMEOUT = 2500;
+export const ENGINE_SESSION_TIMEOUT = 1250;
 
 export const ENGINE_BUNDLE_PICK_DELAY = 350;
+export const ENGINE_INIT_SCREEN_ACTION_DELAY = 500;
+export const ENGINE_INIT_SCREEN_ERROR_DELAY = 1750;
+export const ENGINE_INIT_SCREEN_SUCCESS_DELAY = 500;
 
 export const ENGINE_CAMERA_MIN_SCALE = 1.15;
 export const ENGINE_CAMERA_MAX_SCALE = 10.95;
@@ -116,4 +117,9 @@ export const ENGINE_TS_LAYERS = {
   FG: 3,
   PREVIEW: 4,
   COLLISION: 5
+};
+
+export const ENGINE_DEFAULT_MAP = {
+  WIDTH: 8,
+  HEIGHT: 8
 };

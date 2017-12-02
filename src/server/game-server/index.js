@@ -36,8 +36,7 @@ GameServer.prototype.createHTTPConnection = function() {
 GameServer.prototype.processHTTPRequest = function(req, resp) {
   let queries = url.parse(req.url, true).query;
   if (queries.cmd) {
-    this.processHTTPRequestQuery(queries, req, resp);
-    return;
+    return this.processHTTPRequestQuery(queries, req, resp);
   }
   // nothing to process
   send404(resp);
@@ -51,9 +50,8 @@ GameServer.prototype.processHTTPRequestQuery = function(queries, req, resp) {
   switch (cmd) {
     case "CREATE_SESSION": {
       // only allow access from local network
-      if (getIPFromRequest(req) !== `::ffff:127.0.0.1`) {
-        send404(resp);
-        return;
+      if (getIPFromRequest(req) !== CFG.SERVER_LOCAL_IP) {
+        return send404(resp);
       }
       let data = JSON.parse(new Buffer(queries.data, "base64").toString());
       this.tickets[data.ticket] = data;

@@ -28,7 +28,7 @@
         </div>
         <div>
           <label class="ts-btn">Password</label>
-          <input id="ui-init-screen-password" type="password" autocomplete="new-password" class="ts-btn" style="text-transform: none;">
+          <input id="ui-init-screen-password" type="password" class="ts-btn" style="text-transform: none;">
         </div>
         <div>
           <button id="ui-init-screen-btn-login" class="ts-btn" style="width: 100%;">Login</button>
@@ -120,16 +120,21 @@
 <div id="map-ui"></div>
 
 <div id="engine-ui">
-  <div class="ts-top-head">
+  <!-- TOP MENU -->
+  <div id="engine-ui-top-menu" class="ts-top-head">
     <button class="ts-btn">🌍 Publish</button>
     <button id="engine-ui-map-save" class="ts-btn">💾 Save</button>
     <button id="engine-ui-settings" class="ts-btn">⚙️ Settings</button>
     <button class="ts-btn-invisible"></button>
     <button class="ts-btn-invisible"></button>
     <button class="ts-btn-invisible ts-btn-head-fix"></button>
-    <button class="ts-btn ts-btn-add-map">+</button>
+    <button id="engine-ui-map-add" class="ts-btn ts-btn-add-map">+</button>
     <div class="ts-top-head-item">
-      <label id="engine-ui-cmap-name" class="ts-btn">🌄 Littleroot Town</label>
+      <label id="engine-ui-cmap-name" class="ts-btn">🌄 Map</label>
+      <select id="engine-ui-map-select" class="ts-btn ts-btn-select">
+        <option>Rottenburg</option>
+        <option>Hemmendorf</option>
+      </select>
     </div>
     <div class="ts-top-head-item">
       <label id="engine-ui-cts-name" class="ts-btn"></label>
@@ -141,176 +146,178 @@
       <label id="engine-ui-my">Y: 0</label>
     </div>
   </div>
-  <div class="ts-top-head engine-menu-top-right">
-    <button id="engine-ui-mode-ts" class="ts-btn">🗻 Tiles</button>
-    <button id="engine-ui-mode-obj" class="ts-btn">🚐 Objects</button>
-    <button id="engine-ui-mode-opt" class="ts-btn">🔩 Options</button>
-  </div>
-  <div id="engine-ui-ts">
-    <div class="ts-top-head engine-menu-middle-right">
-      <img id="engine-layer-btn-1" src="./layers-1.png" />
-      <img id="engine-layer-btn-2" src="./layers-2.png" />
-      <img id="engine-layer-btn-3" src="./layers-3.png" />
-      <img id="engine-layer-btn-4" src="./layers-0.png" />
-      <img id="engine-layer-btn-5" src="./layers-4.png" />
+  <div id="engine-ui-right-menu">
+    <div class="ts-top-head engine-menu-top-right">
+      <button id="engine-ui-mode-ts" class="ts-btn">🗻 Tiles</button>
+      <button id="engine-ui-mode-obj" class="ts-btn">🚐 Objects</button>
+      <button id="engine-ui-mode-opt" class="ts-btn">🔩 Options</button>
     </div>
-    <div class="ts-top-head engine-menu-bottom-right">
-      <label>AutoTile</label>
-      <label class="ts-checkbox">
-        <input type="checkbox">
-        <span></span>
-        <div></div>
-      </label>
-    </div>
-    <div class="engine-right-menu" style="height: calc(100% - 144px);">
-      <canvas id="engine-tileset"></canvas>
-    </div>
-  </div>
-  <div id="engine-ui-obj">
-    <div class="engine-right-menu" style="height: calc(100% - 48px);">
-      <div class="engine-right-menu-item engine-abs-item-center">
-        <button class="ts-btn">Create entity</button>
+    <div id="engine-ui-ts">
+      <div class="ts-top-head engine-menu-middle-right">
+        <img id="engine-layer-btn-1" src="./layers-1.png" />
+        <img id="engine-layer-btn-2" src="./layers-2.png" />
+        <img id="engine-layer-btn-3" src="./layers-3.png" />
+        <img id="engine-layer-btn-4" src="./layers-0.png" />
+        <img id="engine-layer-btn-5" src="./layers-4.png" />
       </div>
-      <!-- General entity position -->
-      <div class="engine-right-menu-item engine-abs-item-label"><label>Entity position:</label></div>
-      <div class="engine-right-menu-item engine-abs-item">
-        <label>Position:</label>
-        <input type="number" class="ts-btn sm" placeholder="X:" />
-        <input type="number" class="ts-btn sm" placeholder="Y:" />
-      </div>
-      <div class="engine-right-menu-item engine-abs-item-label"><label>Entity Settings:</label></div>
-      <div class="engine-right-menu-item">
-        <label>Type:</label>
-        <select id="engine-ui-obj-type" class="ts-btn ts-btn-select">
-          <option>Person</option>
-          <option>Warp</option>
-          <option>Script</option>
-          <option>Sign</option>
-        </select>
-      </div>
-      <!-- PERSON menu -->
-      <div id="engine-ui-obj-person">
-        <div class="engine-right-menu-item">
-          <label>Sprite:</label>
-          <input type="number" class="ts-btn sm" placeholder="Id:" />
-        </div>
-        <div class="engine-right-menu-item">
-          <label>Behavior:</label>
-          <select class="ts-btn ts-btn-select">
-            <option>None</option>
-            <option>Look around</option>
-            <option>Look down</option>
-            <option>Look up</option>
-            <option>Look left</option>
-            <option>Look right</option>
-            <option>Walk around</option>
-          </select>
-        </div>
-      </div>
-      <!-- WARP menu -->
-      <div id="engine-ui-obj-warp">
-        <div class="engine-right-menu-item">
-          <label>Map:</label>
-          <select class="ts-btn ts-btn-select">
-            <option>Littleroot Town</option>
-            <option>Oldale Town</option>
-            <option>Mauville City</option>
-          </select>
-        </div>
-        <div class="engine-right-menu-item">
-          <label>Target:</label>
-          <input type="number" class="ts-btn sm" placeholder="X:" />
-          <input type="number" class="ts-btn sm" placeholder="Y:" />
-        </div>
-      </div>
-      <!-- SCRIPT menu -->
-      <div id="engine-ui-obj-script">
-        <input type="text" class="ts-btn" />
-      </div>
-      <!-- SIGN menu -->
-      <div id="engine-ui-obj-sign">
-        <div class="engine-right-menu-item">
-          <label>Behavior:</label>
-          <select class="ts-btn ts-btn-select">
-            <option>All directions</option>
-            <option>Hero is facing up</option>
-            <option>Hero is facing down</option>
-            <option>Hero is facing left</option>
-            <option>Hero is facing right</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div id="engine-ui-opt">
-    <div class="engine-right-menu" style="height: calc(100% - 48px);">
-      <div class="engine-right-menu-item engine-abs-item-label"><label>Map Settings:</label></div>
-      <div class="engine-right-menu-item">
-        <label>Name:</label>
-        <input type="text" class="ts-btn lg" />
-       </div>
-      <div class="engine-right-menu-item">
-        <label>Show Name:</label>
+      <div class="ts-top-head engine-menu-bottom-right">
+        <label>AutoTile</label>
         <label class="ts-checkbox">
           <input type="checkbox">
           <span></span>
           <div></div>
         </label>
       </div>
-       <div class="engine-right-menu-item">
-        <label>Type:</label>
-        <select class="ts-btn ts-btn-select">
-          <option>City</option>
-          <option>Building</option>
-          <option>Route</option>
-          <option>Cave</option>
-          <option>Underwater</option>
-        </select>
+      <div class="engine-right-menu" style="height: calc(100% - 144px);">
+        <canvas id="engine-tileset"></canvas>
       </div>
-      <div class="engine-right-menu-item">
-        <label>Weather:</label>
-        <select class="ts-btn ts-btn-select">
-          <option>None</option>
-          <option>Sunny</option>
-          <option>Rainy</option>
-          <option>Stormy</option>
-          <option>Foggy</option>
-          <option>Haily</option>
-        </select>
+    </div>
+    <div id="engine-ui-obj">
+      <div class="engine-right-menu" style="height: calc(100% - 48px);">
+        <div class="engine-right-menu-item engine-abs-item-center">
+          <button class="ts-btn">Create entity</button>
+        </div>
+        <!-- General entity position -->
+        <div class="engine-right-menu-item engine-abs-item-label"><label>Entity position:</label></div>
+        <div class="engine-right-menu-item engine-abs-item">
+          <label>Position:</label>
+          <input type="number" class="ts-btn sm" placeholder="X:" />
+          <input type="number" class="ts-btn sm" placeholder="Y:" />
+        </div>
+        <div class="engine-right-menu-item engine-abs-item-label"><label>Entity Settings:</label></div>
+        <div class="engine-right-menu-item">
+          <label>Type:</label>
+          <select id="engine-ui-obj-type" class="ts-btn ts-btn-select">
+            <option>Person</option>
+            <option>Warp</option>
+            <option>Script</option>
+            <option>Sign</option>
+          </select>
+        </div>
+        <!-- PERSON menu -->
+        <div id="engine-ui-obj-person">
+          <div class="engine-right-menu-item">
+            <label>Sprite:</label>
+            <input type="number" class="ts-btn sm" placeholder="Id:" />
+          </div>
+          <div class="engine-right-menu-item">
+            <label>Behavior:</label>
+            <select class="ts-btn ts-btn-select">
+              <option>None</option>
+              <option>Look around</option>
+              <option>Look down</option>
+              <option>Look up</option>
+              <option>Look left</option>
+              <option>Look right</option>
+              <option>Walk around</option>
+            </select>
+          </div>
+        </div>
+        <!-- WARP menu -->
+        <div id="engine-ui-obj-warp">
+          <div class="engine-right-menu-item">
+            <label>Map:</label>
+            <select class="ts-btn ts-btn-select">
+              <option>Littleroot Town</option>
+              <option>Oldale Town</option>
+              <option>Mauville City</option>
+            </select>
+          </div>
+          <div class="engine-right-menu-item">
+            <label>Target:</label>
+            <input type="number" class="ts-btn sm" placeholder="X:" />
+            <input type="number" class="ts-btn sm" placeholder="Y:" />
+          </div>
+        </div>
+        <!-- SCRIPT menu -->
+        <div id="engine-ui-obj-script">
+          <input type="text" class="ts-btn" />
+        </div>
+        <!-- SIGN menu -->
+        <div id="engine-ui-obj-sign">
+          <div class="engine-right-menu-item">
+            <label>Behavior:</label>
+            <select class="ts-btn ts-btn-select">
+              <option>All directions</option>
+              <option>Hero is facing up</option>
+              <option>Hero is facing down</option>
+              <option>Hero is facing left</option>
+              <option>Hero is facing right</option>
+            </select>
+          </div>
+        </div>
       </div>
-      <div class="engine-right-menu-item">
-        <label>Music:</label>
-        <select class="ts-btn ts-btn-select">
-          <option>None</option>
-          <option>Song 010</option>
-          <option>Song 011</option>
-        </select>
+    </div>
+    <div id="engine-ui-opt">
+      <div class="engine-right-menu" style="height: calc(100% - 48px);">
+        <div class="engine-right-menu-item engine-abs-item-label"><label>Map Settings:</label></div>
+        <div class="engine-right-menu-item">
+          <label>Name:</label>
+          <input type="text" class="ts-btn lg" />
+         </div>
+        <div class="engine-right-menu-item">
+          <label>Show Name:</label>
+          <label class="ts-checkbox">
+            <input type="checkbox">
+            <span></span>
+            <div></div>
+          </label>
+        </div>
+         <div class="engine-right-menu-item">
+          <label>Type:</label>
+          <select class="ts-btn ts-btn-select">
+            <option>City</option>
+            <option>Building</option>
+            <option>Route</option>
+            <option>Cave</option>
+            <option>Underwater</option>
+          </select>
+        </div>
+        <div class="engine-right-menu-item">
+          <label>Weather:</label>
+          <select class="ts-btn ts-btn-select">
+            <option>None</option>
+            <option>Sunny</option>
+            <option>Rainy</option>
+            <option>Stormy</option>
+            <option>Foggy</option>
+            <option>Haily</option>
+          </select>
+        </div>
+        <div class="engine-right-menu-item">
+          <label>Music:</label>
+          <select class="ts-btn ts-btn-select">
+            <option>None</option>
+            <option>Song 010</option>
+            <option>Song 011</option>
+          </select>
+        </div>
+        <div class="engine-right-menu-item engine-abs-item-label"><label class="danger">Danger Zone:</label></div>
+        <div class="engine-right-menu-item  engine-abs-item-center engine-item-no-outer">
+          <button class="ts-btn">Remove Map</button>
+        </div>
+        <div class="engine-right-menu-item engine-abs-item-center">
+          <input type="number" class="ts-btn sm" placeholder="W:" />
+          <input type="number" class="ts-btn sm" placeholder="H:" />
+          <button class="ts-btn">Resize Map</button>
+        </div>
+        <div class="engine-right-menu-item engine-abs-item-label"><label>Map Encounters:</label></div>
+        <div class="engine-right-menu-item engine-abs-item-center">
+          <label>Type:</label>
+          <select id="engine-ui-encounter-type" class="ts-btn ts-btn-select">
+            <option>Grass</option>
+            <option>Water</option>
+            <option>Fishing</option>
+          </select>
+          <button id="engine-ui-add-encounter" class="ts-btn">+</button>
+        </div>
+        <!-- GRASS encounter menu -->
+        <div id="engine-ui-opt-encount-grass" class="engine-right-menu-item"></div>
+        <!-- WATER encounter menu -->
+        <div id="engine-ui-opt-encount-water" class="engine-right-menu-item"></div>
+        <!-- FISHING encounter menu -->
+        <div id="engine-ui-opt-encount-fishing" class="engine-right-menu-item"></div>
       </div>
-      <div class="engine-right-menu-item engine-abs-item-label"><label class="danger">Danger Zone:</label></div>
-      <div class="engine-right-menu-item  engine-abs-item-center engine-item-no-outer">
-        <button class="ts-btn">Remove Map</button>
-      </div>
-      <div class="engine-right-menu-item engine-abs-item-center">
-        <input type="number" class="ts-btn sm" placeholder="W:" />
-        <input type="number" class="ts-btn sm" placeholder="H:" />
-        <button class="ts-btn">Resize Map</button>
-      </div>
-      <div class="engine-right-menu-item engine-abs-item-label"><label>Map Encounters:</label></div>
-      <div class="engine-right-menu-item engine-abs-item-center">
-        <label>Type:</label>
-        <select id="engine-ui-encounter-type" class="ts-btn ts-btn-select">
-          <option>Grass</option>
-          <option>Water</option>
-          <option>Fishing</option>
-        </select>
-        <button id="engine-ui-add-encounter" class="ts-btn">+</button>
-      </div>
-      <!-- GRASS encounter menu -->
-      <div id="engine-ui-opt-encount-grass" class="engine-right-menu-item"></div>
-      <!-- WATER encounter menu -->
-      <div id="engine-ui-opt-encount-water" class="engine-right-menu-item"></div>
-      <!-- FISHING encounter menu -->
-      <div id="engine-ui-opt-encount-fishing" class="engine-right-menu-item"></div>
     </div>
   </div>
   <!--<div class="engine-menu-bottom"></div>-->

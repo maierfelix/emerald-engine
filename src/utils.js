@@ -58,6 +58,25 @@ export function zoomScale(n) {
   );
 };
 
+export function rectIntersect(
+  x1, y1, w1, h1,
+  x2, y2, w2, h2
+) {
+  let x = Math.max(x1, x2);
+  let num1 = Math.min(x1 + w1, x2 + w2);
+  let y = Math.max(y1, y2);
+  let num2 = Math.min(y1 + h1, y2 + h2);
+  if (num1 > x && num2 > y) {
+    return {
+      x: x,
+      y: y,
+      w: num1 - x,
+      h: num2 - y
+    };
+  }
+  return null;
+}
+
 export function rnd64() {
   let max = Number.MAX_SAFE_INTEGER;
   return Math.floor((Math.random() * max) - (max / 2));
@@ -168,6 +187,19 @@ export function GET(url, delay = 0) {
       xhr.send(null);
     }
   });
+};
+
+export function GET_JSON(url, delay = 0) {
+  return new Promise(resolve => {
+    GET(url, delay).then(result => {
+      let json = JSON.parse(result);
+      resolve(json);
+    });
+  });
+};
+
+export function addSessionToQuery(query, session) {
+  return `${query}&user=${session.user}&session=${session.id}`;
 };
 
 export function drawGrid(ctx, scale, x, y, width, height) {
@@ -329,27 +361,4 @@ export function getNodeChildIndex(node) {
   let index = 0;
   while((node = node.previousSibling) !== null) ++index;
   return index;
-};
-
-window.ppTimer = null;
-export function loginIntoServer(login) {
-  let query = CFG.ENGINE_LOGIN_SERVER_LOC + `/?cmd=LOGIN&username=${login.user}&password=${login.pass}`;
-  return new Promise(resolve => {
-    GET(query).then(sessionId => {
-      clearInterval(ppTimer);
-      if (sessionId) {
-        let query = CFG.ENGINE_LOGIN_SERVER_LOC + `/?cmd=PING&username=${login.user}&sessionId=${sessionId}`;
-        window.ppTimer = setInterval(() => {
-          GET(query);
-        }, CFG.ENGINE_SESSION_TIMEOUT);
-        resolve({
-          user: login.user,
-          pass: login.pass,
-          session: sessionId
-        });
-      } else {
-        resolve(null);
-      }
-    });
-  });
 };

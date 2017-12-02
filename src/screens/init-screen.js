@@ -88,6 +88,7 @@ export default function(instance) {
   })();
 
   return new Promise(resolve => {
+    $("#ui-init-screen").style.display = "block";
     $("#ui-init-screen-btn-login").onclick = (e) => {
       let user = $("#ui-init-screen-username").value;
       let pass = MD5($("#ui-init-screen-password").value);

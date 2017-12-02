@@ -3,6 +3,7 @@ import * as CFG from "../cfg";
 import {
   $,
   GET,
+  addSessionToQuery,
   getPixelUsageData,
   loadImageAsCanvas,
   setImageSmoothing,
@@ -16,7 +17,8 @@ export function loadTilesetFromROM(bank, map) {
 
 export function loadTilesetBundleFromServer(name) {
   return new Promise(resolve => {
-    GET(CFG.ENGINE_TS_SERVER_LOC + `/?cmd=GET_TILESET:${name}`).then(res => {
+    let query = CFG.ENGINE_TS_SERVER_LOC + `/?cmd=GET_BUNDLE&bundle=${name}`;
+    GET(addSessionToQuery(query, this.session)).then(res => {
       let tilesets = JSON.parse(res);
       let count = 0;
       let max = Object.keys(tilesets).length;

@@ -5,23 +5,34 @@ import {
   getRelativeTile
 } from "../../utils";
 
+export function drawMaps() {
+  let maps = this.maps;
+  let length = maps.length;
+  for (let ii = 0; ii < length; ++ii) {
+    let map = maps[ii];
+    this.drawMap(map);
+  };
+};
+
 export function drawMap(map) {
   if (map === null) return;
   let ctx = this.ctx;
+  let isCurrentMap = this.currentMap === map;
   let sx = 0;
   let sy = 0;
   let sw = map.width * CFG.BLOCK_SIZE;
   let sh = map.height * CFG.BLOCK_SIZE;
-  let dx = this.cx + map.x;
-  let dy = this.cy + map.y;
+  let dx = this.cx + (map.x * CFG.BLOCK_SIZE) * this.cz;
+  let dy = this.cy + (map.y * CFG.BLOCK_SIZE) * this.cz;
   let dw = (map.width * CFG.BLOCK_SIZE) * this.cz;
   let dh = (map.height * CFG.BLOCK_SIZE) * this.cz;
-  //this.drawMapTileBased(map);
+  if (!isCurrentMap) ctx.globalAlpha = 0.5;
   this.drawMapTexture(0, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);
   this.drawMapTexture(1, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);
   this.drawMapTexture(2, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);
   this.drawMapObjects(map);
-  this.drawMousePreview();
+  if (!isCurrentMap) ctx.globalAlpha = 1.0;
+  if (isCurrentMap) this.drawMousePreview();
   this.drawMapSizeBorder(map);
 };
 
@@ -80,15 +91,15 @@ export function drawMapTexture(index, textures, sx, sy, sw, sh, dx, dy, dw, dh) 
 export function drawMapSizeBorder(map) {
   let ctx = this.ctx;
   let scale = this.cz;
-  let xx = this.cx + map.x;
-  let yy = this.cy + map.y;
+  let xx = this.cx + (map.x * CFG.BLOCK_SIZE) * this.cz;
+  let yy = this.cy + (map.y * CFG.BLOCK_SIZE) * this.cz;
   let ww = (map.width * CFG.BLOCK_SIZE) * scale;
   let hh = (map.height * CFG.BLOCK_SIZE) * scale;
-  let lw = 1.0 * this.cz;
+  let lw = 0.55 * this.cz;
   ctx.lineWidth = lw;
-  ctx.strokeStyle = `rgba(255,0,0,0.45)`;
+  ctx.strokeStyle = `rgba(255,0,0,0.75)`;
   ctx.strokeRect(
-    xx - lw, yy - lw,
-    ww + (lw * 2), hh + (lw * 2)
+    xx, yy,
+    ww, hh
   );
 };
