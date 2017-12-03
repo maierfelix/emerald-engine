@@ -26,19 +26,37 @@ export function drawMap(map) {
   let dy = this.cy + (map.y * CFG.BLOCK_SIZE) * this.cz;
   let dw = (map.width * CFG.BLOCK_SIZE) * this.cz;
   let dh = (map.height * CFG.BLOCK_SIZE) * this.cz;
-  if (!isCurrentMap) ctx.globalAlpha = 0.5;
-  this.drawMapTexture(0, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);
-  this.drawMapTexture(1, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);
-  this.drawMapTexture(2, map.texture, sx, sy, sw, sh, dx, dy, dw, dh);
+  //this.drawMapTileBased(map);
+  this.drawMapLayerTexture(0, map, sx, sy, sw, sh, dx, dy, dw, dh);
+  this.drawMapLayerTexture(1, map, sx, sy, sw, sh, dx, dy, dw, dh);
+  this.drawMapLayerTexture(2, map, sx, sy, sw, sh, dx, dy, dw, dh);
   this.drawMapObjects(map);
-  if (!isCurrentMap) ctx.globalAlpha = 1.0;
-  if (isCurrentMap) this.drawMousePreview();
+  if (isCurrentMap && !this.newMap) this.drawMousePreview();
   this.drawMapSizeBorder(map);
+};
+
+export function drawMapLayerTexture(index, map, sx, sy, sw, sh, dx, dy, dw, dh) {
+  let ctx = this.ctx;
+  let tsMode = this.tsMode - 1;
+  let isCurrentMap = (this.currentMap === map) || (this.currentMap === null);
+  if (index !== tsMode && tsMode !== 3) ctx.globalAlpha = 0.4;
+  if (!isCurrentMap) ctx.globalAlpha = 0.5;
+  ctx.drawImage(
+    map.textures[index].canvas,
+    sx, sy,
+    sw, sh,
+    dx, dy,
+    dw, dh
+  );
+  ctx.globalAlpha = 1.0;
 };
 
 export function drawMapTileBased(map) {
   let ctx = this.ctx;
   let bundles = map.data;
+  let mx = map.x | 0;
+  let my = map.y | 0;
+  let tw = (CFG.TILESET_DEFAULT_WIDTH / CFG.BLOCK_SIZE) | 0;
   for (let bundleId in bundles) {
     let bundle = bundles[bundleId];
     for (let tsId in bundle) {
@@ -51,19 +69,19 @@ export function drawMapTileBased(map) {
           let tsMode = this.tsMode - 1;
           if ((ll - 1 | 0) !== tsMode && tsMode !== 3) ctx.globalAlpha = 0.4;
         }
-        let size = map.width * map.height;
+        let size = (map.width * map.height) | 0;
         for (let ii = 0; ii < size; ++ii) {
           let xx = (ii % map.width) | 0;
           let yy = (ii / map.width) | 0;
           let tile = (data[ii] - 1) | 0;
           if ((tile + 1) === 0) continue;
-          let sx = (tile % 8) | 0;
-          let sy = (tile / 8) | 0;
+          let sx = (tile % tw) | 0;
+          let sy = (tile / tw) | 0;
           ctx.drawImage(
             tileset,
-            sx * CFG.BLOCK_SIZE, sy * CFG.BLOCK_SIZE,
-            CFG.BLOCK_SIZE, CFG.BLOCK_SIZE,
-            this.cx + (xx * CFG.BLOCK_SIZE) * this.cz, this.cy + (yy * CFG.BLOCK_SIZE) * this.cz,
+            (sx * CFG.BLOCK_SIZE) | 0, (sy * CFG.BLOCK_SIZE) | 0,
+            (CFG.BLOCK_SIZE) | 0, (CFG.BLOCK_SIZE) | 0,
+            this.cx + ((mx + xx) * CFG.BLOCK_SIZE) * this.cz, this.cy + ((my + yy) * CFG.BLOCK_SIZE) * this.cz,
             CFG.BLOCK_SIZE * this.cz, CFG.BLOCK_SIZE * this.cz
           );
         };
@@ -72,20 +90,6 @@ export function drawMapTileBased(map) {
       };
     };
   };
-};
-
-export function drawMapTexture(index, textures, sx, sy, sw, sh, dx, dy, dw, dh) {
-  let ctx = this.ctx;
-  let tsMode = this.tsMode - 1;
-  if (index !== tsMode && tsMode !== 3) ctx.globalAlpha = 0.4;
-  ctx.drawImage(
-    textures[index].canvas,
-    sx, sy,
-    sw, sh,
-    dx, dy,
-    dw, dh
-  );
-  ctx.globalAlpha = 1.0;
 };
 
 export function drawMapSizeBorder(map) {

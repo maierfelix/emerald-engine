@@ -21,7 +21,12 @@ export function setup() {
 export function loadDefaultMap() {
   this.loadTilesetBundleFromServer("dawn").then(tileset => {
     this.useTilesetBundle(tileset);
+    /*let map = new Map(this, 16, 16);
+    this.addMap(map);
+    this.currentMap = map;
+    this.initUI();*/
     this.loadMapFromServer("littleroot-town").then(map => {
+      this.addMap(map);
       this.currentMap = map;
       this.initUI();
     });

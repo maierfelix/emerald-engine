@@ -3,6 +3,7 @@ import ROMInputDialog from "./rom-input";
 import {
   showUILoadingModal,
   closeUILoadingModal,
+  isUILoadingModalActive,
   setUILoadingModalTitle,
   setUILoadingModalTitleColor,
   setUILoadingModalTitleBottom
@@ -11,6 +12,7 @@ import {
 export const showInitScreen = InitScreen;
 export const showLoadingModal = showUILoadingModal;
 export const closeLoadingModal = closeUILoadingModal;
+export const isLoadingModalActive = isUILoadingModalActive;
 export const setLoadingModalTitle = setUILoadingModalTitle;
 export const setLoadingModalBottom = setUILoadingModalTitleBottom;
 export const setLoadingModalTitleColor = setUILoadingModalTitleColor;

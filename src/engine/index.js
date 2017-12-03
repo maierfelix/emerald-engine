@@ -37,8 +37,9 @@ export default class MapEditor {
   /**
    * @param {Rom} rom - The ROM file to use
    */
-  constructor(rom, session) {
-    this.rom = rom;
+  constructor(engine) {
+    this.engine = engine;
+    this.rom = engine.rom;
     this.cx = 0;
     this.cy = 0;
     this.cz = 2.0;
@@ -58,13 +59,13 @@ export default class MapEditor {
     };
     this.selection = {
       entity: null,
-      map: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 },
+      newMap: { sx: 0, sy: 0, ex: 0, ey: 0, ax: 0, ay: 0, jr: false },
       tileset: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 }
     };
     this.preview = {
       tileset: null
     };
-    this.session = session;
+    this.session = engine.session;
     this.mode = -1;
     this.tsMode = -1;
     this.objMode = -1;
@@ -117,7 +118,9 @@ MapEditor.prototype.draw = function() {
   if (this.newMap !== null) {
     this.drawMapPreview(this.newMap);
   }
-  drawGrid(this.ctx, this.cz, this.cx, this.cy, this.width, this.height);
+  if (this.cz >= CFG.ENGINE_CAMERA_GRID_MIN_SCALE) {
+    drawGrid(this.ctx, this.cz, this.cx, this.cy, this.width, this.height);
+  }
   this.frames++;
 };
 

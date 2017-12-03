@@ -11,6 +11,7 @@ import {
   showInitScreen,
   showLoadingModal,
   closeLoadingModal,
+  isLoadingModalActive,
   showROMInputDialog,
   setLoadingModalTitle,
   setLoadingModalBottom,
@@ -70,12 +71,54 @@ Engine.prototype.init = function() {
   });
 };
 
-Engine.prototype.initPingPong = function() {
+Engine.prototype.initSessionTicker = function() {
   let session = this.session;
   let query = CFG.ENGINE_LOGIN_SERVER_LOC + `/?cmd=PING&username=${session.user}&sessionId=${session.id}`;
+  clearInterval(this.ppTimer);
   this.ppTimer = setInterval(() => {
-    GET(query);
+    GET(query).then(result => {
+      if (this.session.isFixing) return;
+      if (this.session.invalid) {
+        this.session.isFixing = true;
+        this.reAuthenticateToServer();
+      }
+      if (result === null) {
+        if (!isLoadingModalActive()) {
+          showLoadingModal(this.rom, `Connection lost!`);
+          setLoadingModalBottom(`Trying to reconnect...`);
+          this.session.invalid = true;
+        }
+      } else {
+        let json = JSON.parse(result);
+        if (json.status === `SESSION_INVALID`) {
+          this.session.invalid = true;
+          if (!isLoadingModalActive()) {
+            showLoadingModal(this.rom, `Session timeout!`);
+            setLoadingModalBottom(`Authenticating...`);
+            this.reAuthenticateToServer();
+          }
+        } else {
+          if (isLoadingModalActive()) closeLoadingModal();
+        }
+      }
+    });
   }, CFG.ENGINE_SESSION_TIMEOUT);
+};
+
+Engine.prototype.reAuthenticateToServer = function() {
+  this.loginIntoServer(this.session).then(json => {
+    if (json.id) {
+      this.session = json;
+      if (isLoadingModalActive()) closeLoadingModal();
+    } else {
+      setLoadingModalTitle(`Failed to authenticate!`);
+      setLoadingModalBottom(`Refreshing the client...`);
+      setTimeout(() => {
+        // reload everything
+        location.reload();
+      }, CFG.ENGINE_INIT_SCREEN_ERROR_DELAY);
+    }
+  });
 };
 
 Engine.prototype.setupInstance = function(login) {
@@ -88,7 +131,7 @@ Engine.prototype.setupInstance = function(login) {
       instance = new ROMTilesetEditor(this.rom, 0, 9);
     break;
     case "map-editor":
-      instance = new MapEditor(this.rom, login);
+      instance = new MapEditor(this);
     break;
   };
   if (!instance) {
@@ -163,7 +206,6 @@ Engine.prototype.loginIntoServer = function(login) {
   let query = CFG.ENGINE_LOGIN_SERVER_LOC + `/?cmd=LOGIN&username=${login.user}&password=${login.pass}`;
   return new Promise(resolve => {
     GET_JSON(query).then(json => {
-      clearInterval(this.ppTimer);
       if (json.kind === "STATUS" && json.msg === "CREATE_SESSION_TICKET") {
         let sessionId = json.data;
         let session = {
@@ -172,7 +214,7 @@ Engine.prototype.loginIntoServer = function(login) {
           id: sessionId
         };
         this.session = session;
-        this.initPingPong();
+        this.initSessionTicker();
         resolve(session);
       } else {
         resolve(json);
@@ -194,7 +236,7 @@ Engine.prototype.registerAccountIntoServer = function(login) {
           id: json.id
         };
         this.session = session;
-        this.initPingPong();
+        this.initSessionTicker();
         resolve(session);
       } else {
         resolve(json);

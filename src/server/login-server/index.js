@@ -168,9 +168,12 @@ LoginServer.prototype.processHTTPPingRequest = function(queries, resp) {
   let sessionId = queries.sessionId;
   let sessionTicket = this.getTicketByUsername(user);
   // reset session timeout
-  if (sessionTicket !== null) sessionTicket.resetTimeout();
-  resp.write("");
-  resp.end();
+  if (sessionTicket !== null) {
+    sessionTicket.resetTimeout();
+    return sendObject({ status: "SESSION_OK" }, resp);
+  }
+  // session invalid
+  return sendObject({ status: "SESSION_INVALID" }, resp);
 };
 
 LoginServer.prototype.processHTTPLoginRequest = function(queries, resp) {
@@ -189,17 +192,32 @@ LoginServer.prototype.processHTTPLoginRequest = function(queries, resp) {
     if (!registered) {
       return sendObject({ kind: "ERROR", msg: "INVALID_LOGIN" }, resp);
     }
-    // user is already connected, abort
+    // user is already connected
     if (this.isUserAlreadyConnected(user)) {
-      console.log(`[LoginServer] Parallel login detected for ${user}`);
-      return sendObject({ kind: "ERROR", msg: "ACCOUNT_IN_USE" }, resp);
+      // wait until the maximum session timeout is reached
+      // then try again to let the user login
+      setTimeout(() => {
+        // user can login now
+        if (!this.isUserAlreadyConnected(user)) {
+          this.sendLoginResponse(user, resp);
+        // user is probably trying to connect multiple times
+        } else {
+          console.log(`[LoginServer] Parallel login detected for ${user}`);
+          return sendObject({ kind: "ERROR", msg: "ACCOUNT_IN_USE" }, resp);
+        }
+      }, CFG.LOGIN_SERVER_SESSION_TIMEOUT - 500);
+      return;
     }
-    console.log(`[LoginServer] ${user} logged in`);
-    // generate a unique session ticket
-    let ticket = this.createSessionTicket(user);
-    // send the ticket id to the client
-    sendObject({ kind: "STATUS", msg: "CREATE_SESSION_TICKET", data: ticket.id }, resp);
+    this.sendLoginResponse(user, resp);
   });
+};
+
+LoginServer.prototype.sendLoginResponse = function(user, resp) {
+  console.log(`[LoginServer] ${user} logged in`);
+  // generate a unique session ticket
+  let ticket = this.createSessionTicket(user);
+  // send the ticket id to the client
+  sendObject({ kind: "STATUS", msg: "CREATE_SESSION_TICKET", data: ticket.id }, resp);
 };
 
 LoginServer.prototype.isUserRegistered = function(user, pass) {

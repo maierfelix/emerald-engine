@@ -4,6 +4,8 @@ import {
 
 import * as CFG from "../cfg";
 
+let isLoadingModalActive;
+
 export function showUILoadingModal(rom, msg, color) {
   // no title color defined, use default color
   if (!color) setUILoadingModalTitleColor(CFG.ENGINE_UI_COLORS.DEFAULT);
@@ -15,7 +17,10 @@ export function showUILoadingModal(rom, msg, color) {
   el.style.display = "flex";
   el.style.opacity = 0.0;
   // delayed opacity<->display hack
-  setTimeout(() => el.style.opacity = 1.0, 10);
+  setTimeout(() => {
+    el.style.opacity = 1.0;
+    isLoadingModalActive = true;
+  }, 10);
   let elBall = $(`#ui-modal-loading-ball`);
   let elSpinner = $(`#ui-modal-loading-spinner`);
   let data = elRndBall.getContext("2d").getImageData(
@@ -36,12 +41,14 @@ export function closeUILoadingModal(forced) {
   if (forced) {
     el.style.opacity = 0.0;
     el.style.display = "none";
+    isLoadingModalActive = false;
     return;
   }
   setTimeout(() => el.style.opacity = 0.0, 10);
   setTimeout(() => {
     if (parseFloat(el.style.opacity) <= 0) {
       el.style.display = "none";
+      isLoadingModalActive = false;
     }
   }, 210);
 };
@@ -59,4 +66,8 @@ export function setUILoadingModalTitle(msg) {
 export function setUILoadingModalTitleBottom(msg) {
   msg = msg || ``;
   $(`#ui-modal-loading-title-bottom`).innerHTML = msg;
+};
+
+export function isUILoadingModalActive() {
+  return isLoadingModalActive;
 };

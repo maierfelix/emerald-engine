@@ -15,8 +15,12 @@ export function loadTilesetFromROM(bank, map) {
   return this.rom.getMapTileset(bank, map);
 };
 
-export function loadTilesetBundleFromServer(name) {
+export function loadTilesetBundleFromServer(name, forced) {
   return new Promise(resolve => {
+    // bundle already cached
+    if (this.bundles[name] && !forced) {
+      return resolve(this.bundles[name]);
+    }
     let query = CFG.ENGINE_TS_SERVER_LOC + `/?cmd=GET_BUNDLE&bundle=${name}`;
     GET(addSessionToQuery(query, this.session)).then(res => {
       let tilesets = JSON.parse(res);

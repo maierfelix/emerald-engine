@@ -2,7 +2,9 @@ import * as CFG from "../cfg";
 
 import {
   zoomScale,
-  getRelativeTile
+  getRelativeTile,
+  getNormalizedSelection,
+  getRectangleFromSelection
 } from "../utils";
 
 export function zoom(e) {
@@ -42,9 +44,7 @@ export function mouseMove(e) {
   if (e.target !== this.map) return;
   // left mouse move
   if (this.drag.ldown) {
-  // we're in map adding mode
-    if (this.newMap !== null) return;
-    this.processUIMouseInput(e);
+    if (!this.newMap) this.processUIMouseInput(e);
   }
   // right mouse move
   if (this.drag.rdown) {
@@ -66,6 +66,11 @@ export function mouseClick(e) {
   // left
   if (e.which === 1) {
     this.drag.ldown = true;
+    if (this.newMap) {
+      let rel = this.getRelativeMapTile(x, y);
+      this.selection.newMap.sx = rel.x;
+      this.selection.newMap.sy = rel.y;
+    }
   }
   // right
   if (e.which === 3) {
@@ -74,7 +79,7 @@ export function mouseClick(e) {
     this.drag.rdown = true;
     this.selection.entity = null;
   }
-  this.mouseMove(e);
+  if (!this.newMap) this.mouseMove(e);
   this.map.focus();
 };
 
@@ -85,9 +90,13 @@ export function mouseUp(e) {
   // left
   if (e.which === 1) {
     this.drag.ldown = false;
-    if (this.newMap !== null) {
+    if (this.newMap) {
       let rel = this.getRelativeMapTile(x, y);
-      this.onUIPlaceNewMapAt(this.newMap, rel.x, rel.y);
+      this.selection.newMap.ax = rel.x - this.newMap.x;
+      this.selection.newMap.ay = rel.y - this.newMap.y;
+      // mouseup fired after resizing the map, abort
+      if (this.selection.newMap.jr) return;
+      this.onUIPlaceNewMap(this.newMap);
     }
   }
   // right

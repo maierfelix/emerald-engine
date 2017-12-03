@@ -354,7 +354,7 @@ input[type=number]::-webkit-inner-spin-button {
   position: absolute;
   top: 0px;
   right: 0px;
-  width: 270px;
+  width: 301px;
   height: 48px;
   border-left: 1px solid black;
   border-top: 1px solid black;
@@ -364,7 +364,7 @@ input[type=number]::-webkit-inner-spin-button {
   position: absolute;
   top: 48px;
   right: 0px;
-  width: 270px;
+  width: 301px;
   height: 48px;
   border-left: 1px solid black;
   border-top: 1px solid black;
@@ -374,7 +374,7 @@ input[type=number]::-webkit-inner-spin-button {
   position: absolute;
   top: 96px;
   right: 0px;
-  width: 270px;
+  width: 301px;
   height: 48px;
   border-left: 1px solid black;
   border-top: 1px solid black;
@@ -432,12 +432,12 @@ label.ts-btn:hover {
 }
 
 #engine-ui-obj > .engine-right-menu {
-  width: 270px;
+  width: 301px;
   top: 48px;
 }
 
 #engine-ui-opt > .engine-right-menu {
-  width: 270px;
+  width: 301px;
   top: 48px;
 }
 
@@ -482,7 +482,7 @@ label.ts-btn:hover {
 
 .ts-btn-add-map {
   float: right;
-  margin-right: 6px;
+  margin-right: 36px;
 }
 
 .engine-ui-btn-list {

@@ -36,5 +36,5 @@ export const LOGIN_SERVER_PASSWORD = {
 export const TS_SERVER_TS_LIST_REFRESH = 1e3 * (30 * 60); // 30min
 
 export const LOGIN_SERVER_SESSION_TIMEOUT = 2500; // 2.5s
-export const LOGIN_SERVER_TICKET_DURATION = 1e3 * (60 * 60); // 60min
-export const LOGIN_SERVER_TICKER_TICKET_TIMEOUTS = 1e3 * (1 * 60); // 1min
+export const LOGIN_SERVER_TICKET_DURATION = 1e3 * (360 * 60); // 6h
+export const LOGIN_SERVER_TICKER_TICKET_TIMEOUTS = 1e3 * (1 * 30); // 30s

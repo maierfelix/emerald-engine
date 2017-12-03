@@ -75,7 +75,7 @@ export function rectIntersect(
     };
   }
   return null;
-}
+};
 
 export function rnd64() {
   let max = Number.MAX_SAFE_INTEGER;
@@ -174,17 +174,21 @@ export function GET(url, delay = 0) {
     let xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
     xhr.responseType = "text";
+    xhr.onerror = (e) => {
+      resolve(null, e);
+    };
     xhr.onload = (e) => {
       if (xhr.readyState === xhr.DONE) {
-        if (xhr.status === 200) resolve(xhr.responseText);
+        if (xhr.status === 200) return resolve(xhr.responseText);
       }
+      resolve(null);
     };
     if (delay > 0) {
       setTimeout(() => {
-        xhr.send(null);
+        xhr.send();
       }, delay);
     } else {
-      xhr.send(null);
+      xhr.send();
     }
   });
 };
@@ -279,6 +283,15 @@ export function getNormalizedSelection(dx, dy, sx, sy) {
     y2 = y1 + y2;
   }
   return { x: x1, y: y1, w: x2, h: y2 };
+};
+
+export function getRectangleFromSelection(dx, dy, sx, sy) {
+  let normalized = getNormalizedSelection(dx, dy, sx, sy);
+  let x = Math.min(normalized.x, normalized.w);
+  let y = Math.min(normalized.y, normalized.h);
+  let w = Math.max(normalized.x, normalized.w);
+  let h = Math.max(normalized.y, normalized.h);
+  return { x, y, w, h };
 };
 
 export function JSONTilesetToCanvas(rom, json) {

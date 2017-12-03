@@ -6,7 +6,7 @@ import HTTPServer from "./http-server/index";
 new DataServer().then(dataServer => {
   new GameServer().then(gameServer => {
     new LoginServer().then(loginServer => {
-      new HTTPServer().then(httpServer => {
+      /*new HTTPServer().then(httpServer => {*/
         // share server instances
         let instances = [dataServer, gameServer, loginServer];
         instances.map((instance, index) => {
@@ -15,7 +15,7 @@ new DataServer().then(dataServer => {
           });
         });
         console.log(`All servers are running!`);
-      });
+      /*});*/
     });
   });
 });

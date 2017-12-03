@@ -7,7 +7,8 @@ import {
   loadJSONFile,
   getRelativeTile,
   addSessionToQuery,
-  createCanvasBuffer
+  createCanvasBuffer,
+  getNormalizedSelection
 } from "../../utils";
 
 import Map from "../map/index";
@@ -58,30 +59,6 @@ export function setUIObjMode(index) {
   elMenu.style.display = "block";
 };
 
-export function setUIMousePosition(x, y) {
-  let rel = getRelativeTile(x - this.cx, y - this.cy, this.cz);
-  $("#engine-ui-mx").innerHTML = `X: ${rel.x / CFG.BLOCK_SIZE}`;
-  $("#engine-ui-my").innerHTML = `Y: ${rel.y / CFG.BLOCK_SIZE}`;
-  // change cursor when hovering over an object
-  // only do this when in object mode
-  if (this.mode === CFG.ENGINE_MODE_OBJ) {
-    let entity = this.getEventEntityByPosition(rel.x / CFG.BLOCK_SIZE, rel.y / CFG.BLOCK_SIZE);
-    this.setUIMapCursor(entity !== null ? "pointer" : "default");
-  }
-  // we're in map adding mode
-  if (this.newMap !== null) {
-    let rel = this.getRelativeMapTile(x, y);
-    this.newMap.x = rel.x;
-    this.newMap.y = rel.y;
-    let valid = this.isFreeMapSpaceAt(rel.x, rel.y, this.newMap.width, this.newMap.height);
-    if (!valid) {
-      this.setUIMapCursor("not-allowed");
-    } else {
-      this.setUIMapCursor("pointer");
-    }
-  }
-};
-
 export function setUIMapCursor(cursor) {
   this.map.style.cursor = cursor;
 };
@@ -126,27 +103,33 @@ export function onUIMapAdd() {
   let map = new Map(this).resize(
     CFG.ENGINE_DEFAULT_MAP.WIDTH, CFG.ENGINE_DEFAULT_MAP.HEIGHT
   );
+  let rel = this.getRelativeMapTile(this.mx, this.my);
+  map.x = rel.x;
+  map.y = rel.y;
   this.newMap = map;
+  this.resetMapPreviewAnchor();
   this.setUIVisibility(false);
   this.setUIMapCursor("pointer");
 };
 
+export function onUIMapAddAbort() {
+  this.newMap = null;
+  this.setUIMapCursor("default");
+  this.setUIVisibility(true);
+};
+
 export function onUIMapSave() {
-  let map = this.currentMap;
-  let json = map.toJSON();
+  let json = this.mapsToJSON();
   console.log(json);
 };
 
-export function onUIPlaceNewMapAt(map, x, y) {
-  let valid = this.isFreeMapSpaceAt(x, y, map.width, map.height);
+export function onUIPlaceNewMap(map) {
+  let valid = this.isFreeMapSpaceAt(map.x, map.y, map.width, map.height);
   if (valid) {
-    map.x = x;
-    map.y = y;
-    this.newMap = null;
+    map.resize(map.width, map.height);
     this.currentMap = map;
     this.addMap(map);
-    this.setUIVisibility(true);
-    this.setUIMapCursor("default");
+    this.onUIMapAddAbort();
   }
 };
 
@@ -155,6 +138,11 @@ export function processUIMouseInput(e) {
   let y = e.clientY;
   let map = this.currentMap;
   let rel = this.getRelativeMapTile(x, y);
+  // we're in map adding mode, abort
+  if (this.newMap !== null) {
+    this.selection.newMap.jr = false;
+    return;
+  }
   // object dragging
   if (this.mode === CFG.ENGINE_MODE_OBJ) {
     let entity = this.getEventEntityByPosition(rel.x, rel.y);
@@ -167,10 +155,64 @@ export function processUIMouseInput(e) {
   }
   // tile drawing
   else if (this.mode === CFG.ENGINE_MODE_TS) {
+    // normalized coordinates
+    let nx = rel.x - map.x;
+    let ny = rel.y - map.y;
     map.drawTileSelectionAt(
-      rel.x, rel.y,
+      nx, ny,
       this.tsMode,
       this.selection.tileset
     );
+  }
+};
+
+export function setUIMousePosition(x, y) {
+  let rel = getRelativeTile(x - this.cx, y - this.cy, this.cz);
+  $("#engine-ui-mx").innerHTML = `X: ${rel.x / CFG.BLOCK_SIZE}`;
+  $("#engine-ui-my").innerHTML = `Y: ${rel.y / CFG.BLOCK_SIZE}`;
+  // change cursor when hovering over an object
+  // only do this when in object mode
+  if (this.mode === CFG.ENGINE_MODE_OBJ) {
+    let entity = this.getEventEntityByPosition(rel.x / CFG.BLOCK_SIZE, rel.y / CFG.BLOCK_SIZE);
+    this.setUIMapCursor(entity !== null ? "pointer" : "default");
+  }
+  // set the added map to our mouse position
+  if (!this.drag.ldown && this.newMap !== null) {
+    let map = this.newMap;
+    let rel = this.getRelativeMapTile(x, y);
+    map.x = rel.x - this.selection.newMap.ax;
+    map.y = rel.y - this.selection.newMap.ay;
+    this.setUIMapPlacableCursor(map);
+    this.selection.newMap.jr = false;
+  }
+  // we're resizing the added map
+  else if (this.drag.ldown && this.newMap !== null) {
+    // resize new map
+    let map = this.newMap;
+    let rel = this.getRelativeMapTile(x, y);
+    let sx = this.selection.newMap.sx;
+    let sy = this.selection.newMap.sy;
+    let normalized = getNormalizedSelection(
+      rel.x, rel.y, sx, sy
+    );
+    let xx = normalized.x;
+    let yy = normalized.y;
+    let ww = (normalized.w - xx + 1);
+    let hh = (normalized.h - yy + 1);
+    map.x = xx;
+    map.y = yy;
+    map.width = ww;
+    map.height = hh;
+    this.selection.newMap.jr = true;
+    this.setUIMapPlacableCursor(map);
+  }
+};
+
+export function setUIMapPlacableCursor(map) {
+  let valid = this.isFreeMapSpaceAt(map.x, map.y, map.width, map.height);
+  if (!valid) {
+    this.setUIMapCursor("not-allowed");
+  } else {
+    this.setUIMapCursor("pointer");
   }
 };

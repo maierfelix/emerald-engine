@@ -40,6 +40,7 @@ export function keyDown(e) {
   switch (key) {
     case "Escape":
       this.closeUIModal();
+      if (this.newMap) this.onUIMapAddAbort();
     break;
   };
 };
