@@ -163,6 +163,16 @@ export function createCanvasFromBase64(data) {
   });
 };
 
+export function createImageFromCanvas(canvas) {
+  return new Promise(resolve => {
+    let img = new Image();
+    img.onload = (e) => {
+      resolve(img);
+    };
+    img.src = canvas.toDataURL("image/png");
+  });
+};
+
 export function loadJSONFile(path) {
   return new Promise(resolve => {
     fetch(path).then(resp => resp.json()).then(resolve);
@@ -175,7 +185,7 @@ export function GET(url, delay = 0) {
     xhr.open("GET", url, true);
     xhr.responseType = "text";
     xhr.onerror = (e) => {
-      resolve(null, e);
+      resolve(null);
     };
     xhr.onload = (e) => {
       if (xhr.readyState === xhr.DONE) {
@@ -294,6 +304,10 @@ export function getRectangleFromSelection(dx, dy, sx, sy) {
   return { x, y, w, h };
 };
 
+export function getTilesetTileIndexBy(x, y) {
+  return (y * CFG.TILESET_HORIZONTAL_SIZE + x) + 1;
+};
+
 export function JSONTilesetToCanvas(rom, json) {
   let buffer = createCanvasBuffer(CFG.TILESET_DEFAULT_WIDTH, CFG.TILESET_DEFAULT_HEIGHT).ctx;
   let tilesets = json;
@@ -307,7 +321,7 @@ export function JSONTilesetToCanvas(rom, json) {
       let tiles = layers[ii];
       for (let jj = 0; jj < tiles.length; ++jj) {
         let tile = tiles[jj];
-        let isBgLayerSource = tile.sx < (CFG.TILESET_DEFAULT_WIDTH / CFG.BLOCK_SIZE);
+        let isBgLayerSource = tile.sx < CFG.TILESET_HORIZONTAL_SIZE;
         let reduceX = (isBgLayerSource ? 0 : -CFG.TILESET_DEFAULT_WIDTH);
         let layer = tileset.layers[isBgLayerSource ? "background" : "foreground"].canvas;
         tileBuffer.clearRect(0, 0, CFG.BLOCK_SIZE, CFG.BLOCK_SIZE);
@@ -374,4 +388,10 @@ export function getNodeChildIndex(node) {
   let index = 0;
   while((node = node.previousSibling) !== null) ++index;
   return index;
+};
+
+export function loadJavaScriptFile(path) {
+  let script = document.createElement("script");
+  script.src = path;
+  document.body.appendChild(script);
 };

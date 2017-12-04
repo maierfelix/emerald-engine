@@ -16,6 +16,7 @@ import {
 import extend from "../extend";
 
 import Map from "./map/index";
+import CanvasRecorder from "../canvas-recorder";
 
 import * as _map from "./map";
 import * as _init from "./init";
@@ -28,10 +29,10 @@ import * as _ui_modal from "./ui/modal";
 import * as _ui_encounter from "./ui/encounter";
 
 import * as _render_map from "./render/map";
-import * as _render_events from "./render/events";
 import * as _render_preview from "./render/preview";
 import * as _render_tileset from "./render/tileset";
 import * as _render_border_map from "./render/map-border";
+import * as _render_map_objects from "./render/map-objects";
 
 export default class MapEditor {
   /**
@@ -45,6 +46,8 @@ export default class MapEditor {
     this.cz = 2.0;
     this.mx = 0;
     this.my = 0;
+    this.tmx = 0;
+    this.tmy = 0;
     this.map = $("#engine-map");
     this.tileset = $("#engine-tileset");
     this.tsCtx = this.tileset.getContext("2d");
@@ -69,6 +72,7 @@ export default class MapEditor {
     this.mode = -1;
     this.tsMode = -1;
     this.objMode = -1;
+    this.tsEditMode = -1;
     this.newMap = null;
     this.modalMode = null;
     this.player = null;
@@ -77,22 +81,6 @@ export default class MapEditor {
     this.currentMap = null;
     this.currentBundle = null;
     this.currentTileset = null;
-    this.events = [
-      {
-        x: 5,
-        y: 18,
-        kind: CFG.ENGINE_BOX_TYPES.ENTITY,
-        width: 1,
-        height: 1
-      },
-      {
-        x: 10,
-        y: 30,
-        kind: CFG.ENGINE_BOX_TYPES.WARP,
-        width: 1,
-        height: 1
-      }
-    ];
     this.entities = [];
     this.setup();
   }
@@ -115,7 +103,7 @@ MapEditor.prototype.draw = function() {
   this.clear();
   this.drawMaps();
   this.drawTileset(tileset);
-  if (this.newMap !== null) {
+  if (this.isUIInMapAddingMode()) {
     this.drawMapPreview(this.newMap);
   }
   if (this.cz >= CFG.ENGINE_CAMERA_GRID_MIN_SCALE) {
@@ -154,11 +142,17 @@ MapEditor.prototype.getPkmnNameList = function() {
   return list;
 };
 
-MapEditor.prototype.getEventEntityByPosition = function(x, y) {
-  let events = this.events;
-  for (let ii = 0; ii < events.length; ++ii) {
-    let event = events[ii];
-    if (event.x === x && event.y === y) return event;
+MapEditor.prototype.getMapObjectByPosition = function(x, y) {
+  let maps = this.maps;
+  for (let ii = 0; ii < maps.length; ++ii) {
+    let map = maps[ii];
+    let objects = map.objects;
+    for (let jj = 0; jj < objects.length; ++jj) {
+      let object = objects[jj];
+      let ox = map.x + object.x;
+      let oy = map.y + object.y;
+      if (ox === x && oy === y) return object;
+    };
   };
   return null;
 };
@@ -174,7 +168,7 @@ extend(MapEditor, _ui_modal);
 extend(MapEditor, _ui_encounter);
 
 extend(MapEditor, _render_map);
-extend(MapEditor, _render_events);
 extend(MapEditor, _render_tileset);
 extend(MapEditor, _render_preview);
 extend(MapEditor, _render_border_map);
+extend(MapEditor, _render_map_objects);

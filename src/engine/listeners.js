@@ -23,6 +23,7 @@ export function addListeners() {
   this.addUIButtonListeners();
   this.addUIObjListeners();
   this.addUIEncounterListeners();
+  this.addUIMapChooseListener();
   let self = this;
   // update loop
   (function update() {
@@ -31,6 +32,7 @@ export function addListeners() {
   }).call(this);
   this.addTilesetListeners();
   this.addTilesetLayerListeners();
+  this.addTilesetEditModeListeners();
   this.addTilesetBundleListener();
   this.addSubTilesetListener();
 };
@@ -72,46 +74,53 @@ export function addUIEncounterListeners() {
   };
 };
 
+export function addUIMapChooseListener() {
+  let el = $(`#engine-ui-map-select`);
+  el.onchange = (e) => {
+    let index = el.selectedIndex;
+    let map = this.maps[index];
+    this.currentMap = map;
+  };
+};
+
 export function addTilesetListeners() {
   let el = $("#engine-tileset");
   let down = false;
   el.onmousedown = (e) => {
+    let mx = e.offsetX;
+    let my = e.offsetY;
     if (e.which !== 1) return;
     down = true;
     this.preview.tileset = null;
-    let mx = e.offsetX;
-    let my = e.offsetY;
     let tile = getRelativeTile(mx, my, CFG.ENGINE_TILESET_SCALE);
-    let selection = this.selection.tileset;
-    selection.x = tile.x; selection.y = tile.y;
-    selection.sx = tile.x; selection.sy = tile.y;
-    selection.w = selection.x;
-    selection.h = selection.y;
+    let sel = this.selection.tileset;
+    sel.sx = tile.x; sel.sy = tile.y;
+    this.setUITilesetSelection(tile.x, tile.y, sel.x, sel.y);
     el.onmousemove.call(this, e);
   };
   el.onmouseup = (e) => {
+    let mx = e.offsetX;
+    let my = e.offsetY;
     if (e.which !== 1) return;
     down = false;
-    this.preview.tileset = null;
-    this.preview.tileset = this.bufferTilesetSelection(this.selection.tileset);
+    this.updateTilesetSelectionPreview();
   };
   el.onmouseout = (e) => {
     el.onmouseup.call(this, e);
   };
   el.onmousemove = (e) => {
-    if (!down) return;
     let mx = e.offsetX;
     let my = e.offsetY;
+    if (!down) return;
+    this.tmx = mx;
+    this.tmy = my;
     let tile = getRelativeTile(mx, my, CFG.ENGINE_TILESET_SCALE);
     let selection = this.selection.tileset;
     let sel = getNormalizedSelection(
       tile.x, tile.y,
       selection.sx, selection.sy
     );
-    selection.x = sel.x;
-    selection.y = sel.y;
-    selection.w = sel.w;
-    selection.h = sel.h;
+    this.setUITilesetSelection(sel.x, sel.y, sel.w, sel.h);
   };
 };
 
@@ -121,6 +130,13 @@ export function addTilesetLayerListeners() {
   $("#engine-layer-btn-3").onclick = (e) => this.setUIActiveTilesetLayer(3);
   $("#engine-layer-btn-4").onclick = (e) => this.setUIActiveTilesetLayer(4);
   $("#engine-layer-btn-5").onclick = (e) => this.setUIActiveTilesetLayer(5);
+};
+
+export function addTilesetEditModeListeners() {
+  $(`#engine-edit-mode-pencil`).onclick = (e) => this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.PENCIL);
+  $(`#engine-edit-mode-pipette`).onclick = (e) => this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.PIPETTE);
+  $(`#engine-edit-mode-bucket`).onclick = (e) => this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.BUCKET);
+  $(`#engine-edit-mode-magic`).onclick = (e) => this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.MAGIC);
 };
 
 export function addTilesetBundleListener() {

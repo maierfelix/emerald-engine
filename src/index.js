@@ -106,17 +106,17 @@ Engine.prototype.initSessionTicker = function() {
 };
 
 Engine.prototype.reAuthenticateToServer = function() {
+  setLoadingModalTitle(`Reauthenticating...`);
   this.loginIntoServer(this.session).then(json => {
-    if (json.id) {
+    if (json && json.id) {
       this.session = json;
+      this.instance.session = json;
       if (isLoadingModalActive()) closeLoadingModal();
     } else {
-      setLoadingModalTitle(`Failed to authenticate!`);
-      setLoadingModalBottom(`Refreshing the client...`);
+      showLoadingModal(this.rom, `Failed to authenticate!`);
       setTimeout(() => {
-        // reload everything
-        location.reload();
-      }, CFG.ENGINE_INIT_SCREEN_ERROR_DELAY);
+        this.reAuthenticateToServer();
+      }, CFG.ENGINE_INIT_SCREEN_ERROR_DELAY * 2.5);
     }
   });
 };
@@ -146,67 +146,13 @@ Engine.prototype.setupInstance = function(login) {
   })();
 };
 
-Engine.prototype.showInitScreen = function() {
-  return new Promise(resolve => {
-    showInitScreen(this).then(result => {
-      if (result.action === "LOGIN") {
-        let login = result.data;
-        showLoadingModal(this.rom, `Authenticating...`);
-        setTimeout(() => {
-          this.loginIntoServer(login).then(json => {
-            if (json.id) {
-              localStorage.setItem("emerald-user", login.user);
-              setLoadingModalTitle(`Loading...`);
-              setTimeout(() => {
-                $("#ui-init-screen").style.display = "none";
-                document.body.style.backgroundImage = ``;
-                closeLoadingModal();
-                resolve(json);
-              }, CFG.ENGINE_INIT_SCREEN_SUCCESS_DELAY);
-            } else {
-              setLoadingModalTitleColor(CFG.ENGINE_UI_COLORS.ERROR);
-              setLoadingModalTitle(SERVER_MSG[json.kind][json.msg]);
-              setTimeout(() => {
-                closeLoadingModal();
-                this.showInitScreen().then(resolve);
-              }, CFG.ENGINE_INIT_SCREEN_ERROR_DELAY);
-            }
-          });
-        }, CFG.ENGINE_INIT_SCREEN_ACTION_DELAY);
-      }
-      else if (result.action === "REGISTER") {
-        let login = result.data;
-        showLoadingModal(this.rom, `Authenticating...`);
-        setTimeout(() => {
-          this.registerAccountIntoServer(login).then(json => {
-            if (json.id) {
-              setLoadingModalTitle(`Account was created successfully!`);
-              setTimeout(() => {
-                $("#ui-init-screen").style.display = "none";
-                document.body.style.backgroundImage = ``;
-                closeLoadingModal();
-                resolve(json);
-              }, CFG.ENGINE_INIT_SCREEN_SUCCESS_DELAY);
-            } else {
-              setLoadingModalTitleColor(CFG.ENGINE_UI_COLORS.ERROR);
-              setLoadingModalTitle(SERVER_MSG[json.kind][json.msg]);
-              setTimeout(() => {
-                closeLoadingModal();
-                this.showInitScreen().then(resolve);
-              }, CFG.ENGINE_INIT_SCREEN_ERROR_DELAY);
-            }
-          });
-        }, CFG.ENGINE_INIT_SCREEN_ACTION_DELAY);
-      }
-    });
-  });
-};
-
 Engine.prototype.loginIntoServer = function(login) {
   let query = CFG.ENGINE_LOGIN_SERVER_LOC + `/?cmd=LOGIN&username=${login.user}&password=${login.pass}`;
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     GET_JSON(query).then(json => {
-      if (json.kind === "STATUS" && json.msg === "CREATE_SESSION_TICKET") {
+      // impossible to contact the server
+      if (!json) return resolve(null);
+      if (json && json.kind === "STATUS" && json.msg === "CREATE_SESSION_TICKET") {
         let sessionId = json.data;
         let session = {
           user: login.user,
@@ -228,6 +174,8 @@ Engine.prototype.registerAccountIntoServer = function(login) {
   return new Promise(resolve => {
     GET_JSON(query).then(json => {
       clearInterval(this.ppTimer);
+      // impossible to contact the server
+      if (!json) return resolve(null);
       if (json.kind === "STATUS" && json.msg === "REGISTRATION_SUCCESSFUL") {
         let sessionId = json.data;
         let session = {
@@ -259,6 +207,70 @@ Engine.prototype.initStage = function(db, buffer) {
     let tra = db.transaction(["ROMData"], "readwrite");
     tra.objectStore("ROMData").delete("key");
     init();
+  });
+};
+
+Engine.prototype.showInitScreen = function() {
+  return new Promise(resolve => {
+    showInitScreen(this).then(result => {
+      if (result.action === "LOGIN") {
+        let login = result.data;
+        showLoadingModal(this.rom, `Authenticating...`);
+        setTimeout(() => {
+          this.loginIntoServer(login).then(json => {
+            if (!json) {
+              closeLoadingModal();
+              return this.showInitScreen().then(resolve);
+            }
+            if (json.id) {
+              localStorage.setItem("emerald-user", login.user);
+              setLoadingModalTitle(`Loading...`);
+              setTimeout(() => {
+                $("#ui-init-screen").style.display = "none";
+                document.body.style.backgroundImage = ``;
+                closeLoadingModal();
+                resolve(json);
+              }, CFG.ENGINE_INIT_SCREEN_SUCCESS_DELAY);
+            } else {
+              setLoadingModalTitleColor(CFG.ENGINE_UI_COLORS.ERROR);
+              setLoadingModalTitle(SERVER_MSG[json.kind][json.msg]);
+              setTimeout(() => {
+                closeLoadingModal();
+                this.showInitScreen().then(resolve);
+              }, CFG.ENGINE_INIT_SCREEN_ERROR_DELAY);
+            }
+          });
+        }, CFG.ENGINE_INIT_SCREEN_ACTION_DELAY);
+      }
+      else if (result.action === "REGISTER") {
+        let login = result.data;
+        showLoadingModal(this.rom, `Authenticating...`);
+        setTimeout(() => {
+          this.registerAccountIntoServer(login).then(json => {
+            if (!json) {
+              closeLoadingModal();
+              return this.showInitScreen().then(resolve);
+            }
+            if (json.id) {
+              setLoadingModalTitle(`Account was created successfully!`);
+              setTimeout(() => {
+                $("#ui-init-screen").style.display = "none";
+                document.body.style.backgroundImage = ``;
+                closeLoadingModal();
+                resolve(json);
+              }, CFG.ENGINE_INIT_SCREEN_SUCCESS_DELAY);
+            } else {
+              setLoadingModalTitleColor(CFG.ENGINE_UI_COLORS.ERROR);
+              setLoadingModalTitle(SERVER_MSG[json.kind][json.msg]);
+              setTimeout(() => {
+                closeLoadingModal();
+                this.showInitScreen().then(resolve);
+              }, CFG.ENGINE_INIT_SCREEN_ERROR_DELAY);
+            }
+          });
+        }, CFG.ENGINE_INIT_SCREEN_ACTION_DELAY);
+      }
+    });
   });
 };
 

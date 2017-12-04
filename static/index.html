@@ -47,17 +47,17 @@
   <div class="ui-party-pkmn-container">
     <div class="party-pkmn-outer">
       <div class="party-pkmn-inner">
-        <img src="http://pokedex.p-pokemon.com/images/sprites/petit_pkmn/1.gif" />
+        
       </div>
     </div>
     <div class="party-pkmn-outer">
       <div class="party-pkmn-inner">
-        <img src="http://pokedex.p-pokemon.com/images/sprites/petit_pkmn/4.gif" />
+        
       </div>
     </div>
     <div class="party-pkmn-outer">
       <div class="party-pkmn-inner">
-        <img src="http://pokedex.p-pokemon.com/images/sprites/petit_pkmn/7.gif" />
+        
       </div>
     </div>
   </div>
@@ -72,11 +72,11 @@
     </div>
     <button id="ts-export" class="ts-btn">Export Tileset</button>
     <div id="ts-rom-notice" class="top-head-notice">Loading ROM...</div>
-    <img id="layer-btn-1" src="./layers-1.png" />
-    <img id="layer-btn-2" src="./layers-2.png" />
-    <img id="layer-btn-3" src="./layers-3.png" />
-    <img id="layer-btn-0" src="./layers-0.png" />
-    <img id="layer-btn-4" src="./layers-4.png" />
+    <img id="layer-btn-1" src="./img/layers-1.png" />
+    <img id="layer-btn-2" src="./img/layers-2.png" />
+    <img id="layer-btn-3" src="./img/layers-3.png" />
+    <img id="layer-btn-0" src="./img/layers-0.png" />
+    <img id="layer-btn-4" src="./img/layers-4.png" />
     <label class="ts-checkbox">
       <input id="ts-flip-y" type="checkbox">
       <span></span>
@@ -154,19 +154,23 @@
     </div>
     <div id="engine-ui-ts">
       <div class="ts-top-head engine-menu-middle-right">
-        <img id="engine-layer-btn-1" src="./layers-1.png" />
-        <img id="engine-layer-btn-2" src="./layers-2.png" />
-        <img id="engine-layer-btn-3" src="./layers-3.png" />
-        <img id="engine-layer-btn-4" src="./layers-0.png" />
-        <img id="engine-layer-btn-5" src="./layers-4.png" />
+        <img id="engine-layer-btn-1" src="./img/layers-1.png" />
+        <img id="engine-layer-btn-2" src="./img/layers-2.png" />
+        <img id="engine-layer-btn-3" src="./img/layers-3.png" />
+        <img id="engine-layer-btn-4" src="./img/layers-0.png" />
+        <img id="engine-layer-btn-5" src="./img/layers-4.png" />
       </div>
       <div class="ts-top-head engine-menu-bottom-right">
-        <label>AutoTile</label>
+        <!--<label>AutoTile</label>
         <label class="ts-checkbox">
           <input type="checkbox">
           <span></span>
           <div></div>
-        </label>
+        </label>-->
+        <img id="engine-edit-mode-pencil" src="./img/pencil-edit.png">
+        <img id="engine-edit-mode-pipette" src="./img/color-dropper.png">
+        <img id="engine-edit-mode-bucket" src="./img/paint-bucket.png">
+        <img id="engine-edit-mode-magic" src="./img/magic-bucket.png">
       </div>
       <div class="engine-right-menu" style="height: calc(100% - 144px);">
         <canvas id="engine-tileset"></canvas>
@@ -294,7 +298,7 @@
         </div>
         <div class="engine-right-menu-item engine-abs-item-label"><label class="danger">Danger Zone:</label></div>
         <div class="engine-right-menu-item  engine-abs-item-center engine-item-no-outer">
-          <button class="ts-btn">Remove Map</button>
+          <button class="ts-btn">Delete Map</button>
         </div>
         <div class="engine-right-menu-item engine-abs-item-center">
           <input type="number" class="ts-btn sm" placeholder="W:" />
@@ -328,8 +332,6 @@
 
 <script type="text/javascript" src="../dist/bundle-browser.js"></script>
 
-<!--
 <script>
 (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='./stats.min.js';document.head.appendChild(script);})()
 </script>
--->

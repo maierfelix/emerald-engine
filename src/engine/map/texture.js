@@ -9,12 +9,14 @@ export function initTextures(width, height) {
   this.textures[0] = createCanvasBuffer(width, height).ctx;
   this.textures[1] = createCanvasBuffer(width, height).ctx;
   this.textures[2] = createCanvasBuffer(width, height).ctx;
+  this.textures["preview"] = createCanvasBuffer(width, height).ctx;
 };
 
 export function resizeTextures(width, height) {
   this.resizeTexture(this.textures[0], width, height);
   this.resizeTexture(this.textures[1], width, height);
   this.resizeTexture(this.textures[2], width, height);
+  this.resizeTexture(this.textures["preview"], width, height);
 };
 
 export function resizeTexture(texture, width, height) {
@@ -23,13 +25,20 @@ export function resizeTexture(texture, width, height) {
   setImageSmoothing(texture, false);
 };
 
+export function clearPreviewTexture() {
+  this.textures.preview.clearRect(
+    0, 0,
+    this.width * CFG.BLOCK_SIZE, this.height * CFG.BLOCK_SIZE
+  );
+};
+
 export function refreshMapTexture() {
   let bundles = this.data;
   let width = this.width | 0;
   let height = this.height | 0;
   let instance = this.instance;
   let scale = CFG.BLOCK_SIZE;
-  let tw = (CFG.TILESET_DEFAULT_WIDTH / CFG.BLOCK_SIZE) | 0;
+  let tw = CFG.TILESET_HORIZONTAL_SIZE;
   for (let bundleId in bundles) {
     let bundle = bundles[bundleId];
     for (let tsId in bundle) {

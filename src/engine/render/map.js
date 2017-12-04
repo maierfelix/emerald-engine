@@ -37,17 +37,29 @@ export function drawMap(map) {
 
 export function drawMapLayerTexture(index, map, sx, sy, sw, sh, dx, dy, dw, dh) {
   let ctx = this.ctx;
-  let tsMode = this.tsMode - 1;
+  let layer = this.tsMode - 1;
+  let texture = map.textures[index];
   let isCurrentMap = (this.currentMap === map) || (this.currentMap === null);
-  if (index !== tsMode && tsMode !== 3) ctx.globalAlpha = 0.4;
+  if (index !== layer && layer !== 3) ctx.globalAlpha = 0.4;
   if (!isCurrentMap) ctx.globalAlpha = 0.5;
+  if (this.mode !== CFG.ENGINE_MODE_TS) ctx.globalAlpha = 1.0;
   ctx.drawImage(
-    map.textures[index].canvas,
+    texture.canvas,
     sx, sy,
     sw, sh,
     dx, dy,
     dw, dh
   );
+  if (this.currentMap === map && this.isActiveTilesetFillMode()) {
+    ctx.globalAlpha = 0.15;
+    ctx.drawImage(
+      map.textures.preview.canvas,
+      sx, sy,
+      sw, sh,
+      dx, dy,
+      dw, dh
+    );
+  }
   ctx.globalAlpha = 1.0;
 };
 
@@ -56,7 +68,7 @@ export function drawMapTileBased(map) {
   let bundles = map.data;
   let mx = map.x | 0;
   let my = map.y | 0;
-  let tw = (CFG.TILESET_DEFAULT_WIDTH / CFG.BLOCK_SIZE) | 0;
+  let tw = CFG.TILESET_HORIZONTAL_SIZE;
   for (let bundleId in bundles) {
     let bundle = bundles[bundleId];
     for (let tsId in bundle) {

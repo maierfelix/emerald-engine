@@ -10,6 +10,7 @@ export const TS_MAX_STACK_SIZE = 10;
 
 export const TILE_SIZE = 8;
 export const BLOCK_SIZE = TILE_SIZE * 2;
+export const TILESET_HORIZONTAL_SIZE = TILESET_DEFAULT_WIDTH / BLOCK_SIZE;
 
 export const PATH_TILE_FIXUPS = `./fixup-tiles.png`;
 
@@ -62,6 +63,8 @@ export const TERRAIN_SHEET_EDGES = {
   "W":   { x: 0, y: 1 }
 };
 
+export const ENGINE_DEV_MODE = true;
+
 export const ENGINE_TILESET_SCALE = 1.5;
 
 export const ENGINE_BOX_TEXT_COLOR = `rgba(255,255,255,0.625)`;
@@ -80,6 +83,8 @@ export const ENGINE_UI_COLORS = {
   DEFAULT: `rgba(255,255,255,0.8)`,
   ERROR: `rgba(255,128,128,0.8)`
 };
+
+export const ENGINE_FILL_PREVIEW_COLOR = `black`;
 
 export const ENGINE_TS_SERVER_LOC = `http://${location.host}:9000`;
 export const ENGINE_LOGIN_SERVER_LOC = `http://${location.host}:9001`;
@@ -118,6 +123,13 @@ export const ENGINE_TS_LAYERS = {
   FG: 3,
   PREVIEW: 4,
   COLLISION: 5
+};
+
+export const ENGINE_TS_EDIT = {
+  PENCIL: 1,
+  PIPETTE: 2,
+  BUCKET: 3,
+  MAGIC: 4
 };
 
 export const ENGINE_DEFAULT_MAP = {

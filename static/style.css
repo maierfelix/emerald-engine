@@ -83,11 +83,17 @@ img {
 }
 
 .ts-top-head > img {
-  margin-top: 6px;
   cursor: pointer;
   padding: 2px;
+  margin-left: 4px;
+  margin-right: 4px;
   width: 28px;
-  margin-top: 8px;
+}
+
+#engine-ui-ts > .ts-top-head {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 #ts-final-layer-wrapper {
@@ -107,9 +113,9 @@ img {
 }
 
 .active-layer-btn {
+  padding: 1px !important;
   border: 1px solid rgba(255,255,255,0.1);
   background: rgba(255,255,255,0.1);
-  padding: 1px !important;
 }
 
 #final-layer-wrapper-title {
@@ -392,7 +398,6 @@ input[type=number]::-webkit-inner-spin-button {
 
 .engine-menu-middle-right > img {
   width: 26px;
-  margin-top: 8px;
 }
 
 .engine-abs-item-center {

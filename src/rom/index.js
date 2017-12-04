@@ -72,10 +72,7 @@ export default class Rom {
     this.mapInBanksCount = [];
     return new Promise((resolve) => {
       this.init().then(() => {
-        loadImage(CFG.PATH_TILE_FIXUPS).then((img) => {
-          this.graphics.fixes = img;
-          resolve(this);
-        });
+        resolve(this);
       });
     });
   }

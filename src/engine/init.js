@@ -15,19 +15,16 @@ export function setup() {
   this.setUIObjMode(0);
   this.setUIEncounterMode(0);
   this.setUIActiveTilesetLayer(1);
+  this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.PENCIL);
   this.loadDefaultMap();
 };
 
 export function loadDefaultMap() {
   this.loadTilesetBundleFromServer("dawn").then(tileset => {
     this.useTilesetBundle(tileset);
-    /*let map = new Map(this, 16, 16);
-    this.addMap(map);
-    this.currentMap = map;
-    this.initUI();*/
     this.loadMapFromServer("littleroot-town").then(map => {
-      this.addMap(map);
       this.currentMap = map;
+      this.setUIActiveMap(map);
       this.initUI();
     });
   });

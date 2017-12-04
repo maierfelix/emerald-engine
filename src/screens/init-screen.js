@@ -9,7 +9,7 @@ let balls = [];
 export default function(instance) {
   let el = $("#ui-init-screen-balls");
   el.style.display = "block";
-  document.body.style.backgroundImage = `url('./bg.png')`;
+  document.body.style.backgroundImage = `url('./img/bg.png')`;
 
   // search for a cached username to autofill
   let cachedUsername = localStorage.getItem("emerald-user");

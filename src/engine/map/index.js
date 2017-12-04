@@ -9,6 +9,7 @@ import extend from "../../extend";
 
 import Engine from "../index";
 
+import * as _fill from "./fill";
 import * as _tile from "./tile";
 import * as _json from "./json";
 import * as _objects from "./objects";
@@ -26,13 +27,20 @@ export default class Map {
     this.height = height | 0;
     this.data = {};
     this.textures = {
-      0: null, // bg
-      1: null, // bgb
-      2: null  // fg
+      0: null,       // bg
+      1: null,       // bgb
+      2: null,       // fg
+      preview: null  // preview
     };
+    this.objects = [
+      {
+        x: 3, y: 2,
+        kind: CFG.ENGINE_BOX_TYPES.ENTITY,
+        width: 1, height: 1
+      }
+    ];
     this.instance = instance;
     this.collisions = [];
-    this.objects = [];
     this.encounters = [];
     this.settings = {
       name: null,
@@ -41,6 +49,8 @@ export default class Map {
       weather: null,
       showName: false
     };
+    // if we only draw tiles onto the preview texture
+    this.drawPreview = false;
     this.resize(width, height);
   }
 };
@@ -84,6 +94,7 @@ Map.prototype.createDataLayer = function(tileset, width, height) {
   };
 };
 
+extend(Map, _fill);
 extend(Map, _tile);
 extend(Map, _json);
 extend(Map, _objects);

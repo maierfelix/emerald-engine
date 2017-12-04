@@ -34,6 +34,8 @@ export function loadMapFromServer(name) {
 
 export function addMap(map) {
   this.maps.push(map);
+  this.refreshUIMapChooseList(this.maps);
+  this.setUIActiveMap(map);
 };
 
 export function mapsToJSON() {

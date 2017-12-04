@@ -63,8 +63,7 @@ LoginServer.prototype.initTickers = function() {
 LoginServer.prototype.updateSessionTickets = function() {
   let now = +Date.now();
   let tickets = this.tickets;
-  let length = tickets.length;
-  for (let ii = 0; ii < length; ++ii) {
+  for (let ii = 0; ii < tickets.length; ++ii) {
     let ticket = tickets[ii];
     let sessionDuration = ticket.duration;
     // ticket timed out, remove it
@@ -75,8 +74,7 @@ LoginServer.prototype.updateSessionTickets = function() {
 LoginServer.prototype.updateSessionTimeouts = function() {
   let now = +Date.now();
   let tickets = this.tickets;
-  let length = tickets.length;
-  for (let ii = 0; ii < length; ++ii) {
+  for (let ii = 0; ii < tickets.length; ++ii) {
     let ticket = tickets[ii];
     let sessionTimeout = ticket.timeout;
     // session timed out, remove it
@@ -205,7 +203,7 @@ LoginServer.prototype.processHTTPLoginRequest = function(queries, resp) {
           console.log(`[LoginServer] Parallel login detected for ${user}`);
           return sendObject({ kind: "ERROR", msg: "ACCOUNT_IN_USE" }, resp);
         }
-      }, CFG.LOGIN_SERVER_SESSION_TIMEOUT - 500);
+      }, CFG.LOGIN_SERVER_SESSION_TIMEOUT - 1e3);
       return;
     }
     this.sendLoginResponse(user, resp);
@@ -284,8 +282,7 @@ LoginServer.prototype.createSessionTicket = function(user) {
 
 LoginServer.prototype.isActiveSessionTicket = function(ticketId) {
   let tickets = this.tickets;
-  let length = tickets.length;
-  for (let ii = 0; ii < length; ++ii) {
+  for (let ii = 0; ii < tickets.length; ++ii) {
     let ticket = tickets[ii];
     if (ticket.id === ticketId) return true;
   };
@@ -294,8 +291,7 @@ LoginServer.prototype.isActiveSessionTicket = function(ticketId) {
 
 LoginServer.prototype.getTicketByUsername = function(username) {
   let tickets = this.tickets;
-  let length = tickets.length;
-  for (let ii = 0; ii < length; ++ii) {
+  for (let ii = 0; ii < tickets.length; ++ii) {
     let ticket = tickets[ii];
     if (ticket.user === username) return ticket;
   };
@@ -304,8 +300,7 @@ LoginServer.prototype.getTicketByUsername = function(username) {
 
 LoginServer.prototype.getTicketById = function(id) {
   let tickets = this.tickets;
-  let length = tickets.length;
-  for (let ii = 0; ii < length; ++ii) {
+  for (let ii = 0; ii < tickets.length; ++ii) {
     let ticket = tickets[ii];
     if (ticket.id === id) return ticket;
   };
@@ -314,8 +309,7 @@ LoginServer.prototype.getTicketById = function(id) {
 
 LoginServer.prototype.removeExistingTicketsByUsername = function(username) {
   let tickets = this.tickets;
-  let length = tickets.length;
-  for (let ii = 0; ii < length; ++ii) {
+  for (let ii = 0; ii < tickets.length; ++ii) {
     let ticket = tickets[ii];
     if (ticket.user === username) tickets.splice(ii, 1);
   };

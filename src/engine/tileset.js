@@ -38,6 +38,7 @@ export function loadTilesetBundleFromServer(name, forced) {
           if (canvas.width !== CFG.TILESET_DEFAULT_WIDTH) {
             canvas = this.fixTilesetDimensions(canvas);
           }
+          // create an usage map, so we can detect empty tiles fast
           let usage = getPixelUsageData(canvas, CFG.BLOCK_SIZE);
           bundle.tilesets[ts] = { canvas, usage };
           if (++count >= max) resolve(bundle);
