@@ -63,8 +63,7 @@ export default class Rom {
         icon: {}
       },
       doors: {},
-      overworlds: {},
-      fixes: null
+      overworlds: {}
     };
     this.maps = {};
     this.animations = {};
@@ -507,12 +506,7 @@ export default class Rom {
     let pMinorTileset = readPointer(buffer, offset); offset += 0x4;
     let majorTileset = this.readTilesetHeader(pMajorTileset, mapHeaderPointer);
     let minorTileset = this.readTilesetHeader(pMinorTileset, mapHeaderPointer);
-    let tileset = this.createTileset(mapWidth, mapHeight, minorTileset, majorTileset);
-    tileset.layers.foreground.drawImage(
-      this.graphics.fixes,
-      0, CFG.TILESET_DEFAULT_HEIGHT - (this.graphics.fixes.height) - 64
-    );
-    return tileset;
+    return this.createTileset(mapWidth, mapHeight, minorTileset, majorTileset);
   }
   createTileset(mapWidth, mapHeight, minorTileset, majorTileset) {
     let buffer = this.buffer;

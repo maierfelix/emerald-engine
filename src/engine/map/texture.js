@@ -25,13 +25,6 @@ export function resizeTexture(texture, width, height) {
   setImageSmoothing(texture, false);
 };
 
-export function clearPreviewTexture() {
-  this.textures.preview.clearRect(
-    0, 0,
-    this.width * CFG.BLOCK_SIZE, this.height * CFG.BLOCK_SIZE
-  );
-};
-
 export function refreshMapTexture() {
   let bundles = this.data;
   let width = this.width | 0;

@@ -41,25 +41,9 @@ export function drawTileAt(tileset, sx, sy, tx, ty, layer) {
   let ctx = this.textures[layer - 1];
   let scale = CFG.BLOCK_SIZE;
   // in bounds check
-  if (
-    (tx < 0 || tx >= this.width) ||
-    (ty < 0 || ty >= this.height)
-  ) return;
-  if (!this.drawPreview) this.setTileAt(tileset, sx, sy, tx, ty, layer);
-  // draw on preview texture
-  if (this.drawPreview) {
-    ctx = this.textures.preview;
-    ctx.clearRect(
-      tx * scale, ty * scale,
-      scale, scale
-    );
-    ctx.fillStyle = CFG.ENGINE_FILL_PREVIEW_COLOR;
-    ctx.fillRect(
-      tx * scale, ty * scale,
-      scale, scale
-    );
-    return;
-  }
+  if (!this.coordsInBounds(tx, ty)) return;
+  this.setTileAt(tileset, sx, sy, tx, ty, layer);
+  // draw tile on given map texture
   ctx.clearRect(
     tx * scale, ty * scale,
     scale, scale
@@ -75,10 +59,7 @@ export function drawTileAt(tileset, sx, sy, tx, ty, layer) {
 
 export function getTileAt(x, y, layer) {
   // in bounds check
-  if (
-    (x < 0 || x >= this.width) ||
-    (y < 0 || y >= this.height)
-  ) return 0;
+  if (!this.coordsInBounds(x, y)) return 0;
   let bundles = this.data;
   let tileIndex = (y * this.width + x) | 0;
   for (let bundleId in bundles) {

@@ -20,12 +20,13 @@ export function setup() {
 };
 
 export function loadDefaultMap() {
-  this.loadTilesetBundleFromServer("dawn").then(tileset => {
-    this.useTilesetBundle(tileset);
+  this.loadTilesetBundleFromServer("dawn").then(bundle => {
+    this.useTilesetBundle(bundle);
     this.loadMapFromServer("littleroot-town").then(map => {
       this.currentMap = map;
       this.setUIActiveMap(map);
       this.initUI();
+      this.useTilesetFromBundleByIndex(bundle, $(`#engine-ui-cts-subts`).childNodes.length - 1);
     });
   });
 };

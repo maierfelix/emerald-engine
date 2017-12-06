@@ -59,14 +59,14 @@ export default class ROMTilesetEditor {
       let layer = this.finalLayerContexts[key];
       this.resizeContext(
         layer,
-        CFG.TILESET_DEFAULT_WIDTH * CFG.TILESET_FINAL_SCALE,
-        CFG.TILESET_DEFAULT_HEIGHT * CFG.TILESET_FINAL_SCALE
+        128 * CFG.TILESET_FINAL_SCALE,
+        2560 * CFG.TILESET_FINAL_SCALE
       );
     };
     this.resizeContext(
       this.elLayersCtx,
-      (CFG.TILESET_DEFAULT_WIDTH * 2) * CFG.TILESET_LAYER_SCALE,
-      CFG.TILESET_DEFAULT_HEIGHT * CFG.TILESET_LAYER_SCALE
+      (128 * 2) * CFG.TILESET_LAYER_SCALE,
+      2560 * CFG.TILESET_LAYER_SCALE
     );
     this.setActiveLayerByIndex(1);
     $("#ts-rom-notice").innerHTML = `Loaded ROM: ${rom.code} ${rom.maker}`;
@@ -477,8 +477,8 @@ export default class ROMTilesetEditor {
   }
   getTileFromTileset(ts, srcX, srcY, flipX, flipY) {
     let tileBuffer = createCanvasBuffer(CFG.BLOCK_SIZE, CFG.BLOCK_SIZE).ctx;
-    let reduceX = (srcX < CFG.TILESET_DEFAULT_WIDTH ? 0 : -CFG.TILESET_DEFAULT_WIDTH);
-    let srcLayer = srcX < CFG.TILESET_DEFAULT_WIDTH ? "background" : "foreground";
+    let reduceX = (srcX < 128 ? 0 : -128);
+    let srcLayer = srcX < 128 ? "background" : "foreground";
     let layer = ts.layers[srcLayer].canvas;
     if (flipX) tileBuffer.scale(-1, 1);
     if (flipY) tileBuffer.scale(1, -1);
@@ -549,14 +549,14 @@ export default class ROMTilesetEditor {
     ctx.drawImage(
       bg,
       0, 0,
-      CFG.TILESET_DEFAULT_WIDTH * CFG.TILESET_LAYER_SCALE,
-      CFG.TILESET_DEFAULT_HEIGHT * CFG.TILESET_LAYER_SCALE
+      128 * CFG.TILESET_LAYER_SCALE,
+      2560 * CFG.TILESET_LAYER_SCALE
     );
     ctx.drawImage(
       fg,
-      CFG.TILESET_DEFAULT_WIDTH * CFG.TILESET_LAYER_SCALE, 0,
-      CFG.TILESET_DEFAULT_WIDTH * CFG.TILESET_LAYER_SCALE,
-      CFG.TILESET_DEFAULT_HEIGHT * CFG.TILESET_LAYER_SCALE
+      128 * CFG.TILESET_LAYER_SCALE, 0,
+      128 * CFG.TILESET_LAYER_SCALE,
+      2560 * CFG.TILESET_LAYER_SCALE
     );
     this.drawSelection(ctx, this.selection.layers, CFG.TILESET_LAYER_SCALE);
   }

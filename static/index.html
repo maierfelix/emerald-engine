@@ -120,6 +120,15 @@
 <div id="map-ui"></div>
 
 <div id="engine-ui">
+  <!-- TOP STATS MENU -->
+  <div id="engine-ui-top-stats" class="ts-top-head">
+    <div class="ts-top-head-item">
+      <label id="engine-ui-new-map-stat-x" class="ts-btn">X:</label>
+      <label id="engine-ui-new-map-stat-y" class="ts-btn">Y:</label><button class="ts-btn-invisible"></button>
+      <label id="engine-ui-new-map-stat-width" class="ts-btn">Width:</label>
+      <label id="engine-ui-new-map-stat-height" class="ts-btn">Height:</label>
+    </div>
+  </div>
   <!-- TOP MENU -->
   <div id="engine-ui-top-menu" class="ts-top-head">
     <button class="ts-btn">🌍 Publish</button>
@@ -131,10 +140,7 @@
     <button id="engine-ui-map-add" class="ts-btn ts-btn-add-map">+</button>
     <div class="ts-top-head-item">
       <label id="engine-ui-cmap-name" class="ts-btn">🌄 Map</label>
-      <select id="engine-ui-map-select" class="ts-btn ts-btn-select">
-        <option>Rottenburg</option>
-        <option>Hemmendorf</option>
-      </select>
+      <select id="engine-ui-map-select" class="ts-btn ts-btn-select"></select>
     </div>
     <div class="ts-top-head-item">
       <label id="engine-ui-cts-name" class="ts-btn"></label>
@@ -171,6 +177,7 @@
         <img id="engine-edit-mode-pipette" src="./img/color-dropper.png">
         <img id="engine-edit-mode-bucket" src="./img/paint-bucket.png">
         <img id="engine-edit-mode-magic" src="./img/magic-bucket.png">
+        <img id="engine-edit-mode-autotile" src="./img/auto-tile.png">
       </div>
       <div class="engine-right-menu" style="height: calc(100% - 144px);">
         <canvas id="engine-tileset"></canvas>

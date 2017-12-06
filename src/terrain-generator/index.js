@@ -36,7 +36,7 @@ export default class TerrainGenerator {
     //ows.appendChild(ts.layers.foreground.canvas);
     //this.generateTerrain(512*2, 512*2);
     fetch("../ts-terrain.json").then(resp => resp.json()).then(json => {
-      let tileset = JSONTilesetToCanvas(this.rom, json);
+      let tileset = JSONTilesetToCanvas(this.rom, json, 128);
       tileset.canvas.style.position = "absolute";
       tileset.canvas.style.right = "0px";
       tileset.canvas.style.top = "0px";

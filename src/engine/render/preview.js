@@ -26,6 +26,20 @@ export function drawTilesetSelectionPreview() {
   let ww = ((sel.w - sel.x) + CFG.BLOCK_SIZE) * this.cz;
   let hh = ((sel.h - sel.y) + CFG.BLOCK_SIZE) * this.cz;
   let preview = this.preview.tileset;
+  ctx.fillStyle = `rgba(0,0,0,0.125)`;
+  // we're in autotile mode
+  if (this.isUIInAutotileMode()) {
+    // don't draw anything if we have an incorrect autotile format
+    if (!this.isSelectionInAutotileFormat(this.selection.tileset)) {
+      ctx.fillRect(
+        xx, yy,
+        CFG.BLOCK_SIZE * this.cz, CFG.BLOCK_SIZE * this.cz
+      );
+      return;
+    } else {
+      ww = hh = CFG.BLOCK_SIZE * this.cz;
+    }
+  }
   if (preview !== null) {
     ctx.globalAlpha = 0.4;
     ctx.drawImage(
@@ -37,8 +51,7 @@ export function drawTilesetSelectionPreview() {
     );
     ctx.globalAlpha = 1.0;
   }
-  ctx.fillStyle = `rgba(0,0,0,0.125)`;
-  ctx.fillRect(
+  if (!this.isUIInAutotileMode()) ctx.fillRect(
     xx, yy,
     ww, hh
   );

@@ -42,7 +42,7 @@ export function keyDown(e) {
   switch (key) {
     case "Escape":
       this.closeUIModal();
-      if (this.newMap) this.onUIMapAddAbort();
+      if (this.isUIInCreationMode()) this.onUIMapAddAbort();
     break;
   };
 };
@@ -137,6 +137,7 @@ export function addTilesetEditModeListeners() {
   $(`#engine-edit-mode-pipette`).onclick = (e) => this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.PIPETTE);
   $(`#engine-edit-mode-bucket`).onclick = (e) => this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.BUCKET);
   $(`#engine-edit-mode-magic`).onclick = (e) => this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.MAGIC);
+  $(`#engine-edit-mode-autotile`).onclick = (e) => this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.AUTOTILE);
 };
 
 export function addTilesetBundleListener() {

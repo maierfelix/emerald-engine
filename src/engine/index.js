@@ -48,6 +48,9 @@ export default class MapEditor {
     this.my = 0;
     this.tmx = 0;
     this.tmy = 0;
+    this.last = {
+      rmx: 0, rmy: 0
+    };
     this.map = $("#engine-map");
     this.tileset = $("#engine-tileset");
     this.tsCtx = this.tileset.getContext("2d");
@@ -65,20 +68,25 @@ export default class MapEditor {
       newMap: { sx: 0, sy: 0, ex: 0, ey: 0, ax: 0, ay: 0, jr: false },
       tileset: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 }
     };
+    this.creation = {
+      map: null
+    };
     this.preview = {
       tileset: null
     };
+    this.redraw = {
+      tileset: false
+    };
     this.session = engine.session;
     this.mode = -1;
-    this.tsMode = -1;
     this.objMode = -1;
     this.tsEditMode = -1;
-    this.newMap = null;
     this.modalMode = null;
     this.player = null;
     this.maps = [];
     this.bundles = {};
     this.currentMap = null;
+    this.currentLayer = -1;
     this.currentBundle = null;
     this.currentTileset = null;
     this.entities = [];
@@ -91,20 +99,15 @@ MapEditor.prototype.clear = function() {
     0, 0,
     this.width, this.height
   );
-  this.tsCtx.clearRect(
-    0, 0,
-    (CFG.TILESET_DEFAULT_WIDTH + 1) * CFG.ENGINE_TILESET_SCALE,
-    CFG.TILESET_DEFAULT_HEIGHT * CFG.ENGINE_TILESET_SCALE
-  );
 };
 
 MapEditor.prototype.draw = function() {
   let tileset = this.currentTileset;
   this.clear();
   this.drawMaps();
-  this.drawTileset(tileset);
-  if (this.isUIInMapAddingMode()) {
-    this.drawMapPreview(this.newMap);
+  if (this.mode === CFG.ENGINE_MODE_TS) this.drawTileset(tileset);
+  if (this.isUIInMapCreationMode()) {
+    this.drawMapPreview(this.creation.map);
   }
   if (this.cz >= CFG.ENGINE_CAMERA_GRID_MIN_SCALE) {
     drawGrid(this.ctx, this.cz, this.cx, this.cy, this.width, this.height);

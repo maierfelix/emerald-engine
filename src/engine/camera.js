@@ -23,6 +23,7 @@ export function zoom(e) {
   let zd = zoomScale(this.cz) - zoomScale(oscale);
   this.cx -= sx * zd;
   this.cy -= sy * zd;
+  this.refreshMouseLast();
   this.setUIMousePosition(x, y);
 };
 
@@ -31,6 +32,7 @@ export function mouseWheel(e) {
     e.preventDefault();
     this.zoom(e);
   }
+  this.refreshMouseLast();
 };
 
 export function mouseContext(e) {
@@ -44,7 +46,7 @@ export function mouseMove(e) {
   if (e.target !== this.map) return;
   // left mouse move
   if (this.drag.ldown) {
-    if (!this.newMap) this.processUIMouseInput(e);
+    if (!this.isUIInMapCreationMode()) this.processUIMouseInput(e);
   }
   // right mouse move
   if (this.drag.rdown) {
@@ -55,10 +57,21 @@ export function mouseMove(e) {
   }
   this.mx = x;
   this.my = y;
-  this.setUIMousePosition(x, y);
+  let rel = this.getRelativeMapTile(x, y);
+  if (this.last.rmx !== rel.x || this.last.rmy !== rel.y) {
+    this.setUIMousePosition(x, y);
+  }
+  this.last.rmx = rel.x;
+  this.last.rmy = rel.y;
+};
+
+export function refreshMouseLast() {
+  this.last.rmx = CFG.MAX_SAFE_INTEGER;
+  this.last.rmy = CFG.MAX_SAFE_INTEGER;
 };
 
 export function mouseClick(e) {
+  this.refreshMouseLast();
   if (e.target !== this.map) return;
   e.preventDefault();
   let x = e.clientX;
@@ -66,7 +79,7 @@ export function mouseClick(e) {
   // left
   if (e.which === 1) {
     this.drag.ldown = true;
-    if (this.newMap) {
+    if (this.isUIInMapCreationMode()) {
       let rel = this.getRelativeMapTile(x, y);
       this.selection.newMap.sx = rel.x;
       this.selection.newMap.sy = rel.y;
@@ -79,7 +92,7 @@ export function mouseClick(e) {
     this.drag.rdown = true;
     this.selection.entity = null;
   }
-  if (!this.newMap) this.mouseMove(e);
+  if (!this.isUIInMapCreationMode()) this.mouseMove(e);
   this.map.focus();
 };
 
@@ -87,16 +100,21 @@ export function mouseUp(e) {
   e.preventDefault();
   let x = e.clientX;
   let y = e.clientY;
+  this.refreshMouseLast();
   // left
   if (e.which === 1) {
     this.drag.ldown = false;
-    if (this.newMap) {
+    if (this.isUIInMapCreationMode()) {
       let rel = this.getRelativeMapTile(x, y);
-      this.selection.newMap.ax = rel.x - this.newMap.x;
-      this.selection.newMap.ay = rel.y - this.newMap.y;
+      this.selection.newMap.ax = rel.x - this.creation.map.x;
+      this.selection.newMap.ay = rel.y - this.creation.map.y;
       // mouseup fired after resizing the map, abort
-      if (this.selection.newMap.jr) return;
-      this.onUIPlaceNewMap(this.newMap);
+      // allow adding the map on the next mouseup
+      if (this.selection.newMap.jr) {
+        this.selection.newMap.jr = false;
+        return;
+      }
+      this.onUIPlaceNewMap(this.creation.map);
     }
   }
   // right

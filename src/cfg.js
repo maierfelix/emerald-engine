@@ -49,23 +49,31 @@ export const TERRAIN_TILES = {
 };
 
 export const TERRAIN_SHEET_EDGES = {
+  "NSEW":{ x: 1, y: 1 },
   "NW":  { x: 0, y: 0 },
-  "N+W": { x: 4, y: 1 },
+  "N+W": { x: 3, y: 0 },
   "N":   { x: 1, y: 0 },
   "NE":  { x: 2, y: 0 },
-  "N+E": { x: 3, y: 1 },
+  "N+E": { x: 4, y: 0 },
   "E":   { x: 2, y: 1 },
   "SE":  { x: 2, y: 2 },
-  "S+E": { x: 3, y: 0 },
+  "S+E": { x: 4, y: 1 },
   "S":   { x: 1, y: 2 },
   "SW":  { x: 0, y: 2 },
-  "S+W": { x: 4, y: 0 },
+  "S+W": { x: 3, y: 1 },
   "W":   { x: 0, y: 1 }
 };
+
+export const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER;
 
 export const ENGINE_DEV_MODE = true;
 
 export const ENGINE_TILESET_SCALE = 1.5;
+export const ENGINE_TILESET_SELECT_COLOR = `rgba(255,0,0,1)`;
+export const ENGINE_TILESET_AUTOTILE_COLOR = `rgba(240,240,0,1)`;
+
+export const ENGINE_AUTOTILE_WIDTH = 5;
+export const ENGINE_AUTOTILE_HEIGHT = 3;
 
 export const ENGINE_BOX_TEXT_COLOR = `rgba(255,255,255,0.625)`;
 export const ENGINE_BOX_TYPES = {
@@ -96,7 +104,7 @@ export const ENGINE_INIT_SCREEN_ACTION_DELAY = 500;
 export const ENGINE_INIT_SCREEN_ERROR_DELAY = 1750;
 export const ENGINE_INIT_SCREEN_SUCCESS_DELAY = 500;
 
-export const ENGINE_CAMERA_MIN_SCALE = 0.35;
+export const ENGINE_CAMERA_MIN_SCALE = 0.2;
 export const ENGINE_CAMERA_MAX_SCALE = 10.95;
 export const ENGINE_CAMERA_GRID_MIN_SCALE = 1.15;
 
@@ -129,7 +137,8 @@ export const ENGINE_TS_EDIT = {
   PENCIL: 1,
   PIPETTE: 2,
   BUCKET: 3,
-  MAGIC: 4
+  MAGIC: 4,
+  AUTOTILE: 5
 };
 
 export const ENGINE_DEFAULT_MAP = {

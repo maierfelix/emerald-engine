@@ -41,54 +41,6 @@ export function cloneObject(obj) {
   return JSON.parse(JSON.stringify(obj));
 };
 
-export function roundTo(a, b) {
-  b = 1 / (b);
-  return (Math.round(a * b) / b);
-};
-
-export function scaledCosine(i) {
-  return 0.5 * (1.0 - Math.cos(i * Math.PI));
-};
-
-export function zoomScale(n) {
-  return (
-    n >= 0 ? n + 1 :
-    n < 0 ? -(n) + 1 :
-    n + 1
-  );
-};
-
-export function rectIntersect(
-  x1, y1, w1, h1,
-  x2, y2, w2, h2
-) {
-  let x = Math.max(x1, x2);
-  let num1 = Math.min(x1 + w1, x2 + w2);
-  let y = Math.max(y1, y2);
-  let num2 = Math.min(y1 + h1, y2 + h2);
-  if (num1 > x && num2 > y) {
-    return {
-      x: x,
-      y: y,
-      w: num1 - x,
-      h: num2 - y
-    };
-  }
-  return null;
-};
-
-export function rnd64() {
-  let max = Number.MAX_SAFE_INTEGER;
-  return Math.floor((Math.random() * max) - (max / 2));
-};
-
-export function getRelativeTile(x, y, scale) {
-  let dim = CFG.BLOCK_SIZE * scale;
-  let xx = (Math.ceil(x / dim) * CFG.BLOCK_SIZE) - CFG.BLOCK_SIZE;
-  let yy = (Math.ceil(y / dim) * CFG.BLOCK_SIZE) - CFG.BLOCK_SIZE;
-  return { x: xx, y: yy };
-};
-
 export function createCanvasBuffer(width, height) {
   let canvas = document.createElement("canvas");
   canvas.width = width;
@@ -275,6 +227,54 @@ export function isEmptyImageData(imgData) {
   return count <= 0;
 };
 
+export function roundTo(a, b) {
+  b = 1 / (b);
+  return (Math.round(a * b) / b);
+};
+
+export function scaledCosine(i) {
+  return 0.5 * (1.0 - Math.cos(i * Math.PI));
+};
+
+export function zoomScale(n) {
+  return (
+    n >= 0 ? n + 1 :
+    n < 0 ? -(n) + 1 :
+    n + 1
+  );
+};
+
+export function rectIntersect(
+  x1, y1, w1, h1,
+  x2, y2, w2, h2
+) {
+  let x = Math.max(x1, x2);
+  let num1 = Math.min(x1 + w1, x2 + w2);
+  let y = Math.max(y1, y2);
+  let num2 = Math.min(y1 + h1, y2 + h2);
+  if (num1 > x && num2 > y) {
+    return {
+      x: x,
+      y: y,
+      w: num1 - x,
+      h: num2 - y
+    };
+  }
+  return null;
+};
+
+export function rnd64() {
+  let max = Number.MAX_SAFE_INTEGER;
+  return Math.floor((Math.random() * max) - (max / 2));
+};
+
+export function getRelativeTile(x, y, scale) {
+  let dim = CFG.BLOCK_SIZE * scale;
+  let xx = (Math.ceil(x / dim) * CFG.BLOCK_SIZE) - CFG.BLOCK_SIZE;
+  let yy = (Math.ceil(y / dim) * CFG.BLOCK_SIZE) - CFG.BLOCK_SIZE;
+  return { x: xx, y: yy };
+};
+
 export function getNormalizedSelection(dx, dy, sx, sy) {
   let x1 = sx;
   let y1 = sy;
@@ -308,8 +308,14 @@ export function getTilesetTileIndexBy(x, y) {
   return (y * CFG.TILESET_HORIZONTAL_SIZE + x) + 1;
 };
 
-export function JSONTilesetToCanvas(rom, json) {
-  let buffer = createCanvasBuffer(CFG.TILESET_DEFAULT_WIDTH, CFG.TILESET_DEFAULT_HEIGHT).ctx;
+export function getTilesetTilePositionByIndex(index) {
+  let x = ((index - 1) % CFG.TILESET_HORIZONTAL_SIZE) | 0;
+  let y = ((index - 1) / CFG.TILESET_HORIZONTAL_SIZE) | 0;
+  return { x, y };
+};
+
+export function JSONTilesetToCanvas(rom, json, width) {
+  let buffer = createCanvasBuffer(width, CFG.TILESET_DEFAULT_HEIGHT).ctx;
   let tilesets = json;
   let tileBuffer = createCanvasBuffer(CFG.BLOCK_SIZE, CFG.BLOCK_SIZE).ctx;
   for (let ts in tilesets) {
@@ -321,8 +327,8 @@ export function JSONTilesetToCanvas(rom, json) {
       let tiles = layers[ii];
       for (let jj = 0; jj < tiles.length; ++jj) {
         let tile = tiles[jj];
-        let isBgLayerSource = tile.sx < CFG.TILESET_HORIZONTAL_SIZE;
-        let reduceX = (isBgLayerSource ? 0 : -CFG.TILESET_DEFAULT_WIDTH);
+        let isBgLayerSource = tile.sx < (width / CFG.BLOCK_SIZE);
+        let reduceX = (isBgLayerSource ? 0 : -width);
         let layer = tileset.layers[isBgLayerSource ? "background" : "foreground"].canvas;
         tileBuffer.clearRect(0, 0, CFG.BLOCK_SIZE, CFG.BLOCK_SIZE);
         if (tile.fx) tileBuffer.scale(-1, 1);

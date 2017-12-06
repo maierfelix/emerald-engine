@@ -15,6 +15,7 @@ import * as _json from "./json";
 import * as _objects from "./objects";
 import * as _settings from "./settings";
 import * as _textures from "./texture";
+import * as _autotile from "./autotile";
 import * as _encounters from "./encounters";
 
 export default class Map {
@@ -49,7 +50,6 @@ export default class Map {
       weather: null,
       showName: false
     };
-    // if we only draw tiles onto the preview texture
     this.drawPreview = false;
     this.resize(width, height);
   }
@@ -94,10 +94,30 @@ Map.prototype.createDataLayer = function(tileset, width, height) {
   };
 };
 
+Map.prototype.coordsInBounds = function(x, y) {
+  return (
+    (x >= 0 && x < this.width) &&
+    (y >= 0 && y < this.height)
+  );
+};
+
+Map.prototype.isInView = function() {
+  let instance = this.instance;
+  let xx = instance.cx + ((this.x * CFG.BLOCK_SIZE) * instance.cz) | 0;
+  let yy = instance.cy + ((this.y * CFG.BLOCK_SIZE) * instance.cz) | 0;
+  let ww = ((this.width * CFG.BLOCK_SIZE) * instance.cz) | 0;
+  let hh = ((this.height * CFG.BLOCK_SIZE) * instance.cz) | 0;
+  return (
+    (xx + ww >= 0 && xx <= instance.width) &&
+    (yy + hh >= 0 && yy <= instance.height)
+  );
+};
+
 extend(Map, _fill);
 extend(Map, _tile);
 extend(Map, _json);
 extend(Map, _objects);
 extend(Map, _settings);
 extend(Map, _textures);
+extend(Map, _autotile);
 extend(Map, _encounters);

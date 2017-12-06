@@ -455,6 +455,11 @@ label.ts-btn:hover {
   user-select: none;
 }
 
+#engine-ui-top-stats {
+  display: flex;
+  justify-content: center;
+}
+
 .ssm {
   width: 34px;
 }
