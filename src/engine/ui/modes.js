@@ -11,6 +11,11 @@ import {
   getNormalizedSelection
 } from "../../utils";
 
+import {
+  showAlertModal,
+  closeAlertModal
+} from "../../screens/index";
+
 import Map from "../map/index";
 
 export function resetUIModeButtons() {
@@ -85,10 +90,54 @@ export function setUIActiveMap(map) {
     let cmap = maps[ii];
     if (cmap === map) {
       $(`#engine-ui-map-select`).selectedIndex = ii;
+      this.currentMap = map;
+      this.refreshUIMapMenuByMap(map);
       return;
     }
   };
-  console.warn(`Failed to set active UI map ${map.name}`);
+  console.warn(`Failed to set active map`, map);
+};
+
+export function refreshUIMapMenuByMap(map) {
+  this.setUIActiveMapObjects(map);
+  this.setUIActiveMapOptions(map);
+};
+
+export function setUIActiveMapObjects(map) {
+
+};
+
+export function setUIActiveMapOptions(map) {
+  let settings = map.settings;
+  let elName = $(`#engine-ui-opt-name`);
+  let elShowName = $(`#engine-ui-opt-show-name`);
+  let elType = $(`#engine-ui-opt-type`);
+  let elWeather = $(`#engine-ui-opt-weather`);
+  let elMusic = $(`#engine-ui-opt-music`);
+  let elWidth = $(`#engine-ui-opt-width`);
+  let elHeight = $(`#engine-ui-opt-height`);
+  elName.value = settings.name || ``;
+  elShowName.checked = settings.showName ? true : false;
+  elType.selectedIndex = settings.type || 0;
+  elWeather.selectedIndex = settings.weather || 0;
+  elMusic.selectedIndex = settings.music || 0;
+  elWidth.value = map.width;
+  elHeight.value = map.height;
+};
+
+export function onUIUpdateMapSettings(property, value) {
+  let map = this.currentMap;
+  if (!map.settings.hasOwnProperty(property)) {
+    console.warn(`Invalid map property ${property}`, map);
+  }
+  map.settings[property] = value;
+};
+
+export function onUIDeleteMap(map) {
+  showAlertModal(`Do you really want to delete this map?`).then((answer) => {
+    if (answer) this.removeMap(map);
+    closeAlertModal();
+  });
 };
 
 export function resetUIActiveTilesetLayers() {
@@ -257,7 +306,6 @@ export function onUIPlaceNewMap(map) {
   let valid = this.isFreeMapSpaceAt(map.x, map.y, map.width, map.height);
   if (valid) {
     map.resize(map.width, map.height);
-    this.currentMap = map;
     this.addMap(map);
     this.onUIMapAddAbort();
   }

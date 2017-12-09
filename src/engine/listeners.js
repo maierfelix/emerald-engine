@@ -7,7 +7,7 @@ import {
 } from "../utils";
 
 export function addListeners() {
-  window.addEventListener("resize", (e) => this.resize(e));
+  window.addEventListener("resize", (e) => this.resize(window.innerWidth, window.innerHeight));
   window.addEventListener("mousewheel", (e) => this.mouseWheel(e));
   window.addEventListener("mousemove", (e) => this.mouseMove(e));
   window.addEventListener("mousedown", (e) => {
@@ -35,6 +35,7 @@ export function addListeners() {
   this.addTilesetEditModeListeners();
   this.addTilesetBundleListener();
   this.addSubTilesetListener();
+  this.addMapOptionsListeners();
 };
 
 export function keyDown(e) {
@@ -79,8 +80,44 @@ export function addUIMapChooseListener() {
   el.onchange = (e) => {
     let index = el.selectedIndex;
     let map = this.maps[index];
-    this.currentMap = map;
+    this.setUIActiveMap(map);
   };
+};
+
+export function addMapOptionsListeners() {
+  let elName = $(`#engine-ui-opt-name`);
+  let elShowName = $(`#engine-ui-opt-show-name`);
+  let elType = $(`#engine-ui-opt-type`);
+  let elWeather = $(`#engine-ui-opt-weather`);
+  let elMusic = $(`#engine-ui-opt-music`);
+  let elDelete = $(`#engine-ui-opt-delete`);
+  let elWidth = $(`#engine-ui-opt-width`);
+  let elHeight = $(`#engine-ui-opt-height`);
+  let elResize = $(`#engine-ui-opt-resize`);
+  elName.oninput = (e) => {
+    this.onUIUpdateMapSettings(`name`, elName.value);
+  };
+  elShowName.onchange = (e) => {
+    this.onUIUpdateMapSettings(`showName`, elShowName.checked);
+  };
+  elType.onchange = (e) => {
+    console.log(elType, elType.selectedIndex);
+    this.onUIUpdateMapSettings(`type`, elType.selectedIndex);
+  };
+  elWeather.onchange = (e) => {
+    this.onUIUpdateMapSettings(`weather`, elWeather.selectedIndex);
+  };
+  elMusic.onchange = (e) => {
+    this.onUIUpdateMapSettings(`music`, elMusic.selectedIndex);
+  };
+  elDelete.onclick = (e) => {
+    if (this.currentMap) this.onUIDeleteMap(this.currentMap);
+  };
+  elWidth.oninput = elHeight.oninput = (e) => {
+    this.onUISetMapSize(parseInt(elWidth.value), parseInt(elHeight.value));
+  };
+  elResize.onclick = (e) => { };
+  $(`#engine-ui-resize-map-warning`).display = `flex`;
 };
 
 export function addTilesetListeners() {

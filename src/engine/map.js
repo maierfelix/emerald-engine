@@ -38,6 +38,19 @@ export function addMap(map) {
   this.setUIActiveMap(map);
 };
 
+export function removeMap(map) {
+  for (let ii = 0; ii < this.maps.length; ++ii) {
+    if (this.maps[ii] === map) {
+      this.maps[ii].destroy();
+      this.maps.splice(ii, 1);
+      break;
+    }
+  };
+  this.currentMap = null;
+  this.refreshUIMapChooseList(this.maps);
+  if (this.maps.length) this.setUIActiveMap(this.maps[this.maps.length - 1]);
+};
+
 export function mapsToJSON() {
   let json = `[`;
   this.maps.map((map, index) => {
@@ -46,18 +59,6 @@ export function mapsToJSON() {
   });
   json += `]`;
   return json;
-};
-
-export function removeMap(map) {
-  let maps = this.maps;
-  let length = maps.length;
-  for (let ii = 0; ii < length; ++ii) {
-    let cmap = maps[ii];
-    if (cmap === map) {
-      this.maps.splice(ii, 1);
-      break;
-    }
-  };
 };
 
 export function getRelativeMapTile(x, y) {

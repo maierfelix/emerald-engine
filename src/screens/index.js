@@ -1,6 +1,8 @@
 import InitScreen from "./init-screen";
 import ROMInputDialog from "./rom-input";
 import {
+  showUIAlertModal,
+  closeUIAlertModal,
   showUILoadingModal,
   closeUILoadingModal,
   isUILoadingModalActive,
@@ -10,6 +12,8 @@ import {
 } from "./loading-modal";
 
 export const showInitScreen = InitScreen;
+export const showAlertModal = showUIAlertModal;
+export const closeAlertModal = closeUIAlertModal;
 export const showLoadingModal = showUILoadingModal;
 export const closeLoadingModal = closeUILoadingModal;
 export const isLoadingModalActive = isUILoadingModalActive;

@@ -2,7 +2,8 @@ import * as CFG from "../../cfg";
 
 import {
   uid,
-  assert
+  assert,
+  createCanvasBuffer
 } from "../../utils";
 
 import extend from "../../extend";
@@ -33,6 +34,11 @@ export default class Map {
       2: null,       // fg
       preview: null  // preview
     };
+    this.texturesGL = {
+      0: null,
+      1: null,
+      2: null
+    };
     this.objects = [
       {
         x: 3, y: 2,
@@ -44,15 +50,21 @@ export default class Map {
     this.collisions = [];
     this.encounters = [];
     this.settings = {
-      name: null,
-      type: null,
-      music: null,
-      weather: null,
+      name: ``,
+      type: 0,
+      music: 0,
+      weather: 0,
       showName: false
     };
+    this.fillTable = null;
     this.drawPreview = false;
-    this.resize(width, height);
+    this.init();
   }
+};
+
+Map.prototype.init = function() {
+  this.fillTable = new Uint8Array(this.width * this.height);
+  this.resize(this.width, this.height);
 };
 
 Map.prototype.resize = function(width, height) {
@@ -61,6 +73,16 @@ Map.prototype.resize = function(width, height) {
   this.initTextures(width * CFG.BLOCK_SIZE, height * CFG.BLOCK_SIZE);
   this.resizeTextures(width * CFG.BLOCK_SIZE, height * CFG.BLOCK_SIZE);
   return this;
+};
+
+Map.prototype.destroy = function() {
+  this.textures[0] = null;
+  this.textures[1] = null;
+  this.textures[2] = null;
+  this.textures["preview"] = null;
+  this.instance.gl.freeTexture(this.texturesGL[0]); this.texturesGL[0] = null;
+  this.instance.gl.freeTexture(this.texturesGL[1]); this.texturesGL[1] = null;
+  this.instance.gl.freeTexture(this.texturesGL[2]); this.texturesGL[2] = null;
 };
 
 Map.prototype.dataLayerMissing = function(tileset) {
@@ -78,19 +100,10 @@ Map.prototype.createDataLayer = function(tileset, width, height) {
   let bundleId = tileset.bundle.name;
   // allocate bundle data
   if (!this.data[bundleId]) this.data[bundleId] = {};
-  let mapData = this.data[bundleId];
-  // allocate bundle tileset data
-  let data = mapData[tsId] = {
-    1: new Array(size).fill(0),
-    2: new Array(size).fill(0),
-    3: new Array(size).fill(0)
-  };
-  for (let ii = 0; ii < size; ++ii) {
-    let x = (ii % width) | 0;
-    let y = (ii / width) | 0;
-    data[1][ii] = 0;
-    data[2][ii] = 0;
-    data[3][ii] = 0;
+  this.data[bundleId][tsId] = {
+    1: new Uint16Array(size),
+    2: new Uint16Array(size),
+    3: new Uint16Array(size)
   };
 };
 

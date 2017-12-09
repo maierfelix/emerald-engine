@@ -9,7 +9,9 @@ export function initTextures(width, height) {
   this.textures[0] = createCanvasBuffer(width, height).ctx;
   this.textures[1] = createCanvasBuffer(width, height).ctx;
   this.textures[2] = createCanvasBuffer(width, height).ctx;
-  this.textures["preview"] = createCanvasBuffer(width, height).ctx;
+  // create preview texture without scaling
+  this.textures["preview"] = createCanvasBuffer(this.width, this.height).ctx;
+  this.initGLTextures(width, height);
 };
 
 export function resizeTextures(width, height) {
@@ -25,11 +27,19 @@ export function resizeTexture(texture, width, height) {
   setImageSmoothing(texture, false);
 };
 
-export function refreshMapTexture() {
+export function initGLTextures(width, height) {
+  let gl = this.instance.gl;
+  this.texturesGL[0] = gl.createTexture(width, height);
+  this.texturesGL[1] = gl.createTexture(width, height);
+  this.texturesGL[2] = gl.createTexture(width, height);
+};
+
+export function refreshMapTextures() {
   let bundles = this.data;
   let width = this.width | 0;
   let height = this.height | 0;
   let instance = this.instance;
+  let gl = instance.gl;
   let scale = CFG.BLOCK_SIZE;
   let tw = CFG.TILESET_HORIZONTAL_SIZE;
   for (let bundleId in bundles) {
@@ -39,7 +49,9 @@ export function refreshMapTexture() {
       let tileset = instance.bundles[bundleId].tilesets[tsId].canvas;
       for (let ll in ts) {
         let data = ts[ll];
-        let texture = this.textures[(ll | 0) - 1];
+        let layer = (ll | 0) - 1;
+        let texture = this.textures[layer];
+        let textureGL = this.texturesGL[layer];
         let size = width * height;
         for (let ii = 0; ii < size; ++ii) {
           let xx = (ii % width) | 0;
@@ -52,8 +64,14 @@ export function refreshMapTexture() {
             tileset,
             sx * scale, sy * scale,
             scale, scale,
-            (xx * scale), (yy * scale),
+            xx * scale, yy * scale,
             scale, scale
+          );
+          gl.updateGLTextureTileByCanvas(
+            textureGL,
+            tileset,
+            sx * scale, sy * scale,
+            xx * scale, yy * scale
           );
         };
       };

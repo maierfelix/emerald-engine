@@ -28,21 +28,45 @@ export function drawMap(map) {
   let dw = (map.width * CFG.BLOCK_SIZE) * this.cz;
   let dh = (map.height * CFG.BLOCK_SIZE) * this.cz;
   //this.drawMapTileBased(map);
-  this.drawMapLayerTexture(0, map, sx, sy, sw, sh, dx, dy, dw, dh);
-  this.drawMapLayerTexture(1, map, sx, sy, sw, sh, dx, dy, dw, dh);
-  this.drawMapLayerTexture(2, map, sx, sy, sw, sh, dx, dy, dw, dh);
+  if (this.drawingMode === CFG.ENGINE_RENDERER.GL) {
+    this.drawMapGL(0, map, sx, sy, sw, sh, dx, dy, dw, dh);
+    this.drawMapGL(1, map, sx, sy, sw, sh, dx, dy, dw, dh);
+    this.drawMapGL(2, map, sx, sy, sw, sh, dx, dy, dw, dh);
+  }
+  else if (this.drawingMode === CFG.ENGINE_RENDERER.CANVAS) {
+    this.drawMapLayerTexture(0, map, sx, sy, sw, sh, dx, dy, dw, dh);
+    this.drawMapLayerTexture(1, map, sx, sy, sw, sh, dx, dy, dw, dh);
+    this.drawMapLayerTexture(2, map, sx, sy, sw, sh, dx, dy, dw, dh);
+  }
+  if (isCurrentMap && this.isActiveTilesetFillMode()) this.drawMapFillPreview(map);
   this.drawMapObjects(map);
   this.drawMapSizeBorder(map);
 };
 
-export function drawMapLayerTexture(index, map, sx, sy, sw, sh, dx, dy, dw, dh) {
+export function drawMapGL(layer, map, sx, sy, sw, sh, dx, dy, dw, dh) {
+  let texture = map.texturesGL[layer];
+  let currentMap = this.currentMap;
+  let currentLayer = this.currentLayer - 1;
+  let isCurrentMap = (currentMap === map) || (currentMap === null);
+  if (layer !== currentLayer && currentLayer !== 3) this.gl.alpha = 0.4;
+  if (!isCurrentMap) this.gl.alpha = 0.5;
+  this.gl.drawTexture(
+    texture,
+    dx, dy,
+    dw, dh
+  );
+  this.gl.alpha = 1.0;
+};
+
+export function drawMapLayerTexture(layer, map, sx, sy, sw, sh, dx, dy, dw, dh) {
   let ctx = this.ctx;
-  let layer = this.currentLayer - 1;
-  let texture = map.textures[index];
-  let isCurrentMap = (this.currentMap === map) || (this.currentMap === null);
-  if (index !== layer && layer !== 3) ctx.globalAlpha = 0.4;
+  let texture = map.textures[layer];
+  let currentMap = this.currentMap;
+  let currentLayer = this.currentLayer - 1;
+  let isCurrentMap = (currentMap === map) || (currentMap === null);
+  if (layer !== currentLayer && currentLayer !== 3) ctx.globalAlpha = 0.4;
   if (!isCurrentMap) ctx.globalAlpha = 0.5;
-  if (this.mode !== CFG.ENGINE_MODE_TS) ctx.globalAlpha = 1.0;
+  //if (this.mode !== CFG.ENGINE_MODE_TS) ctx.globalAlpha = 1.0;
   ctx.drawImage(
     texture.canvas,
     sx, sy,
@@ -50,17 +74,20 @@ export function drawMapLayerTexture(index, map, sx, sy, sw, sh, dx, dy, dw, dh) 
     dx, dy,
     dw, dh
   );
-  if (this.currentMap === map && this.isActiveTilesetFillMode()) {
-    ctx.globalAlpha = 0.125;
-    ctx.drawImage(
-      map.textures.preview.canvas,
-      0, 0,
-      map.width * CFG.BLOCK_SIZE, map.height * CFG.BLOCK_SIZE,
-      this.cx + (map.x * CFG.BLOCK_SIZE) * this.cz,
-      this.cy + (map.y * CFG.BLOCK_SIZE) * this.cz,
-      (map.width * CFG.BLOCK_SIZE) * this.cz, (map.height * CFG.BLOCK_SIZE) * this.cz
-    );
-  }
+  ctx.globalAlpha = 1.0;
+};
+
+export function drawMapFillPreview(map) {
+  let ctx = this.ctx;
+  ctx.globalAlpha = 0.25;
+  ctx.drawImage(
+    map.textures.preview.canvas,
+    0, 0,
+    map.width, map.height,
+    this.cx + (map.x * CFG.BLOCK_SIZE) * this.cz,
+    this.cy + (map.y * CFG.BLOCK_SIZE) * this.cz,
+    (map.width * CFG.BLOCK_SIZE) * this.cz, (map.height * CFG.BLOCK_SIZE) * this.cz
+  );
   ctx.globalAlpha = 1.0;
 };
 

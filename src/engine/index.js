@@ -16,6 +16,7 @@ import {
 import extend from "../extend";
 
 import Map from "./map/index";
+import WebGLRenderer from "../webgl";
 import CanvasRecorder from "../canvas-recorder";
 
 import * as _map from "./map";
@@ -52,8 +53,11 @@ export default class MapEditor {
       rmx: 0, rmy: 0
     };
     this.map = $("#engine-map");
+    this.mapGL = $("#engine-map-gl");
     this.tileset = $("#engine-tileset");
     this.tsCtx = this.tileset.getContext("2d");
+    this.gl = new WebGLRenderer(this.mapGL);
+    this.drawingMode = CFG.ENGINE_DEFAULT_RENDERER;
     this.ctx = this.map.getContext("2d");
     this.width = 0;
     this.height = 0;
@@ -99,6 +103,7 @@ MapEditor.prototype.clear = function() {
     0, 0,
     this.width, this.height
   );
+  this.gl.clear();
 };
 
 MapEditor.prototype.draw = function() {
@@ -119,14 +124,13 @@ MapEditor.prototype.update = function() {
 
 };
 
-MapEditor.prototype.resize = function(e) {
-  let width = window.innerWidth;
-  let height = window.innerHeight;
+MapEditor.prototype.resize = function(width, height) {
   this.width = width;
   this.height = height;
   this.map.width = width;
   this.map.height = height;
   setImageSmoothing(this.ctx, false);
+  this.gl.resize(width, height);
 };
 
 MapEditor.prototype.initUI = function() {

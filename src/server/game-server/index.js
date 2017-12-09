@@ -63,3 +63,10 @@ GameServer.prototype.processHTTPRequestQuery = function(queries, req, resp) {
   };
   resp.end();
 };
+
+GameServer.prototype.isValidSession = function(user, sessionId) {
+  let ticket = this.LoginServer.getTicketByUsername(user);
+  return (
+    ticket !== null && ticket.id === sessionId
+  );
+};

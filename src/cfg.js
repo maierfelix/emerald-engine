@@ -146,5 +146,14 @@ export const ENGINE_DEFAULT_MAP = {
   HEIGHT: 8
 };
 
-export const ENGINE_MAP_MAX_WIDTH = 64;
-export const ENGINE_MAP_MAX_HEIGHT = 64;
+export const ENGINE_MAP_MAX_WIDTH = 96;
+export const ENGINE_MAP_MAX_HEIGHT = 96;
+
+export const ENGINE_WEBGL_TEX_LIMIT = 256;
+
+export const ENGINE_RENDERER = {
+  GL: 1,
+  CANVAS: 2
+};
+
+export const ENGINE_DEFAULT_RENDERER = ENGINE_RENDERER.GL;

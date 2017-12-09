@@ -401,3 +401,39 @@ export function loadJavaScriptFile(path) {
   script.src = path;
   document.body.appendChild(script);
 };
+
+export function compressDataArray(data) {
+  let str = ``;
+  let length = data.length;
+  for (let ii = 0; ii < length; ++ii) {
+    if (data[ii + 0] === data[ii + 1]) {
+      let search = data[ii + 0];
+      let start = ii;
+      while (data[ii] === search) ++ii;
+      str += `${(ii - start)}x${search}`;
+      ii--;
+    } else {
+      str += data[ii];
+    }
+    if (ii + 1 < length) str += `,`;
+  };
+  return str;
+};
+
+export function decompressDataArray(str) {
+  let items = str.split(`,`);
+  let length = items.length;
+  let data = [];
+  for (let ii = 0; ii < length; ++ii) {
+    let item = items[ii];
+    let repeat = item.split(`x`);
+    if (repeat.length > 1) {
+      let times = parseInt(repeat[0]);
+      let value = parseInt(repeat[1]);
+      for (let jj = 0; jj < times; ++jj) data.push(value);
+    } else {
+      data.push(parseInt(item));
+    }
+  };
+  return data;
+};

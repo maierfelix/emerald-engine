@@ -38,17 +38,31 @@ export function drawTileByTileIndexAt(tileset, tile, x, y, layer) {
 };
 
 export function drawTileAt(tileset, sx, sy, tx, ty, layer) {
-  let ctx = this.textures[layer - 1];
+  let texture = this.textures[layer - 1];
+  let textureGL = this.texturesGL[layer - 1];
   let scale = CFG.BLOCK_SIZE;
   // in bounds check
   if (!this.coordsInBounds(tx, ty)) return;
   this.setTileAt(tileset, sx, sy, tx, ty, layer);
   // draw tile on given map texture
-  ctx.clearRect(
+  this.drawTileIntoTextureAt(tileset, sx, sy, tx, ty, layer);
+  this.instance.gl.updateGLTextureTileByCanvas(
+    textureGL,
+    tileset.canvas,
+    sx * scale, sy * scale,
+    tx * scale, ty * scale
+  );
+};
+
+export function drawTileIntoTextureAt(tileset, sx, sy, tx, ty, layer) {
+  let texture = this.textures[layer - 1];
+  let scale = CFG.BLOCK_SIZE;
+  // draw tile on given map texture
+  texture.clearRect(
     tx * scale, ty * scale,
     scale, scale
   );
-  ctx.drawImage(
+  texture.drawImage(
     tileset.canvas,
     sx * scale, sy * scale,
     scale, scale,

@@ -32,6 +32,7 @@ console.assert(
   (typeof Worker !== "undefined") &&
   (typeof FileReader !== "undefined") &&
   (typeof IDBDatabase !== "undefined") &&
+  (typeof WebAssembly !== "undefined") &&
   (typeof WebGLRenderingContext !== "undefined")
 );
 
@@ -98,7 +99,7 @@ Engine.prototype.initSessionTicker = function() {
             this.reAuthenticateToServer();
           }
         } else {
-          if (isLoadingModalActive()) closeLoadingModal();
+          //if (isLoadingModalActive()) closeLoadingModal();
         }
       }
     });

@@ -57,14 +57,23 @@ export function drawTable(table, tile, tileset, layer) {
   let tilePos = getTilesetTilePositionByIndex(tile);
   let tx = tilePos.x | 0;
   let ty = tilePos.y | 0;
+  let scale = CFG.BLOCK_SIZE;
+  let texture = this.textures[layer - 1];
+  let textureGL = this.texturesGL[layer - 1];
+  // first draw into a buffer
   for (let ii = 0; ii < size; ++ii) {
     let x = (ii % width) | 0;
     let y = (ii / width) | 0;
     if (table[ii] !== 2) continue;
-    this.drawTileAt(
-      tileset, tx, ty, x, y, layer
-    );
+    this.setTileAt(tileset, tx, ty, x, y, layer);
+    this.drawTileIntoTextureAt(tileset, tx, ty, x, y, layer);
   };
+  // finally update the gpu texture with the buffer
+  this.instance.gl.updateGLTextureByCanvas(
+    textureGL,
+    texture.canvas,
+    0, 0
+  );
 };
 
 export function drawPreviewTable(table) {
@@ -80,8 +89,8 @@ export function drawPreviewTable(table) {
     let yy = (ii / width) | 0;
     if (table[ii] !== 2) continue;
     preview.fillRect(
-      xx * scale, yy * scale,
-      scale, scale
+      xx, yy,
+      1, 1
     );
   };
 };
@@ -90,7 +99,7 @@ export function clearPreviewTable() {
   let preview = this.textures.preview;
   preview.clearRect(
     0, 0,
-    this.width * CFG.BLOCK_SIZE, this.height * CFG.BLOCK_SIZE
+    this.width, this.height
   );
 };
 
