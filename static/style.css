@@ -397,7 +397,7 @@ input[type=number]::-webkit-inner-spin-button {
 }
 
 .engine-menu-middle-right > img {
-  width: 26px;
+  width: 28px;
 }
 
 .engine-abs-item-center {
@@ -458,6 +458,40 @@ label.ts-btn:hover {
 #engine-ui-top-stats {
   display: flex;
   justify-content: center;
+}
+
+#engine-ui-right-menu {
+  right: 0px;
+  top: 0px;
+  z-index: 3;
+  position: absolute;
+  height: 100%;
+}
+
+#engine-ui-top-menu {
+  left: 0px;
+  top: 0px;
+  z-index: 3;
+}
+
+#engine-ui-top-stats {
+  left: 0px;
+  top: 0px;
+  z-index: 3;
+}
+
+#engine-map, #engine-map-gl {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+}
+
+#engine-map {
+  z-index: 2;
+}
+
+#engine-map-gl {
+  z-index: 1;
 }
 
 .ssm {
@@ -790,6 +824,32 @@ label.ts-btn:hover {
   color: rgba(255,255,255,0.8);
   text-transform: uppercase;
   padding-top: 130px;
+}
+
+#ui-modal-interactive-area {
+  display: none;
+  position: absolute;
+  color: rgba(255,255,255,0.8);
+  padding-top: 90px;
+}
+
+#ui-modal-interactive-area > .ts-btn {
+  background: rgba(54, 54, 54, 0.5);
+  border: 1px solid rgba(54, 54, 54, 0.5);
+  min-width: 64px;
+  text-align: center;
+}
+
+#ui-modal-interactive-area > .ts-btn:hover {
+  background: rgba(54, 54, 54, 0.85) !important;
+}
+
+#engine-ui-resize-map-warning {
+  display: none;
+}
+
+#engine-ui-resize-map-warning > label {
+  font-size: 10px;
 }
 
 #ui-modal-loading-ball > canvas {

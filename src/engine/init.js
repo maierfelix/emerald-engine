@@ -11,7 +11,6 @@ import Map from "./map/index";
 export function setup() {
   this.addListeners();
   this.resize(window.innerWidth, window.innerHeight);
-  this.loadWASMModule();
   this.setUIMode("ts");
   this.setUIObjMode(0);
   this.setUIEncounterMode(0);
@@ -20,18 +19,14 @@ export function setup() {
   this.loadDefaultMap();
 };
 
-export function loadWASMModule() {
-
-};
-
 export function loadDefaultMap() {
-  this.loadTilesetBundleFromServer("dawn").then(bundle => {
-    this.useTilesetBundle(bundle);
-    this.loadMapFromServer("littleroot-town").then(map => {
-      this.currentMap = map;
+  this.loadWorldFromServer("littleroot-town").then(() => {
+    this.setUIActiveMap(this.maps[this.maps.length - 1]);
+    this.loadTilesetBundleFromServer("dawn").then(bundle => {
+      this.useTilesetBundle(bundle);
       this.initUI();
       this.useTilesetFromBundleByIndex(bundle, $(`#engine-ui-cts-subts`).childNodes.length - 1);
-      this.setUIActiveMap(this.maps[1]);
+      this.setUIActiveMap(this.maps[0]);
     });
   });
 };

@@ -10,6 +10,7 @@ export const OFFSETS = {
   ITEM_COUNT: 377,
   BERRY_DATA: 0x57FC94,
   BERRY_COUNT: 43,
+  NATIONAL_DEX_TBL: 0x31DC82,
   PKMN_COUNT: 412,
   PKMN_NAMES: 0x3185C8,
   PKMN_BACK_IMG: 0x3028B8,
@@ -556,6 +557,11 @@ export const OFFSETS = {
     }
   ]
 };
+
+// 251 - 274 are bad
+export const ROM_BAD_IDS = (
+  Array(25).fill(0).map((x, i) => (i + 387))
+);
 
 export const DIR = {
   NULL: 0,

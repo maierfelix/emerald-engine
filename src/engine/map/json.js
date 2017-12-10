@@ -2,8 +2,9 @@ import * as CFG from "../../cfg";
 
 import {
   assert,
-  compressDataArray,
-  decompressDataArray
+  saveFile,
+  mangleDataArray,
+  unmangleDataArray
 } from "../../utils";
 
 export function validateJSON(json) {
@@ -39,7 +40,7 @@ export function createDataFromJSON(json) {
 export function createLayerFromJSON(data, width, height) {
   let size = width * height;
   let view = new Uint16Array(size);
-  let decomp = decompressDataArray(data);
+  let decomp = unmangleDataArray(data);
   for (let ii = 0; ii < size; ++ii) view[ii] = decomp[ii];
   return view;
 };
@@ -53,9 +54,9 @@ export function createJSONFromData() {
     for (let tsId in bundle) {
       let layers = bundle[tsId];
       data[bundleId][tsId] = {
-        1: compressDataArray(layers[1]),
-        2: compressDataArray(layers[2]),
-        3: compressDataArray(layers[3])
+        1: mangleDataArray(layers[1]),
+        2: mangleDataArray(layers[2]),
+        3: mangleDataArray(layers[3])
       };
     };
   };
@@ -68,10 +69,10 @@ export function fromJSON(json) {
   this.y = json.y;
   this.data = this.createDataFromJSON(json);
   this.settings = json.settings;
-  this.resize(json.width, json.height);
-  this.refreshMapTextures();
+  this.setBoundings(json.width, json.height);
   return new Promise(resolve => {
     this.instance.resolveBundleList(json.data).then(() => {
+      this.refreshMapTextures();
       resolve(this);
     });
   });

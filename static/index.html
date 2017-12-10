@@ -11,6 +11,10 @@
   <div id="ui-modal-loading-ball"></div>
   <div id="ui-modal-loading-title">Loading something awesome...</div>
   <div id="ui-modal-loading-title-bottom"></div>
+  <div id="ui-modal-interactive-area">
+    <label id="ui-modal-interactive-yes" class="ts-btn">Ok</label>
+    <label id="ui-modal-interactive-no" class="ts-btn">Abort</label>
+  </div>
   <div class="ui-modal-loading-bg"></div>
 </div>
 
@@ -148,6 +152,11 @@
     </div>
     <button class="ts-btn-invisible" style="float: right;"></button>
     <div class="ts-top-head-item">
+      <label id="engine-ui-rmx">X: 0</label>
+      <label id="engine-ui-rmy">Y: 0</label>
+    </div>
+    <button class="ts-btn-invisible" style="float: right;"></button>
+    <div class="ts-top-head-item">
       <label id="engine-ui-mx">X: 0</label>
       <label id="engine-ui-my">Y: 0</label>
     </div>
@@ -160,11 +169,11 @@
     </div>
     <div id="engine-ui-ts">
       <div class="ts-top-head engine-menu-middle-right">
-        <img id="engine-layer-btn-1" src="./img/layers-1.png" />
-        <img id="engine-layer-btn-2" src="./img/layers-2.png" />
-        <img id="engine-layer-btn-3" src="./img/layers-3.png" />
-        <img id="engine-layer-btn-4" src="./img/layers-0.png" />
-        <img id="engine-layer-btn-5" src="./img/layers-4.png" />
+        <img id="engine-layer-btn-1" src="./img/windows-10/layer-1.png" />
+        <img id="engine-layer-btn-2" src="./img/windows-10/layer-2.png" />
+        <img id="engine-layer-btn-3" src="./img/windows-10/layer-3.png" />
+        <img id="engine-layer-btn-4" src="./img/windows-10/layer-0.png" />
+        <img id="engine-layer-btn-5" src="./img/windows-10/layer-4.png" />
       </div>
       <div class="ts-top-head engine-menu-bottom-right">
         <!--<label>AutoTile</label>
@@ -173,11 +182,11 @@
           <span></span>
           <div></div>
         </label>-->
-        <img id="engine-edit-mode-pencil" src="./img/pencil-edit.png">
-        <img id="engine-edit-mode-pipette" src="./img/color-dropper.png">
-        <img id="engine-edit-mode-bucket" src="./img/paint-bucket.png">
-        <img id="engine-edit-mode-magic" src="./img/magic-bucket.png">
-        <img id="engine-edit-mode-autotile" src="./img/auto-tile.png">
+        <img id="engine-edit-mode-pencil" src="./img/windows-10/pencil-edit.png">
+        <img id="engine-edit-mode-pipette" src="./img/windows-10/color-dropper.png">
+        <img id="engine-edit-mode-bucket" src="./img/windows-10/paint-bucket.png">
+        <img id="engine-edit-mode-magic" src="./img/windows-10/magic-bucket.png">
+        <img id="engine-edit-mode-autotile" src="./img/windows-10/auto-tile.png">
       </div>
       <div class="engine-right-menu" style="height: calc(100% - 144px);">
         <canvas id="engine-tileset"></canvas>
@@ -264,19 +273,19 @@
         <div class="engine-right-menu-item engine-abs-item-label"><label>Map Settings:</label></div>
         <div class="engine-right-menu-item">
           <label>Name:</label>
-          <input type="text" class="ts-btn lg" />
-         </div>
+          <input id="engine-ui-opt-name" type="text" class="ts-btn lg" />
+        </div>
         <div class="engine-right-menu-item">
           <label>Show Name:</label>
           <label class="ts-checkbox">
-            <input type="checkbox">
+            <input id="engine-ui-opt-show-name" type="checkbox">
             <span></span>
             <div></div>
           </label>
         </div>
          <div class="engine-right-menu-item">
           <label>Type:</label>
-          <select class="ts-btn ts-btn-select">
+          <select id="engine-ui-opt-type" class="ts-btn ts-btn-select">
             <option>City</option>
             <option>Building</option>
             <option>Route</option>
@@ -286,7 +295,7 @@
         </div>
         <div class="engine-right-menu-item">
           <label>Weather:</label>
-          <select class="ts-btn ts-btn-select">
+          <select id="engine-ui-opt-weather" class="ts-btn ts-btn-select">
             <option>None</option>
             <option>Sunny</option>
             <option>Rainy</option>
@@ -297,20 +306,17 @@
         </div>
         <div class="engine-right-menu-item">
           <label>Music:</label>
-          <select class="ts-btn ts-btn-select">
+          <select id="engine-ui-opt-music" class="ts-btn ts-btn-select">
             <option>None</option>
             <option>Song 010</option>
             <option>Song 011</option>
           </select>
         </div>
-        <div class="engine-right-menu-item engine-abs-item-label"><label class="danger">Danger Zone:</label></div>
-        <div class="engine-right-menu-item  engine-abs-item-center engine-item-no-outer">
-          <button class="ts-btn">Delete Map</button>
-        </div>
-        <div class="engine-right-menu-item engine-abs-item-center">
-          <input type="number" class="ts-btn sm" placeholder="W:" />
-          <input type="number" class="ts-btn sm" placeholder="H:" />
-          <button class="ts-btn">Resize Map</button>
+        <div class="engine-right-menu-item engine-abs-item-label"><label>Map Dimensions:</label></div>
+        <div class="engine-right-menu-item  engine-abs-item-center">
+          <button id="engine-ui-opt-delete" class="ts-btn">Delete Map</button>
+          <button id="engine-ui-opt-move" class="ts-btn">Move Map</button>
+          <button id="engine-ui-opt-resize" class="ts-btn">Resize Map</button>
         </div>
         <div class="engine-right-menu-item engine-abs-item-label"><label>Map Encounters:</label></div>
         <div class="engine-right-menu-item engine-abs-item-center">
@@ -333,6 +339,7 @@
   </div>
   <!--<div class="engine-menu-bottom"></div>-->
   <canvas id="engine-map"></canvas>
+  <canvas id="engine-map-gl"></canvas>
 </div>
 
 <link href="style.css" rel="stylesheet" type="text/css">

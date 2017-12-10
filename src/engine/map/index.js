@@ -64,15 +64,49 @@ export default class Map {
 
 Map.prototype.init = function() {
   this.fillTable = new Uint8Array(this.width * this.height);
-  this.resize(this.width, this.height);
+  this.setBoundings(this.width, this.height);
 };
 
-Map.prototype.resize = function(width, height) {
+Map.prototype.setBoundings = function(width, height) {
   this.width = width;
   this.height = height;
   this.initTextures(width * CFG.BLOCK_SIZE, height * CFG.BLOCK_SIZE);
   this.resizeTextures(width * CFG.BLOCK_SIZE, height * CFG.BLOCK_SIZE);
   return this;
+};
+
+Map.prototype.resize = function(width, height) {
+  this.destroy();
+  this.resizeDataLayers(width, height);
+  this.setBoundings(width, height);
+  this.refreshMapTextures();
+};
+
+Map.prototype.resizeDataLayers = function(newWidth, newHeight) {
+  let bundles = this.data;
+  let instance = this.instance;
+  let oldWidth = this.width;
+  let oldHeight = this.height;
+  for (let bundleId in bundles) {
+    let bundle = bundles[bundleId];
+    for (let tsId in bundle) {
+      let ts = bundle[tsId];
+      let tileset = instance.bundles[bundleId].tilesets[tsId].canvas;
+      for (let ll in ts) {
+        let data = ts[ll];
+        let len = oldWidth * oldHeight;
+        let buffer = new Uint16Array(newWidth * newHeight);
+        for (let ii = 0; ii < len; ++ii) {
+          let x = (ii % oldWidth) | 0;
+          let y = (ii / oldWidth) | 0;
+          let oldIndex = (y * oldWidth + x) | 0;
+          let newIndex = (oldIndex + (y * (newWidth - oldWidth))) | 0;
+          buffer[newIndex] = data[oldIndex] | 0;
+        };
+        ts[ll] = buffer;
+      };
+    };
+  };
 };
 
 Map.prototype.destroy = function() {

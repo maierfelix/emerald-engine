@@ -34,7 +34,7 @@ export function getUIEncounterDOMItem() {
       <select class="ts-btn ts-btn-select">
         ${strNames}
       </select>
-      <input type="number" class="ts-btn ssm" placeholder="0%">
+      <input type="number" class="ts-btn ssm engine-ui-encount-chance" placeholder="0%">
       <div class="engine-ui-encount-wrapper">
         <label>Min:</label> <input type="number" class="ts-btn ssm" placeholder="Min:" value="1">
         <label>Max:</label>
@@ -52,6 +52,7 @@ export function addUIEncounterNodeByType(index) {
   let node = this.getUIEncounterDOMItem();
   let rmBtn = node.children[1];
   let pkmnBtn = node.querySelector(".ts-btn-select");
+  let pkmnChance = node.querySelector(".engine-ui-encount-chance");
   let pkmnPreview = node.querySelector(".engine-ui-encount-icon");
   let pkmnIcon = null;
   let pkmnIconBuffer = createCanvasBuffer(32, 32).ctx;

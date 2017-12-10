@@ -36,7 +36,8 @@ import {
 
 import {
   DIR,
-  OFFSETS as OFS
+  OFFSETS as OFS,
+  ROM_BAD_IDS
 } from "./offsets";
 
 import * as CFG from "../cfg";
@@ -944,24 +945,31 @@ export default class Rom {
     };
   }
   generatePkmnNameTable() {
+    let buffer = this.buffer;
     let table = this.names.pkmns;
-    let id = 1;
     for (let ii = 1; ii <= OFS.PKMN_COUNT; ++ii) {
-      let name = this.getPkmnNameById(ii);
-      if (name === "?") continue;
+      let id = readShort(buffer, OFS.NATIONAL_DEX_TBL + ((ii - 1) * 2));
+      if (ROM_BAD_IDS.indexOf(id) > -1) continue;
+      let index = ii;
+      if (id === 252) index = 277;
+      let name = this.getPkmnNameById(index);
       table[id] = name;
-      id++;
     };
   }
   generatePkmnGraphicTable() {
+    let buffer = this.buffer;
     let table = this.graphics.pkmns;
     for (let ii = 1; ii <= OFS.PKMN_COUNT; ++ii) {
-      let icon = this.getPkmnIconImgById(ii);
-      let back = this.getPkmnBackImgById(ii);
-      let front = this.getPkmnFrontImgById(ii);
-      table.icon[ii] = icon;
-      table.back[ii] = back;
-      table.front[ii] = front;
+      let id = readShort(buffer, OFS.NATIONAL_DEX_TBL + ((ii - 1) * 2));
+      let index = ii;
+      if (id === 252) index = 277;
+      if (ROM_BAD_IDS.indexOf(id) > -1) continue;
+      let icon = this.getPkmnIconImgById(index);
+      let back = this.getPkmnBackImgById(index);
+      let front = this.getPkmnFrontImgById(index);
+      table.icon[id] = icon;
+      table.back[id] = back;
+      table.front[id] = front;
     };
   }
   generateItemNameTable() {

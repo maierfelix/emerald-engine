@@ -73,11 +73,13 @@ export function drawMapPreview(map) {
   let yy = this.cy + ((map.y * CFG.BLOCK_SIZE) * this.cz);
   let ww = (map.width * CFG.BLOCK_SIZE) * this.cz;
   let hh = (map.height * CFG.BLOCK_SIZE) * this.cz;
-  ctx.fillStyle = `rgba(255,255,255,0.15)`;
-  ctx.fillRect(
-    xx, yy,
-    ww, hh
-  );
+  if (!this.isUIInMapMoveMode()) {
+    ctx.fillStyle = `rgba(255,255,255,0.15)`;
+    ctx.fillRect(
+      xx, yy,
+      ww, hh
+    );
+  }
   this.drawMapPreviewIntersections(map);
   this.drawMapSizeBorder(map);
 };
@@ -95,6 +97,8 @@ export function drawMapPreviewIntersections(map) {
   }
   for (let ii = 0; ii < length; ++ii) {
     let cmap = maps[ii];
+    // ignore moving map, we don't want to intersect it itself
+    if (this.moving.map === cmap) continue;
     let intersect = rectIntersect(
       map.x, map.y, map.width, map.height,
       cmap.x, cmap.y, cmap.width, cmap.height

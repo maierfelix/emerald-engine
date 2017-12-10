@@ -15,19 +15,31 @@ export function loadTilesetFromROM(bank, map) {
   return this.rom.getMapTileset(bank, map);
 };
 
-export function loadTilesetBundleFromServer(name, forced) {
+export function waitForBundle(bundle, resolve) {
+  if (bundle.loaded) resolve(bundle);
+  else setTimeout(() => this.waitForBundle(bundle, resolve), 100);
+};
+
+export function loadTilesetBundleFromServer(name) {
   return new Promise(resolve => {
     // bundle already cached
-    if (this.bundles[name] && !forced) {
-      return resolve(this.bundles[name]);
+    if (this.bundles[name]) {
+      if (!this.bundles[name].loaded) {
+        return this.waitForBundle(this.bundles[name], resolve);
+      } else {
+        return resolve(this.bundles[name]);
+      }
     }
     let query = CFG.ENGINE_TS_SERVER_LOC + `/?cmd=GET_BUNDLE&bundle=${name}`;
+    // reserve bundle
+    this.bundles[name] = { loaded: false };
     GET(addSessionToQuery(query, this.session)).then(res => {
       let tilesets = JSON.parse(res);
       let count = 0;
       let max = Object.keys(tilesets).length;
       let bundle = {
         name: name,
+        loaded: false,
         tilesets: {}
       };
       this.bundles[name] = bundle;
@@ -41,7 +53,10 @@ export function loadTilesetBundleFromServer(name, forced) {
           // create an usage map, so we can detect empty tiles fast
           let usage = getPixelUsageData(canvas, CFG.BLOCK_SIZE);
           bundle.tilesets[ts] = { canvas, usage };
-          if (++count >= max) resolve(bundle);
+          if (++count >= max) {
+            bundle.loaded = true;
+            resolve(bundle);
+          }
         });
       };
     });
@@ -51,6 +66,7 @@ export function loadTilesetBundleFromServer(name, forced) {
 export function resetTilesetSelection() {
   this.preview.tileset = null;
   this.selection.tileset = { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 };
+  this.tmx = this.tmy = 0;
 };
 
 export function useTilesetBundle(bundle) {
@@ -130,15 +146,7 @@ export function bufferTilesetSelection(sel) {
 };
 
 export function bufferTilesetAutotileSelection(map, sel) {
-  //let tile = map.getAutoTileAt(sel.x, sel.y);
   let buffer = createCanvasBuffer(CFG.BLOCK_SIZE, CFG.BLOCK_SIZE).ctx;
-  /*buffer.drawImage(
-    tile,
-    0, 0,
-    CFG.BLOCK_SIZE, CFG.BLOCK_SIZE,
-    0, 0,
-    CFG.BLOCK_SIZE, CFG.BLOCK_SIZE
-  );*/
   buffer.fillRect(
     0, 0,
     CFG.BLOCK_SIZE, CFG.BLOCK_SIZE
@@ -147,9 +155,9 @@ export function bufferTilesetAutotileSelection(map, sel) {
 };
 
 export function resolveBundleList(list) {
+  let count = 0;
+  let max = Object.keys(list).length;
   return new Promise(resolve => {
-    let count = 0;
-    let max = Object.keys(list).length;
     for (let bundleId in list) {
       this.loadTilesetBundleFromServer(bundleId).then(() => {
         if (++count >= max) resolve();

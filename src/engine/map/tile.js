@@ -2,7 +2,8 @@ import * as CFG from "../../cfg";
 
 import {
   uid,
-  assert
+  assert,
+  getTilesetTilePositionByIndex
 } from "../../utils";
 
 export function drawTileSelectionAt(x, y, layer, selection) {
@@ -86,6 +87,30 @@ export function getTileAt(x, y, layer) {
     };
   };
   return 0;
+};
+
+export function getTileInformationAt(x, y, layer) {
+  // in bounds check
+  if (!this.coordsInBounds(x, y)) return null;
+  let bundles = this.data;
+  let tileIndex = (y * this.width + x) | 0;
+  for (let bundleId in bundles) {
+    let bundle = bundles[bundleId];
+    for (let tsId in bundle) {
+      let tileset = bundle[tsId];
+      let dataLayer = tileset[layer];
+      let tile = dataLayer[tileIndex];
+      let tsPosition = getTilesetTilePositionByIndex(tile);
+      if (tile > 0) return {
+        x: tsPosition.x,
+        y: tsPosition.y,
+        tile: tile - 1,
+        tilesetId: tsId,
+        bundleId: bundleId
+      };
+    };
+  };
+  return null;
 };
 
 export function setTileAt(tileset, sx, sy, tx, ty, layer) {

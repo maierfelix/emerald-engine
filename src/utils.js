@@ -314,6 +314,15 @@ export function getTilesetTilePositionByIndex(index) {
   return { x, y };
 };
 
+export function coordsInMapBoundings(map, x, y) {
+  let nx = x - map.x;
+  let ny = y - map.y;
+  return (
+    (nx >= 0 && nx < map.width) &&
+    (ny >= 0 && ny < map.height)
+  );
+};
+
 export function JSONTilesetToCanvas(rom, json, width) {
   let buffer = createCanvasBuffer(width, CFG.TILESET_DEFAULT_HEIGHT).ctx;
   let tilesets = json;
@@ -402,7 +411,7 @@ export function loadJavaScriptFile(path) {
   document.body.appendChild(script);
 };
 
-export function compressDataArray(data) {
+export function mangleDataArray(data) {
   let str = ``;
   let length = data.length;
   for (let ii = 0; ii < length; ++ii) {
@@ -420,7 +429,7 @@ export function compressDataArray(data) {
   return str;
 };
 
-export function decompressDataArray(str) {
+export function unmangleDataArray(str) {
   let items = str.split(`,`);
   let length = items.length;
   let data = [];
@@ -436,4 +445,29 @@ export function decompressDataArray(str) {
     }
   };
   return data;
+};
+
+export function stringToArrayBuffer(str) {
+  let len = str.length;
+  let bytes = new Uint8Array(len * 2);
+  for (let ii = 0; ii < len; ++ii)  {
+    let cc = str.charCodeAt(ii);
+    let index = ii * 2;
+    bytes[index + 0] = ((cc >> 0) & 0xff);
+    bytes[index + 1] = ((cc >> 8) & 0xff);
+  };
+  return bytes;
+};
+
+export function saveFile(name, data) {
+  let a = document.createElement("a");
+  a.style.display = "none";
+  document.body.appendChild(a);
+  let blob = new Blob([data], { type: "octet/stream" }),
+  url = window.URL.createObjectURL(blob);
+  a.href = url;
+  a.download = name;
+  a.click();
+  window.URL.revokeObjectURL(url);
+  setTimeout(() => a.parentNode.removeChild(a));
 };

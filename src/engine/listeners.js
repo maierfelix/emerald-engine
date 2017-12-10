@@ -43,7 +43,12 @@ export function keyDown(e) {
   switch (key) {
     case "Escape":
       this.closeUIModal();
-      if (this.isUIInCreationMode()) this.onUIMapAddAbort();
+      if (this.isUIInMapCreationMode()) this.onUIMapAddAbort();
+      else if (this.isUIInMapMoveMode()) this.onUIMapMoveAbort(this.currentMap, true);
+    break;
+    case "Enter":
+      if (this.isUIInMapCreationMode()) this.onUIPlaceNewMap(this.creation.map);
+      else if (this.isUIInMapMoveMode()) this.onUIMapMoveAbort(this.currentMap);
     break;
   };
 };
@@ -94,6 +99,7 @@ export function addMapOptionsListeners() {
   let elWidth = $(`#engine-ui-opt-width`);
   let elHeight = $(`#engine-ui-opt-height`);
   let elResize = $(`#engine-ui-opt-resize`);
+  let elMove = $(`#engine-ui-opt-move`);
   elName.oninput = (e) => {
     this.onUIUpdateMapSettings(`name`, elName.value);
   };
@@ -111,13 +117,24 @@ export function addMapOptionsListeners() {
     this.onUIUpdateMapSettings(`music`, elMusic.selectedIndex);
   };
   elDelete.onclick = (e) => {
-    if (this.currentMap) this.onUIDeleteMap(this.currentMap);
+    if (this.currentMap) this.onUIMapDelete(this.currentMap);
   };
-  elWidth.oninput = elHeight.oninput = (e) => {
-    this.onUISetMapSize(parseInt(elWidth.value), parseInt(elHeight.value));
+  elMove.onclick = (e) => {
+    if (this.currentMap) this.onUIMapMove(this.currentMap);
   };
-  elResize.onclick = (e) => { };
-  $(`#engine-ui-resize-map-warning`).display = `flex`;
+  /*elWidth.oninput = elHeight.oninput = (e) => {
+    this.onUISetMapSize(this.currentMap, parseInt(elWidth.value), parseInt(elHeight.value));
+  };*/
+  elResize.onclick = (e) => {
+    let map = this.currentMap;
+    let newWidth = parseInt(elWidth.value);
+    let newHeight = parseInt(elHeight.value);
+    // make sure the map can be placed there
+    if (this.isFreeMapSpaceAt(map.x, map.y, newWidth, newHeight, map)) {
+      map.resize(newWidth, newHeight);
+      this.onUISetMapSize(map, map.width, map.height);
+    }
+  };
 };
 
 export function addTilesetListeners() {
@@ -132,6 +149,8 @@ export function addTilesetListeners() {
     let tile = getRelativeTile(mx, my, CFG.ENGINE_TILESET_SCALE);
     let sel = this.selection.tileset;
     sel.sx = tile.x; sel.sy = tile.y;
+    // don't allow any action when in pipette mode
+    if (this.isUIInPipetteMode()) return;
     this.setUITilesetSelection(tile.x, tile.y, sel.x, sel.y);
     el.onmousemove.call(this, e);
   };
@@ -157,6 +176,8 @@ export function addTilesetListeners() {
       tile.x, tile.y,
       selection.sx, selection.sy
     );
+    // don't allow any action when in pipette mode
+    if (this.isUIInPipetteMode()) return;
     this.setUITilesetSelection(sel.x, sel.y, sel.w, sel.h);
   };
 };

@@ -25,8 +25,10 @@ import * as _camera from "./camera";
 import * as _tileset from "./tileset";
 import * as _listeners from "./listeners";
 
+import * as _ui_map from "./ui/map";
 import * as _ui_modes from "./ui/modes";
 import * as _ui_modal from "./ui/modal";
+import * as _ui_tileset from "./ui/tileset";
 import * as _ui_encounter from "./ui/encounter";
 
 import * as _render_map from "./render/map";
@@ -69,10 +71,14 @@ export default class MapEditor {
     };
     this.selection = {
       entity: null,
+      mapMove: { sx: 0, sy: 0, ox: 0, oy: 0 },
       newMap: { sx: 0, sy: 0, ex: 0, ey: 0, ax: 0, ay: 0, jr: false },
       tileset: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 }
     };
     this.creation = {
+      map: null
+    };
+    this.moving = {
       map: null
     };
     this.preview = {
@@ -111,9 +117,8 @@ MapEditor.prototype.draw = function() {
   this.clear();
   this.drawMaps();
   if (this.mode === CFG.ENGINE_MODE_TS) this.drawTileset(tileset);
-  if (this.isUIInMapCreationMode()) {
-    this.drawMapPreview(this.creation.map);
-  }
+  if (this.isUIInMapCreationMode()) this.drawMapPreview(this.creation.map);
+  else if (this.isUIInMapMoveMode()) this.drawMapPreview(this.moving.map);
   if (this.cz >= CFG.ENGINE_CAMERA_GRID_MIN_SCALE) {
     drawGrid(this.ctx, this.cz, this.cx, this.cy, this.width, this.height);
   }
@@ -170,8 +175,10 @@ extend(MapEditor, _camera);
 extend(MapEditor, _tileset);
 extend(MapEditor, _listeners);
 
+extend(MapEditor, _ui_map);
 extend(MapEditor, _ui_modes);
 extend(MapEditor, _ui_modal);
+extend(MapEditor, _ui_tileset);
 extend(MapEditor, _ui_encounter);
 
 extend(MapEditor, _render_map);

@@ -32,10 +32,29 @@ export function loadMapFromServer(name) {
   });
 };
 
+export function loadMapList(maps, index = 0) {
+  return new Promise(resolve => {
+    let json = maps[index];
+    new Map(this).fromJSON(json).then((map) => {
+      this.addMap(map);
+      if (++index < maps.length) this.loadMapList(maps, index).then(resolve);
+      else resolve();
+    });
+  });
+};
+
+export function loadWorldFromServer(name) {
+  return new Promise(resolve => {
+    GET(`../data/maps/${name}.json`).then(res => {
+      let maps = JSON.parse(res);
+      this.loadMapList(maps).then(() => resolve());
+    });
+  });
+};
+
 export function addMap(map) {
   this.maps.push(map);
   this.refreshUIMapChooseList(this.maps);
-  this.setUIActiveMap(map);
 };
 
 export function removeMap(map) {
@@ -69,7 +88,7 @@ export function getRelativeMapTile(x, y) {
   };
 };
 
-export function isFreeMapSpaceAt(x, y, w, h) {
+export function isFreeMapSpaceAt(x, y, w, h, ignoreMap = null) {
   let maps = this.maps;
   let length = maps.length;
   // validate max map dimension
@@ -79,6 +98,9 @@ export function isFreeMapSpaceAt(x, y, w, h) {
   ) return false;
   for (let ii = 0; ii < length; ++ii) {
     let map = maps[ii];
+    // ignore the submitted map
+    if (ignoreMap !== null && map === ignoreMap) continue;
+    // get the intersected area
     let intersect = rectIntersect(
       map.x, map.y, map.width, map.height,
       x, y, w, h
