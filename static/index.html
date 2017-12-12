@@ -1,4 +1,12 @@
-<link href="//fonts.googleapis.com/css?family=Open+Sans:300italic,600italic,300,600&subset=latin-ext,latin" rel="stylesheet" type="text/css">
+<html>
+  <head>
+    <title>Emerald Engine - Map Editor</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="//fonts.googleapis.com/css?family=Open+Sans:300italic,600italic,300,600&subset=latin-ext,latin" rel="stylesheet" type="text/css">
+    <link href="style.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
 
 <div id="ows"></div>
 
@@ -131,6 +139,9 @@
       <label id="engine-ui-new-map-stat-y" class="ts-btn">Y:</label><button class="ts-btn-invisible"></button>
       <label id="engine-ui-new-map-stat-width" class="ts-btn">Width:</label>
       <label id="engine-ui-new-map-stat-height" class="ts-btn">Height:</label>
+    </div>
+    <div id="engine-ui-top-stats-warning" class="ts-top-head-item">
+      <label id="engine-ui-top-stats-warning-msg" class="ts-btn danger"></label>
     </div>
   </div>
   <!-- TOP MENU -->
@@ -315,7 +326,6 @@
         <div class="engine-right-menu-item engine-abs-item-label"><label>Map Dimensions:</label></div>
         <div class="engine-right-menu-item  engine-abs-item-center">
           <button id="engine-ui-opt-delete" class="ts-btn">Delete Map</button>
-          <button id="engine-ui-opt-move" class="ts-btn">Move Map</button>
           <button id="engine-ui-opt-resize" class="ts-btn">Resize Map</button>
         </div>
         <div class="engine-right-menu-item engine-abs-item-label"><label>Map Encounters:</label></div>
@@ -342,10 +352,13 @@
   <canvas id="engine-map-gl"></canvas>
 </div>
 
-<link href="style.css" rel="stylesheet" type="text/css">
-
+<!--
 <script type="text/javascript" src="../dist/bundle-browser.js"></script>
+-->
 
 <script>
 (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='./stats.min.js';document.head.appendChild(script);})()
 </script>
+
+  </body>
+</html>

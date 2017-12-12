@@ -4,6 +4,7 @@ import {
   $,
   GET,
   assert,
+  getResizeDirection,
   coordsInMapBoundings
 } from "../../utils";
 
@@ -18,8 +19,8 @@ export function isUIInMapCreationMode() {
   return this.creation.map !== null;
 };
 
-export function isUIInMapMoveMode() {
-  return this.moving.map !== null;
+export function isUIInMapResizeMode() {
+  return this.resizing.map !== null;
 };
 
 export function setUIMapCursor(cursor) {
@@ -96,15 +97,6 @@ export function onUISetMapSize(map, width, height) {
   //elHeight.value = Math.max(1, height || 1);
 };
 
-export function onUIResizeMap(map) {
-  let width = parseInt($(`#engine-ui-opt-width`).value);
-  let height = parseInt($(`#engine-ui-opt-height`).value);
-  // only resize if necessary
-  if (map.width !== width || map.height !== height) {
-    map.resize(width, height);
-  }
-};
-
 export function onUIMapDelete(map) {
   showAlertModal(`Do you really want to delete this map?`).then((answer) => {
     if (answer) this.removeMap(map);
@@ -115,9 +107,51 @@ export function onUIMapDelete(map) {
 export function setUIMapStatsModeVisibility(visibility) {
   this.setUIVisibility(!visibility);
   this.setUIMapCursor("pointer");
-  this.setUINewMapStatsVisibility(visibility);
+  this.setUIMapStatsVisibility(visibility);
   if (visibility) this.setUIMapCursor("pointer");
   else this.setUIMapCursor("default");
+  this.setUIMapStatsWarning(``);
+};
+
+export function setUIMapStatsVisibility(state) {
+  let el = $(`#engine-ui-top-stats`);
+  el.style.visibility = state ? `visible` : `hidden`;
+};
+
+export function updateMapStatsModeUI(map) {
+  let statX = $(`#engine-ui-new-map-stat-x`);
+  let statY = $(`#engine-ui-new-map-stat-y`);
+  let statW = $(`#engine-ui-new-map-stat-width`);
+  let statH = $(`#engine-ui-new-map-stat-height`);
+  if (this.isUIInMapResizeMode()) {
+    statX.innerHTML = `X: ${map.x}:${map.margin.x}`;
+    statY.innerHTML = `Y: ${map.y}:${map.margin.y}`;
+    statW.innerHTML = `Width: ${map.width}:${map.margin.w}`;
+    statH.innerHTML = `Height: ${map.height}:${map.margin.h}`;
+  } else {
+    statX.innerHTML = `X: ` + map.x;
+    statY.innerHTML = `Y: ` + map.y;
+    statW.innerHTML = `Width: ` + map.width;
+    statH.innerHTML = `Height: ` + map.height;
+  }
+};
+
+export function setUIMapStatsWarning(msg) {
+  let el = $(`#engine-ui-top-stats-warning`);
+  let elMsg = $(`#engine-ui-top-stats-warning-msg`);
+  el.style.display = msg.length > 0 ? `block` : `none`;
+  elMsg.innerHTML = msg;
+};
+
+export function setUIMapStatsMapValidity(map, isPlaceable) {
+  this.setUIMapStatsWarning(``);
+  if (!isPlaceable) {
+    if (!this.isValidMapSize(map.width + map.margin.w, map.height + map.margin.h)) {
+      this.setUIMapStatsWarning(`Invalid Map boundings`);
+    } else {
+      this.setUIMapStatsWarning(`Invalid Map position`);
+    }
+  }
 };
 
 export function onUIMapAdd() {
@@ -138,19 +172,26 @@ export function onUIMapAddAbort() {
   this.setUIMapStatsModeVisibility(false);
 };
 
-export function onUIMapMove(map) {
-  this.moving.map = map;
-  this.selection.mapMove.ox = map.x;
-  this.selection.mapMove.oy = map.y;
+export function onUIMapResize(map) {
+  this.resizing.map = map;
   this.updateMapStatsModeUI(map);
   this.setUIMapStatsModeVisibility(true);
+  let resize = this.selection.mapResize;
+  resize.ox = map.x;
+  resize.oy = map.y;
+  resize.ow = map.width;
+  resize.oh = map.height;
 };
 
-export function onUIMapMoveAbort(map, reset) {
-  let canBePlaced = this.isFreeMapSpaceAt(map.x, map.y, map.width, map.height, map);
+export function onUIMapResizeAbort(map) {
+  let canBePlaced = this.isFreeMapSpaceAt(
+    map.x + map.margin.x, map.y + map.margin.y,
+    map.width + map.margin.w, map.height + map.margin.h,
+    map
+  );
   if (reset) {
-    map.x = this.selection.mapMove.ox;
-    map.y = this.selection.mapMove.oy;
+    //map.x = this.selection.mapResize.ox;
+    //map.y = this.selection.mapResize.oy;
     this.moving.map = null;
     this.setUIMapStatsModeVisibility(false);
   }
@@ -175,22 +216,6 @@ export function onUIPlaceNewMap(map) {
   }
 };
 
-export function setUINewMapStatsVisibility(state) {
-  let el = $(`#engine-ui-top-stats`);
-  el.style.visibility = state ? `visible` : `hidden`;
-};
-
-export function updateMapStatsModeUI(map) {
-  let statX = $(`#engine-ui-new-map-stat-x`);
-  let statY = $(`#engine-ui-new-map-stat-y`);
-  let statW = $(`#engine-ui-new-map-stat-width`);
-  let statH = $(`#engine-ui-new-map-stat-height`);
-  statX.innerHTML = `X: ` + map.x;
-  statY.innerHTML = `Y: ` + map.y;
-  statW.innerHTML = `Width: ` + map.width;
-  statH.innerHTML = `Height: ` + map.height;
-};
-
 export function onUIMapFill(x, y, preview = false) {
   let map = this.currentMap;
   let rel = this.getRelativeMapTile(x, y);
@@ -200,6 +225,7 @@ export function onUIMapFill(x, y, preview = false) {
   let sel = this.selection.tileset;
   let tileset = this.currentTileset;
   switch (this.tsEditMode) {
+    // bucket filling
     case CFG.ENGINE_TS_EDIT.BUCKET:
       if (preview) map.drawPreview = true;
       map.bucketFillAt(
@@ -211,6 +237,7 @@ export function onUIMapFill(x, y, preview = false) {
       );
       map.drawPreview = false;
     break;
+    // magic bucket filling
     case CFG.ENGINE_TS_EDIT.MAGIC:
       if (preview) map.drawPreview = true;
       map.magicFillAt(
@@ -232,14 +259,15 @@ export function setUIMapPlacableCursor(map) {
   } else {
     this.setUIMapCursor("pointer");
   }
+  this.setUIMapStatsMapValidity(map, isPlaceable);
 };
 
-export function setUIMapMoveableCursor(map) {
+export function setUIMapResizeCursor(map) {
   let rel = this.getRelativeMapTile(this.mx, this.my);
   if (coordsInMapBoundings(map, rel.x, rel.y)) {
-    let isPlaceable = this.isFreeMapSpaceAt(map.x, map.y, map.width, map.height, map);
-    if (!isPlaceable) this.setUIMapCursor("not-allowed");
-    else this.setUIMapCursor("move");
+    let dir = getResizeDirection(rel.x, rel.y, map);
+    let cursor = dir ? `${dir}-resize` : "move";
+    this.setUIMapCursor(cursor);
   } else {
     this.setUIMapCursor("default");
   }

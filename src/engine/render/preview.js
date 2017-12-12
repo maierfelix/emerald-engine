@@ -69,11 +69,11 @@ export function drawObjectPreview() {
 
 export function drawMapPreview(map) {
   let ctx = this.ctx;
-  let xx = this.cx + ((map.x * CFG.BLOCK_SIZE) * this.cz);
-  let yy = this.cy + ((map.y * CFG.BLOCK_SIZE) * this.cz);
-  let ww = (map.width * CFG.BLOCK_SIZE) * this.cz;
-  let hh = (map.height * CFG.BLOCK_SIZE) * this.cz;
-  if (!this.isUIInMapMoveMode()) {
+  let xx = this.cx + (((map.x + map.margin.x) * CFG.BLOCK_SIZE) * this.cz);
+  let yy = this.cy + (((map.y + map.margin.y) * CFG.BLOCK_SIZE) * this.cz);
+  let ww = ((map.width + map.margin.w) * CFG.BLOCK_SIZE) * this.cz;
+  let hh = ((map.height + map.margin.h) * CFG.BLOCK_SIZE) * this.cz;
+  if (this.isUIInMapResizeMode()) {
     ctx.fillStyle = `rgba(255,255,255,0.15)`;
     ctx.fillRect(
       xx, yy,
@@ -88,20 +88,22 @@ export function drawMapPreviewIntersections(map) {
   let ctx = this.ctx;
   let maps = this.maps;
   let length = maps.length;
-  if (
-    map.width > CFG.ENGINE_MAP_MAX_WIDTH ||
-    map.height > CFG.ENGINE_MAP_MAX_HEIGHT
-  ) {
-    this.drawIntersectionArea(map.x, map.y, map.width, map.height);
+  if (!this.isValidMapSize(map.width + map.margin.w, map.height + map.margin.h)) {
+    this.drawIntersectionArea(
+      map.x + map.margin.x, map.y + map.margin.y,
+      map.width + map.margin.w, map.height + map.margin.h
+    );
     return;
   }
   for (let ii = 0; ii < length; ++ii) {
     let cmap = maps[ii];
-    // ignore moving map, we don't want to intersect it itself
-    if (this.moving.map === cmap) continue;
+    // ignore resizing map, we don't want to intersect it itself
+    if (this.resizing.map === cmap) continue;
     let intersect = rectIntersect(
-      map.x, map.y, map.width, map.height,
-      cmap.x, cmap.y, cmap.width, cmap.height
+      map.x + map.margin.x, map.y + map.margin.y,
+      map.width + map.margin.w, map.height + map.margin.h,
+      cmap.x, cmap.y,
+      cmap.width, cmap.height
     );
     if (intersect !== null) {
       this.drawIntersectionArea(intersect.x, intersect.y, intersect.w, intersect.h);

@@ -94,8 +94,9 @@ export const ENGINE_UI_COLORS = {
 
 export const ENGINE_FILL_PREVIEW_COLOR = `black`;
 
-export const ENGINE_TS_SERVER_LOC = `http://${location.host}:9000`;
-export const ENGINE_LOGIN_SERVER_LOC = `http://${location.host}:9001`;
+export const ENGINE_HOST_LOCATION = `localhost`;
+export const ENGINE_TS_SERVER_LOC = `http://${ENGINE_HOST_LOCATION}:9000`;
+export const ENGINE_LOGIN_SERVER_LOC = `http://${ENGINE_HOST_LOCATION}:9001`;
 
 export const ENGINE_SESSION_TIMEOUT = 1250;
 
@@ -145,6 +146,9 @@ export const ENGINE_DEFAULT_MAP = {
   WIDTH: 8,
   HEIGHT: 8
 };
+
+export const ENGINE_MAP_MIN_WIDTH = 8;
+export const ENGINE_MAP_MIN_HEIGHT = 8;
 
 export const ENGINE_MAP_MAX_WIDTH = 96;
 export const ENGINE_MAP_MAX_HEIGHT = 96;

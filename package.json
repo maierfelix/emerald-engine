@@ -7,6 +7,7 @@
     "type": "git",
     "url": "git+ssh://git@github.com/maierfelix/emerald-engine.git"
   },
+  "main": "./static/main.js",
   "browser": "dist/bundle-browser.js",
   "server": "dist/bundle-server.js",
   "keywords": [],

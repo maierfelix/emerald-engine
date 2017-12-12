@@ -18,6 +18,7 @@ export function drawMaps() {
 export function drawMap(map) {
   if (map === null) return;
   let ctx = this.ctx;
+  let isResized = this.resizing.map === map;
   let isCurrentMap = this.currentMap === map;
   let sx = 0;
   let sy = 0;
@@ -27,7 +28,14 @@ export function drawMap(map) {
   let dy = this.cy + (map.y * CFG.BLOCK_SIZE) * this.cz;
   let dw = (map.width * CFG.BLOCK_SIZE) * this.cz;
   let dh = (map.height * CFG.BLOCK_SIZE) * this.cz;
-  //this.drawMapTileBased(map);
+  // draw texture with original dimensions when in resize mode
+  if (isResized) {
+    let resize = this.selection.mapResize;
+    sw = resize.ow * CFG.BLOCK_SIZE;
+    sh = resize.oh * CFG.BLOCK_SIZE;
+    dw = (resize.ow * CFG.BLOCK_SIZE) * this.cz;
+    dh = (resize.oh * CFG.BLOCK_SIZE) * this.cz;
+  }
   if (this.drawingMode === CFG.ENGINE_RENDERER.GL) {
     this.drawMapGL(0, map, sx, sy, sw, sh, dx, dy, dw, dh);
     this.drawMapGL(1, map, sx, sy, sw, sh, dx, dy, dw, dh);
@@ -135,10 +143,10 @@ export function drawMapTileBased(map) {
 export function drawMapSizeBorder(map) {
   let ctx = this.ctx;
   let scale = this.cz;
-  let xx = this.cx + (map.x * CFG.BLOCK_SIZE) * this.cz;
-  let yy = this.cy + (map.y * CFG.BLOCK_SIZE) * this.cz;
-  let ww = (map.width * CFG.BLOCK_SIZE) * scale;
-  let hh = (map.height * CFG.BLOCK_SIZE) * scale;
+  let xx = this.cx + ((map.x + map.margin.x) * CFG.BLOCK_SIZE) * this.cz;
+  let yy = this.cy + ((map.y + map.margin.y) * CFG.BLOCK_SIZE) * this.cz;
+  let ww = ((map.width + map.margin.w) * CFG.BLOCK_SIZE) * scale;
+  let hh = ((map.height + map.margin.h) * CFG.BLOCK_SIZE) * scale;
   let lw = 0.55 * this.cz;
   ctx.lineWidth = lw;
   ctx.strokeStyle = `rgba(255,0,0,0.75)`;

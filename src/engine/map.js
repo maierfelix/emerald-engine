@@ -88,22 +88,30 @@ export function getRelativeMapTile(x, y) {
   };
 };
 
+export function isValidMapSize(w, h) {
+  return (
+    w >= CFG.ENGINE_MAP_MIN_WIDTH &&
+    h >= CFG.ENGINE_MAP_MIN_HEIGHT &&
+    w <= CFG.ENGINE_MAP_MAX_WIDTH &&
+    h <= CFG.ENGINE_MAP_MAX_HEIGHT
+  );
+};
+
 export function isFreeMapSpaceAt(x, y, w, h, ignoreMap = null) {
   let maps = this.maps;
   let length = maps.length;
-  // validate max map dimension
-  if (
-    w > CFG.ENGINE_MAP_MAX_WIDTH ||
-    h > CFG.ENGINE_MAP_MAX_HEIGHT
-  ) return false;
+  // validate min/max map dimension
+  if (!this.isValidMapSize(w, h)) return false;
   for (let ii = 0; ii < length; ++ii) {
     let map = maps[ii];
     // ignore the submitted map
     if (ignoreMap !== null && map === ignoreMap) continue;
     // get the intersected area
     let intersect = rectIntersect(
-      map.x, map.y, map.width, map.height,
-      x, y, w, h
+      map.x + map.marginX, map.y + map.marginY,
+      map.width - map.marginX, map.height - map.marginY,
+      x, y,
+      w, h
     );
     if (intersect !== null) return false;
   };

@@ -3,6 +3,7 @@ import * as CFG from "../cfg";
 import {
   zoomScale,
   getRelativeTile,
+  getResizeDirection,
   coordsInMapBoundings,
   getNormalizedSelection,
   getRectangleFromSelection
@@ -54,22 +55,31 @@ export function mouseClick(e) {
   // left
   if (e.which === 1) {
     this.drag.ldown = true;
+    // map add
     if (this.isUIInMapCreationMode()) {
       let rel = this.getRelativeMapTile(x, y);
-      this.selection.newMap.sx = rel.x;
-      this.selection.newMap.sy = rel.y;
+      let add = this.selection.newMap;
+      add.sx = rel.x;
+      add.sy = rel.y;
     }
-    else if (this.isUIInMapMoveMode()) {
+    // map resize
+    else if (this.isUIInMapResizeMode()) {
       let rel = this.getRelativeMapTile(x, y);
-      let map = this.moving.map;
+      let map = this.resizing.map;
       let rx = rel.x - map.x;
       let ry = rel.y - map.y;
       if (coordsInMapBoundings(map, rel.x, rel.y)) {
-        this.selection.mapMove.sx = rx;
-        this.selection.mapMove.sy = ry;
+        let resize = this.selection.mapResize;
+        resize.sx = rx;
+        resize.sy = ry;
+        resize.sw = map.x + map.width;
+        resize.sh = map.y + map.height;
+        resize.dir = getResizeDirection(rel.x, rel.y, map);
+        resize.updateCursor = true;
       } else {
-        this.selection.mapMove.sx = Number.MAX_SAFE_INTEGER;
-        this.selection.mapMove.sy = Number.MAX_SAFE_INTEGER;
+        let move = this.selection.mapMove;
+        move.sx = Number.MAX_SAFE_INTEGER;
+        move.sy = Number.MAX_SAFE_INTEGER;
       }
     }
   }
@@ -94,12 +104,13 @@ export function mouseUp(e) {
     this.drag.ldown = false;
     if (this.isUIInMapCreationMode()) {
       let rel = this.getRelativeMapTile(x, y);
-      this.selection.newMap.ax = rel.x - this.creation.map.x;
-      this.selection.newMap.ay = rel.y - this.creation.map.y;
+      let add = this.selection.newMap;
+      add.ax = rel.x - this.creation.map.x;
+      add.ay = rel.y - this.creation.map.y;
       // mouseup fired after resizing the map, abort
       // allow adding the map on the next mouseup
-      if (this.selection.newMap.jr) {
-        this.selection.newMap.jr = false;
+      if (this.selection.newMap.justResized) {
+        this.selection.newMap.justResized = false;
         return;
       }
       this.onUIPlaceNewMap(this.creation.map);

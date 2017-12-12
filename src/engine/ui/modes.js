@@ -8,10 +8,12 @@ import {
   loadJSONFile,
   getRelativeTile,
   addSessionToQuery,
+  getResizeDirection,
   createCanvasBuffer,
   stringToArrayBuffer,
   coordsInMapBoundings,
-  getNormalizedSelection
+  getNormalizedSelection,
+  getNormalizedResizeDirection
 } from "../../utils";
 
 import {
@@ -145,11 +147,6 @@ export function processUIMouseInput(e) {
       }
     }
   }
-  // we're in map moving mode
-  else if (this.isUIInMapMoveMode()) {
-    let map = this.moving.map;
-    this.setUIMapMoveableCursor(map);
-  }
 };
 
 export function setUIMousePosition(x, y) {
@@ -192,31 +189,67 @@ export function setUIMousePosition(x, y) {
       map.y = yy;
       map.width = ww;
       map.height = hh;
-      this.selection.newMap.jr = true;
+      this.selection.newMap.justResized = true;
       this.setUIMapPlacableCursor(map);
     // set the new map to our mouse position
     } else {
       map.x = rel.x - this.selection.newMap.ax;
       map.y = rel.y - this.selection.newMap.ay;
       this.setUIMapPlacableCursor(map);
-      this.selection.newMap.jr = false;
+      this.selection.newMap.justResized = false;
     }
     this.updateMapStatsModeUI(map);
   }
-  // map moving
-  else if (this.isUIInMapMoveMode()) {
-    let map = this.moving.map;
-    // drag-move the map
+  // map resizing
+  else if (this.isUIInMapResizeMode()) {
+    let map = this.resizing.map;
+    let resize = this.selection.mapResize;
+    if (!this.drag.ldown) this.setUIMapResizeCursor(map);
+    // drag-resize the map
     if (this.drag.ldown) {
-      let sx = this.selection.mapMove.sx;
-      let sy = this.selection.mapMove.sy;
-      if (sx !== Number.MAX_SAFE_INTEGER && sy !== Number.MAX_SAFE_INTEGER) {
-        map.x = rel.x - sx;
-        map.y = rel.y - sy;
+      // update the cursor only one time
+      if (resize.updateCursor) {
+        this.setUIMapResizeCursor(map);
+        resize.updateCursor = false;
       }
-
+      let sx = resize.sx;
+      let sy = resize.sy;
+      let sw = resize.sw;
+      let sh = resize.sh;
+      let dir = resize.dir;
+      let sel = getNormalizedResizeDirection(dir);
+      if (!dir.length) {
+        let sx = resize.sx;
+        let sy = resize.sy;
+        if (sx !== Number.MAX_SAFE_INTEGER && sy !== Number.MAX_SAFE_INTEGER) {
+          map.x = rel.x - sx;
+          map.y = rel.y - sy;
+        }
+      }
+      else if (sx !== Number.MAX_SAFE_INTEGER && sy !== Number.MAX_SAFE_INTEGER) {
+        if (sel.x < 0) {
+          map.margin.x = (rel.x - sx) - map.x;
+        }
+        else if (sel.x > 0) {
+          map.margin.w = (rel.x - sx) - map.x;
+        }
+        /*if (sel.y < 0) {
+          let height = map.y - rel.y - sy;
+          map.y = rel.y - sy;
+          map.height += height;
+        }
+        else if (sel.y > 0) {
+          let height = (rel.y + 1) - map.y;
+          map.height = height;
+        }*/
+      }
+      this.updateMapStatsModeUI(map);
+      let isPlaceable = this.isFreeMapSpaceAt(
+        map.x + map.margin.x, map.y + map.margin.y,
+        map.width + map.margin.w, map.height + map.margin.h,
+        map
+      );
+      this.setUIMapStatsMapValidity(map, isPlaceable);
     }
-    this.updateMapStatsModeUI(map);
-    this.setUIMapMoveableCursor(map);
   }
 };

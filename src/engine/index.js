@@ -72,13 +72,14 @@ export default class MapEditor {
     this.selection = {
       entity: null,
       mapMove: { sx: 0, sy: 0, ox: 0, oy: 0 },
-      newMap: { sx: 0, sy: 0, ex: 0, ey: 0, ax: 0, ay: 0, jr: false },
+      mapResize: { sx: 0, sy: 0, ox: 0, oy: 0, ow: 0, oh: 0, updateCursor: false },
+      newMap: { sx: 0, sy: 0, ex: 0, ey: 0, ax: 0, ay: 0, justResized: false },
       tileset: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 }
     };
     this.creation = {
       map: null
     };
-    this.moving = {
+    this.resizing = {
       map: null
     };
     this.preview = {
@@ -118,7 +119,7 @@ MapEditor.prototype.draw = function() {
   this.drawMaps();
   if (this.mode === CFG.ENGINE_MODE_TS) this.drawTileset(tileset);
   if (this.isUIInMapCreationMode()) this.drawMapPreview(this.creation.map);
-  else if (this.isUIInMapMoveMode()) this.drawMapPreview(this.moving.map);
+  else if (this.isUIInMapResizeMode()) this.drawMapPreview(this.resizing.map);
   if (this.cz >= CFG.ENGINE_CAMERA_GRID_MIN_SCALE) {
     drawGrid(this.ctx, this.cz, this.cx, this.cy, this.width, this.height);
   }

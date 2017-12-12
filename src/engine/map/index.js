@@ -27,6 +27,7 @@ export default class Map {
     this.y = 0;
     this.width = width | 0;
     this.height = height | 0;
+    this.margin = { x: 0, y: 0, w: 0, h: 0 };
     this.data = {};
     this.textures = {
       0: null,       // bg

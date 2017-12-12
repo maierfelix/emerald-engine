@@ -40,15 +40,18 @@ export function addListeners() {
 
 export function keyDown(e) {
   let key = e.key;
+  let win = nw.Window.get();
   switch (key) {
+    case "F11":
+      if (!win.isFullscreen) win.toggleFullscreen();
+      else win.leaveFullscreen();
+    break;
     case "Escape":
       this.closeUIModal();
       if (this.isUIInMapCreationMode()) this.onUIMapAddAbort();
-      else if (this.isUIInMapMoveMode()) this.onUIMapMoveAbort(this.currentMap, true);
     break;
     case "Enter":
       if (this.isUIInMapCreationMode()) this.onUIPlaceNewMap(this.creation.map);
-      else if (this.isUIInMapMoveMode()) this.onUIMapMoveAbort(this.currentMap);
     break;
   };
 };
@@ -99,7 +102,6 @@ export function addMapOptionsListeners() {
   let elWidth = $(`#engine-ui-opt-width`);
   let elHeight = $(`#engine-ui-opt-height`);
   let elResize = $(`#engine-ui-opt-resize`);
-  let elMove = $(`#engine-ui-opt-move`);
   elName.oninput = (e) => {
     this.onUIUpdateMapSettings(`name`, elName.value);
   };
@@ -119,21 +121,8 @@ export function addMapOptionsListeners() {
   elDelete.onclick = (e) => {
     if (this.currentMap) this.onUIMapDelete(this.currentMap);
   };
-  elMove.onclick = (e) => {
-    if (this.currentMap) this.onUIMapMove(this.currentMap);
-  };
-  /*elWidth.oninput = elHeight.oninput = (e) => {
-    this.onUISetMapSize(this.currentMap, parseInt(elWidth.value), parseInt(elHeight.value));
-  };*/
   elResize.onclick = (e) => {
-    let map = this.currentMap;
-    let newWidth = parseInt(elWidth.value);
-    let newHeight = parseInt(elHeight.value);
-    // make sure the map can be placed there
-    if (this.isFreeMapSpaceAt(map.x, map.y, newWidth, newHeight, map)) {
-      map.resize(newWidth, newHeight);
-      this.onUISetMapSize(map, map.width, map.height);
-    }
+    if (this.currentMap) this.onUIMapResize(this.currentMap);
   };
 };
 

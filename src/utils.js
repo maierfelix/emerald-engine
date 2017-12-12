@@ -314,13 +314,44 @@ export function getTilesetTilePositionByIndex(index) {
   return { x, y };
 };
 
-export function coordsInMapBoundings(map, x, y) {
-  let nx = x - map.x;
-  let ny = y - map.y;
+export function coordsInMapBoundings(map, rx, ry) {
+  let x = rx - (map.x + map.margin.x);
+  let y = ry - (map.y + map.margin.y);
   return (
-    (nx >= 0 && nx < map.width) &&
-    (ny >= 0 && ny < map.height)
+    (x >= 0 && x < (map.width + map.margin.w)) &&
+    (y >= 0 && y < (map.height + map.margin.h))
   );
+};
+
+export function getResizeDirection(rx, ry, map) {
+  let x = rx - (map.x + map.margin.x);
+  let y = ry - (map.y + map.margin.y);
+  let width = (map.width + map.margin.w);
+  let height = (map.height + map.margin.h);
+  let dir = "";
+  if (x <= 0 && y <= 0) dir = "nw";
+  else if (x <= 0 && (y >= 1 && y < height - 1)) dir = "w";
+  else if (x <= 0 && y >= height - 1) dir = "sw";
+  else if ((x >= 1 && x < width - 1) && y >= height - 1) dir = "s";
+  else if (x >= width - 1 && y >= height - 1) dir = "se";
+  else if (x >= width - 1 && (y >= 1 && y < height - 1)) dir = "e";
+  else if (x >= width - 1 && y <= 0) dir = "ne";
+  else if ((x >= 1 && x < width - 1) && y <= 0) dir = "n";
+  return dir;
+};
+
+export function getNormalizedResizeDirection(dir) {
+  switch (dir) {
+    case "w":  return { x: -1, y:  0 };
+    case "e":  return { x:  1, y:  0 };
+    case "n":  return { x:  0, y: -1 };
+    case "s":  return { x:  0, y:  1 };
+    case "nw": return { x: -1, y: -1 };
+    case "se": return { x:  1, y:  1 };
+    case "sw": return { x: -1, y:  1 };
+    case "ne": return { x:  1, y: -1 };
+  };
+  return { x: 0, y: 0 };
 };
 
 export function JSONTilesetToCanvas(rom, json, width) {
