@@ -66,20 +66,22 @@ export function mouseClick(e) {
     else if (this.isUIInMapResizeMode()) {
       let rel = this.getRelativeMapTile(x, y);
       let map = this.resizing.map;
-      let rx = rel.x - map.x;
-      let ry = rel.y - map.y;
+      let move = this.selection.mapMove;
+      let resize = this.selection.mapResize;
+      resize.dir = "";
+      resize.sx = move.sx = Number.MAX_SAFE_INTEGER;
+      resize.sy = move.sy = Number.MAX_SAFE_INTEGER;
       if (coordsInMapBoundings(map, rel.x, rel.y)) {
-        let resize = this.selection.mapResize;
-        resize.sx = rx;
-        resize.sy = ry;
+        resize.sx = rel.x - map.x;
+        resize.sy = rel.y - map.y;
         resize.sw = map.x + map.width;
         resize.sh = map.y + map.height;
         resize.dir = getResizeDirection(rel.x, rel.y, map);
         resize.updateCursor = true;
-      } else {
-        let move = this.selection.mapMove;
-        move.sx = Number.MAX_SAFE_INTEGER;
-        move.sy = Number.MAX_SAFE_INTEGER;
+        if (!resize.dir.length) {
+          move.sx = Number.MAX_SAFE_INTEGER;
+          move.sy = Number.MAX_SAFE_INTEGER;
+        }
       }
     }
   }

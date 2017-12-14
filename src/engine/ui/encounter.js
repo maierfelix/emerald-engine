@@ -4,6 +4,7 @@ import {
   $,
   GET,
   assert,
+  parseHTMLString,
   createCanvasBuffer
 } from "../../utils";
 
@@ -42,8 +43,7 @@ export function getUIEncounterDOMItem() {
       </div>
     </div>
   `;
-  let node = new DOMParser().parseFromString(html, "text/html").body.childNodes[0];
-  return node;
+  return parseHTMLString(html);
 };
 
 export function addUIEncounterNodeByType(index) {

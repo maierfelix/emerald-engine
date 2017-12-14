@@ -119,21 +119,35 @@ export function setUIMapStatsVisibility(state) {
 };
 
 export function updateMapStatsModeUI(map) {
+  if (this.isUIInMapResizeMode()) return this.updateMapStatsResizeModeUI(map);
   let statX = $(`#engine-ui-new-map-stat-x`);
   let statY = $(`#engine-ui-new-map-stat-y`);
   let statW = $(`#engine-ui-new-map-stat-width`);
   let statH = $(`#engine-ui-new-map-stat-height`);
-  if (this.isUIInMapResizeMode()) {
-    statX.innerHTML = `X: ${map.x}:${map.margin.x}`;
-    statY.innerHTML = `Y: ${map.y}:${map.margin.y}`;
-    statW.innerHTML = `Width: ${map.width}:${map.margin.w}`;
-    statH.innerHTML = `Height: ${map.height}:${map.margin.h}`;
-  } else {
-    statX.innerHTML = `X: ` + map.x;
-    statY.innerHTML = `Y: ` + map.y;
-    statW.innerHTML = `Width: ` + map.width;
-    statH.innerHTML = `Height: ` + map.height;
-  }
+  statX.innerHTML = `X: ` + map.x;
+  statY.innerHTML = `Y: ` + map.y;
+  statW.innerHTML = `Width: ` + map.width;
+  statH.innerHTML = `Height: ` + map.height;
+};
+
+export function updateMapStatsResizeModeUI(map) {
+  let statX = $(`#engine-ui-new-map-stat-x`);
+  let statY = $(`#engine-ui-new-map-stat-y`);
+  let statW = $(`#engine-ui-new-map-stat-width`);
+  let statH = $(`#engine-ui-new-map-stat-height`);
+  let mrX = map.margin.x;
+  let mrY = map.margin.y;
+  let mrW = map.margin.w - mrX;
+  let mrH = map.margin.h - mrY;
+  // show a + sign when margin values are positive
+  mrX = (mrX > 0 ? `+` : ``) + mrX;
+  mrY = (mrY > 0 ? `+` : ``) + mrY;
+  mrW = (mrW > 0 ? `+` : ``) + mrW;
+  mrH = (mrH > 0 ? `+` : ``) + mrH;
+  statX.innerHTML = `X: ${map.x}:${mrX}`;
+  statY.innerHTML = `Y: ${map.y}:${mrY}`;
+  statW.innerHTML = `Width: ${map.width}:${mrW}`;
+  statH.innerHTML = `Height: ${map.height}:${mrH}`;
 };
 
 export function setUIMapStatsWarning(msg) {
@@ -146,7 +160,8 @@ export function setUIMapStatsWarning(msg) {
 export function setUIMapStatsMapValidity(map, isPlaceable) {
   this.setUIMapStatsWarning(``);
   if (!isPlaceable) {
-    if (!this.isValidMapSize(map.width + map.margin.w, map.height + map.margin.h)) {
+    let bounds = map.getMarginBoundings();
+    if (!this.isValidMapSize(bounds.w, bounds.h)) {
       this.setUIMapStatsWarning(`Invalid Map boundings`);
     } else {
       this.setUIMapStatsWarning(`Invalid Map position`);
@@ -183,22 +198,18 @@ export function onUIMapResize(map) {
   resize.oh = map.height;
 };
 
-export function onUIMapResizeAbort(map) {
-  let canBePlaced = this.isFreeMapSpaceAt(
-    map.x + map.margin.x, map.y + map.margin.y,
-    map.width + map.margin.w, map.height + map.margin.h,
-    map
-  );
-  if (reset) {
-    //map.x = this.selection.mapResize.ox;
-    //map.y = this.selection.mapResize.oy;
-    this.moving.map = null;
-    this.setUIMapStatsModeVisibility(false);
-  }
-  else if (canBePlaced) {
-    this.moving.map = null;
-    this.setUIMapStatsModeVisibility(false);
-  }
+export function onUIMapResizeAbort() {
+  let map = this.resizing.map;
+  let resize = this.selection.mapResize;
+  map.x = resize.ox;
+  map.y = resize.oy;
+  map.resetMargins();
+  this.onUIMapResizeFinish();
+};
+
+export function onUIMapResizeFinish() {
+  this.resizing.map = null;
+  this.setUIMapStatsModeVisibility(false);
 };
 
 export function onUIMapSave() {
@@ -213,6 +224,16 @@ export function onUIPlaceNewMap(map) {
     this.addMap(map);
     this.onUIMapAddAbort();
     this.setUIActiveMap(map);
+  }
+};
+
+export function onUIPlaceResizedMap(map) {
+  let bounds = map.getMarginBoundings();
+  let valid = this.isFreeMapSpaceAt(bounds.x, bounds.y, bounds.w, bounds.h, map);
+  console.log(bounds, valid);
+  if (valid) {
+    map.resize(bounds.x, bounds.y, bounds.w, bounds.h);
+    this.onUIMapResizeFinish();
   }
 };
 
@@ -253,7 +274,14 @@ export function onUIMapFill(x, y, preview = false) {
 };
 
 export function setUIMapPlacableCursor(map) {
-  let isPlaceable = this.isFreeMapSpaceAt(map.x, map.y, map.width, map.height);
+  let mrX = map.margin.x;
+  let mrY = map.margin.y;
+  let mrW = map.margin.w - mrX;
+  let mrH = map.margin.h - mrY;
+  let isPlaceable = this.isFreeMapSpaceAt(
+    map.x + mrX, map.y + mrY,
+    map.width + mrW, map.height + mrH
+  );
   if (!isPlaceable) {
     this.setUIMapCursor("not-allowed");
   } else {

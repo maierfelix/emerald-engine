@@ -49,9 +49,11 @@ export function keyDown(e) {
     case "Escape":
       this.closeUIModal();
       if (this.isUIInMapCreationMode()) this.onUIMapAddAbort();
+      else if (this.isUIInMapResizeMode()) this.onUIMapResizeAbort();
     break;
     case "Enter":
       if (this.isUIInMapCreationMode()) this.onUIPlaceNewMap(this.creation.map);
+      else if (this.isUIInMapResizeMode()) this.onUIPlaceResizedMap(this.resizing.map);
     break;
   };
 };

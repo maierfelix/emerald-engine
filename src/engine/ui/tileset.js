@@ -11,43 +11,45 @@ export function resetUIActiveTilesetLayers() {
   for (let key in CFG.ENGINE_TS_LAYERS) {
     let layerIndex = CFG.ENGINE_TS_LAYERS[key];
     let el = $(`#engine-layer-btn-${layerIndex}`);
-    el.setAttribute("class", "");
+    el.classList.remove("active-layer-btn")
   };
 };
 
 export function setUIActiveTilesetLayer(index) {
   this.currentLayer = index;
   this.resetUIActiveTilesetLayers();
-  $(`#engine-layer-btn-${index}`).setAttribute("class", "active-layer-btn");
+  $(`#engine-layer-btn-${index}`).classList.add("active-layer-btn");
 };
 
 export function resetUIActiveEditModes() {
   for (let key in CFG.ENGINE_TS_EDIT) {
     let el = $(`#engine-edit-mode-${key.toLowerCase()}`);
-    el.setAttribute("class", "");
+    el.classList.remove("active-layer-btn");
   };
 };
 
 export function setUIActiveEditMode(mode) {
   this.setActiveEditMode(mode);
   this.resetUIActiveEditModes();
+  let el = null;
   switch (mode) {
     case CFG.ENGINE_TS_EDIT.PENCIL:
-      $(`#engine-edit-mode-pencil`).setAttribute("class", "active-layer-btn");
+      el = $(`#engine-edit-mode-pencil`);
     break;
     case CFG.ENGINE_TS_EDIT.PIPETTE:
-      $(`#engine-edit-mode-pipette`).setAttribute("class", "active-layer-btn");
+      el = $(`#engine-edit-mode-pipette`);
     break;
     case CFG.ENGINE_TS_EDIT.BUCKET:
-      $(`#engine-edit-mode-bucket`).setAttribute("class", "active-layer-btn");
+      el = $(`#engine-edit-mode-bucket`);
     break;
     case CFG.ENGINE_TS_EDIT.MAGIC:
-      $(`#engine-edit-mode-magic`).setAttribute("class", "active-layer-btn");
+      el = $(`#engine-edit-mode-magic`);
     break;
     case CFG.ENGINE_TS_EDIT.AUTOTILE:
-      $(`#engine-edit-mode-autotile`).setAttribute("class", "active-layer-btn");
+      el = $(`#engine-edit-mode-autotile`);
     break;
   };
+  if (el) el.classList.add("active-layer-btn");
   if (this.isActiveUITilesetFillMode()) {
     this.forceUISingleTilesetSelection();
   }

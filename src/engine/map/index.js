@@ -76,33 +76,67 @@ Map.prototype.setBoundings = function(width, height) {
   return this;
 };
 
-Map.prototype.resize = function(width, height) {
-  this.destroy();
-  this.resizeDataLayers(width, height);
-  this.setBoundings(width, height);
-  this.refreshMapTextures();
+Map.prototype.getBoundings = function() {
+  return {
+    x: this.x,
+    y: this.y,
+    w: this.width,
+    h: this.height
+  };
 };
 
-Map.prototype.resizeDataLayers = function(newWidth, newHeight) {
+Map.prototype.getMarginBoundings = function() {
+  let bounds = this.getBoundings();
+  let margin = this.margin;
+  return {
+    x: bounds.x + margin.x,
+    y: bounds.y + margin.y,
+    w: bounds.w + margin.w - margin.x,
+    h: bounds.h + margin.h - margin.y
+  };
+};
+
+Map.prototype.isMarginBoundingsValid = function() {
+  let bounds = this.getMarginBoundings();
+  return (
+    bounds.w >= CFG.ENGINE_MAP_MIN_WIDTH &&
+    bounds.h >= CFG.ENGINE_MAP_MIN_HEIGHT
+  );
+};
+
+Map.prototype.resetMargins = function() {
+  let margin = this.margin;
+  margin.x = margin.y = 0;
+  margin.w = margin.h = 0;
+};
+
+Map.prototype.resize = function(x, y, width, height) {
+  this.destroy();
+  this.resizeDataLayers(x, y, width, height);
+  this.x = x;
+  this.y = y;
+  this.setBoundings(width, height);
+  this.refreshMapTextures();
+  this.resetMargins();
+};
+
+Map.prototype.resizeDataLayers = function(x, y, width, height) {
   let bundles = this.data;
   let instance = this.instance;
-  let oldWidth = this.width;
-  let oldHeight = this.height;
   for (let bundleId in bundles) {
     let bundle = bundles[bundleId];
     for (let tsId in bundle) {
       let ts = bundle[tsId];
-      let tileset = instance.bundles[bundleId].tilesets[tsId].canvas;
       for (let ll in ts) {
         let data = ts[ll];
-        let len = oldWidth * oldHeight;
-        let buffer = new Uint16Array(newWidth * newHeight);
-        for (let ii = 0; ii < len; ++ii) {
-          let x = (ii % oldWidth) | 0;
-          let y = (ii / oldWidth) | 0;
-          let oldIndex = (y * oldWidth + x) | 0;
-          let newIndex = (oldIndex + (y * (newWidth - oldWidth))) | 0;
-          buffer[newIndex] = data[oldIndex] | 0;
+        let buffer = new Uint16Array(width * height);
+        for (let ii = 0; ii < this.width * this.height; ++ii) {
+          let xx = (ii % this.width) | 0;
+          let yy = (ii / this.width) | 0;
+          let opx = (yy * this.width + xx) | 0;
+          let npx = opx + (yy * (width - this.width)) + (this.x - x) + ((this.y - y) * width);
+          if (xx < (x - this.x) || yy < (y - this.y)) continue;
+          buffer[npx] = data[opx];
         };
         ts[ll] = buffer;
       };

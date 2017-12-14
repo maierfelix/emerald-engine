@@ -69,11 +69,19 @@ export function drawObjectPreview() {
 
 export function drawMapPreview(map) {
   let ctx = this.ctx;
-  let xx = this.cx + (((map.x + map.margin.x) * CFG.BLOCK_SIZE) * this.cz);
-  let yy = this.cy + (((map.y + map.margin.y) * CFG.BLOCK_SIZE) * this.cz);
-  let ww = ((map.width + map.margin.w) * CFG.BLOCK_SIZE) * this.cz;
-  let hh = ((map.height + map.margin.h) * CFG.BLOCK_SIZE) * this.cz;
-  if (this.isUIInMapResizeMode()) {
+  let isResizing = (this.resizing.map === map);
+  let xx = this.cx + ((map.x * CFG.BLOCK_SIZE) * this.cz);
+  let yy = this.cy + ((map.y * CFG.BLOCK_SIZE) * this.cz);
+  let ww = (map.width * CFG.BLOCK_SIZE) * this.cz;
+  let hh = (map.height * CFG.BLOCK_SIZE) * this.cz;
+  if (isResizing) {
+    let bounds = map.getMarginBoundings();
+    xx = this.cx + (bounds.x * CFG.BLOCK_SIZE) * this.cz;
+    yy = this.cy + (bounds.y * CFG.BLOCK_SIZE) * this.cz;
+    ww = (bounds.w * CFG.BLOCK_SIZE) * this.cz;
+    hh = (bounds.h * CFG.BLOCK_SIZE) * this.cz;
+  }
+  if (this.isUIInMapCreationMode() || this.isUIInMapResizeMode()) {
     ctx.fillStyle = `rgba(255,255,255,0.15)`;
     ctx.fillRect(
       xx, yy,
@@ -88,10 +96,25 @@ export function drawMapPreviewIntersections(map) {
   let ctx = this.ctx;
   let maps = this.maps;
   let length = maps.length;
-  if (!this.isValidMapSize(map.width + map.margin.w, map.height + map.margin.h)) {
+  let isResizing = (this.resizing.map === map);
+
+  let mapX = map.x;
+  let mapY = map.y;
+  let mapW = map.width;
+  let mapH = map.height;
+
+  if (isResizing) {
+    let bounds = map.getMarginBoundings();
+    mapX = bounds.x;
+    mapY = bounds.y;
+    mapW = bounds.w;
+    mapH = bounds.h;
+  }
+
+  if (!this.isValidMapSize(mapW, mapH)) {
     this.drawIntersectionArea(
-      map.x + map.margin.x, map.y + map.margin.y,
-      map.width + map.margin.w, map.height + map.margin.h
+      mapX, mapY,
+      mapW, mapH
     );
     return;
   }
@@ -100,8 +123,8 @@ export function drawMapPreviewIntersections(map) {
     // ignore resizing map, we don't want to intersect it itself
     if (this.resizing.map === cmap) continue;
     let intersect = rectIntersect(
-      map.x + map.margin.x, map.y + map.margin.y,
-      map.width + map.margin.w, map.height + map.margin.h,
+      mapX, mapY,
+      mapW, mapH,
       cmap.x, cmap.y,
       cmap.width, cmap.height
     );

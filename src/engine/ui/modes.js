@@ -218,6 +218,7 @@ export function setUIMousePosition(x, y) {
       let sh = resize.sh;
       let dir = resize.dir;
       let sel = getNormalizedResizeDirection(dir);
+      // move
       if (!dir.length) {
         let sx = resize.sx;
         let sy = resize.sy;
@@ -227,26 +228,30 @@ export function setUIMousePosition(x, y) {
         }
       }
       else if (sx !== Number.MAX_SAFE_INTEGER && sy !== Number.MAX_SAFE_INTEGER) {
+        let ox = map.margin.x; let oy = map.margin.y;
+        let ow = map.margin.w; let oh = map.margin.h;
         if (sel.x < 0) {
-          map.margin.x = (rel.x - sx) - map.x;
+          map.margin.x = sx + (rel.x - sx) - map.x;
+          if (!map.isMarginBoundingsValid()) map.margin.x = ox;
         }
         else if (sel.x > 0) {
-          map.margin.w = (rel.x - sx) - map.x;
+          map.margin.w = sx + (rel.x - sx) - map.width + 1 - map.x;
+          if (!map.isMarginBoundingsValid()) map.margin.w = ow;
         }
-        /*if (sel.y < 0) {
-          let height = map.y - rel.y - sy;
-          map.y = rel.y - sy;
-          map.height += height;
+        if (sel.y < 0) {
+          map.margin.y = sy + (rel.y - sy) - map.y;
+          if (!map.isMarginBoundingsValid()) map.margin.y = oy;
         }
         else if (sel.y > 0) {
-          let height = (rel.y + 1) - map.y;
-          map.height = height;
-        }*/
+          map.margin.h = sy + (rel.y - sy) - map.height + 1 - map.y;
+          if (!map.isMarginBoundingsValid()) map.margin.h = oh;
+        }
       }
       this.updateMapStatsModeUI(map);
+      let bounds = map.getMarginBoundings();
       let isPlaceable = this.isFreeMapSpaceAt(
-        map.x + map.margin.x, map.y + map.margin.y,
-        map.width + map.margin.w, map.height + map.margin.h,
+        bounds.x, bounds.y,
+        bounds.w, bounds.h,
         map
       );
       this.setUIMapStatsMapValidity(map, isPlaceable);

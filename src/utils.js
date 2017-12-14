@@ -315,19 +315,21 @@ export function getTilesetTilePositionByIndex(index) {
 };
 
 export function coordsInMapBoundings(map, rx, ry) {
-  let x = rx - (map.x + map.margin.x);
-  let y = ry - (map.y + map.margin.y);
+  let bounds = map.getMarginBoundings();
+  let x = (rx - bounds.x);
+  let y = (ry - bounds.y);
   return (
-    (x >= 0 && x < (map.width + map.margin.w)) &&
-    (y >= 0 && y < (map.height + map.margin.h))
+    (x >= 0 && x < bounds.w) &&
+    (y >= 0 && y < bounds.h)
   );
 };
 
 export function getResizeDirection(rx, ry, map) {
-  let x = rx - (map.x + map.margin.x);
-  let y = ry - (map.y + map.margin.y);
-  let width = (map.width + map.margin.w);
-  let height = (map.height + map.margin.h);
+  let bounds = map.getMarginBoundings();
+  let x = (rx - bounds.x);
+  let y = (ry - bounds.y);
+  let width = bounds.w;
+  let height = bounds.h;
   let dir = "";
   if (x <= 0 && y <= 0) dir = "nw";
   else if (x <= 0 && (y >= 1 && y < height - 1)) dir = "w";
@@ -434,6 +436,10 @@ export function getNodeChildIndex(node) {
   let index = 0;
   while((node = node.previousSibling) !== null) ++index;
   return index;
+};
+
+export function parseHTMLString(html) {
+  return new DOMParser().parseFromString(html, "text/html").body.childNodes[0];
 };
 
 export function loadJavaScriptFile(path) {

@@ -180,24 +180,18 @@
     </div>
     <div id="engine-ui-ts">
       <div class="ts-top-head engine-menu-middle-right">
-        <img id="engine-layer-btn-1" src="./img/windows-10/layer-1.png" />
-        <img id="engine-layer-btn-2" src="./img/windows-10/layer-2.png" />
-        <img id="engine-layer-btn-3" src="./img/windows-10/layer-3.png" />
-        <img id="engine-layer-btn-4" src="./img/windows-10/layer-0.png" />
-        <img id="engine-layer-btn-5" src="./img/windows-10/layer-4.png" />
+        <label id="engine-layer-btn-1" class="ts-btn ts-img-btn"><img src="./img/windows-10/layer-1.png"></label>
+        <label id="engine-layer-btn-2" class="ts-btn ts-img-btn"><img src="./img/windows-10/layer-2.png"></label>
+        <label id="engine-layer-btn-3" class="ts-btn ts-img-btn"><img src="./img/windows-10/layer-3.png"></label>
+        <label id="engine-layer-btn-4" class="ts-btn ts-img-btn"><img src="./img/windows-10/layer-0.png"></label>
+        <label id="engine-layer-btn-5" class="ts-btn ts-img-btn"><img src="./img/windows-10/layer-4.png"></label>
       </div>
       <div class="ts-top-head engine-menu-bottom-right">
-        <!--<label>AutoTile</label>
-        <label class="ts-checkbox">
-          <input type="checkbox">
-          <span></span>
-          <div></div>
-        </label>-->
-        <img id="engine-edit-mode-pencil" src="./img/windows-10/pencil-edit.png">
-        <img id="engine-edit-mode-pipette" src="./img/windows-10/color-dropper.png">
-        <img id="engine-edit-mode-bucket" src="./img/windows-10/paint-bucket.png">
-        <img id="engine-edit-mode-magic" src="./img/windows-10/magic-bucket.png">
-        <img id="engine-edit-mode-autotile" src="./img/windows-10/auto-tile.png">
+        <label id="engine-edit-mode-pencil" class="ts-btn ts-img-btn"><img src="./img/windows-10/pencil-edit.png"></label>
+        <label id="engine-edit-mode-pipette" class="ts-btn ts-img-btn"><img src="./img/windows-10/color-dropper.png"></label>
+        <label id="engine-edit-mode-bucket" class="ts-btn ts-img-btn"><img src="./img/windows-10/paint-bucket.png"></label>
+        <label id="engine-edit-mode-magic" class="ts-btn ts-img-btn"><img src="./img/windows-10/magic-bucket.png"></label>
+        <label id="engine-edit-mode-autotile" class="ts-btn ts-img-btn"><img src="./img/windows-10/auto-tile.png"></label>
       </div>
       <div class="engine-right-menu" style="height: calc(100% - 144px);">
         <canvas id="engine-tileset"></canvas>
@@ -281,6 +275,9 @@
     </div>
     <div id="engine-ui-opt">
       <div class="engine-right-menu" style="height: calc(100% - 48px);">
+        <div class="engine-right-menu-item engine-abs-item-center">
+          <button id="engine-ui-opt-resize" class="ts-btn">Edit Boundings</button>
+        </div>
         <div class="engine-right-menu-item engine-abs-item-label"><label>Map Settings:</label></div>
         <div class="engine-right-menu-item">
           <label>Name:</label>
@@ -323,10 +320,9 @@
             <option>Song 011</option>
           </select>
         </div>
-        <div class="engine-right-menu-item engine-abs-item-label"><label>Map Dimensions:</label></div>
-        <div class="engine-right-menu-item  engine-abs-item-center">
+        <div class="engine-right-menu-item engine-abs-item-label"><label class="danger">Danger Zone:</label></div>
+        <div class="engine-right-menu-item  engine-abs-item-center engine-item-no-outer">
           <button id="engine-ui-opt-delete" class="ts-btn">Delete Map</button>
-          <button id="engine-ui-opt-resize" class="ts-btn">Resize Map</button>
         </div>
         <div class="engine-right-menu-item engine-abs-item-label"><label>Map Encounters:</label></div>
         <div class="engine-right-menu-item engine-abs-item-center">

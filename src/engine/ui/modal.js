@@ -4,6 +4,7 @@ import {
   $,
   GET,
   assert,
+  parseHTMLString,
   addSessionToQuery,
 } from "../../utils";
 
@@ -71,6 +72,5 @@ export function createUIModelItem(name, desc) {
       <button class="ts-btn ui-modal-item-choose">Pick Tileset</button>
     </div>
   `;
-  let node = new DOMParser().parseFromString(html, "text/html").body.childNodes[0];
-  return node;
+  return parseHTMLString(html);
 };

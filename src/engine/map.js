@@ -106,10 +106,14 @@ export function isFreeMapSpaceAt(x, y, w, h, ignoreMap = null) {
     let map = maps[ii];
     // ignore the submitted map
     if (ignoreMap !== null && map === ignoreMap) continue;
+    let mrX = map.margin.x;
+    let mrY = map.margin.y;
+    let mrW = map.margin.w - mrX;
+    let mrH = map.margin.h - mrY;
     // get the intersected area
     let intersect = rectIntersect(
-      map.x + map.marginX, map.y + map.marginY,
-      map.width - map.marginX, map.height - map.marginY,
+      map.x + mrX, map.y + mrY,
+      map.width + mrW, map.height + mrH,
       x, y,
       w, h
     );

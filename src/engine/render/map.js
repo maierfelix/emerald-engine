@@ -18,8 +18,8 @@ export function drawMaps() {
 export function drawMap(map) {
   if (map === null) return;
   let ctx = this.ctx;
-  let isResized = this.resizing.map === map;
-  let isCurrentMap = this.currentMap === map;
+  let isResizing = (this.resizing.map === map);
+  let isCurrentMap = (this.currentMap === map);
   let sx = 0;
   let sy = 0;
   let sw = map.width * CFG.BLOCK_SIZE;
@@ -29,7 +29,7 @@ export function drawMap(map) {
   let dw = (map.width * CFG.BLOCK_SIZE) * this.cz;
   let dh = (map.height * CFG.BLOCK_SIZE) * this.cz;
   // draw texture with original dimensions when in resize mode
-  if (isResized) {
+  if (isResizing) {
     let resize = this.selection.mapResize;
     sw = resize.ow * CFG.BLOCK_SIZE;
     sh = resize.oh * CFG.BLOCK_SIZE;
@@ -47,7 +47,7 @@ export function drawMap(map) {
     this.drawMapLayerTexture(2, map, sx, sy, sw, sh, dx, dy, dw, dh);
   }
   if (isCurrentMap && this.isActiveTilesetFillMode()) this.drawMapFillPreview(map);
-  this.drawMapObjects(map);
+  if (this.mode === CFG.ENGINE_MODE_OBJ) this.drawMapObjects(map);
   this.drawMapSizeBorder(map);
 };
 
@@ -142,12 +142,19 @@ export function drawMapTileBased(map) {
 
 export function drawMapSizeBorder(map) {
   let ctx = this.ctx;
-  let scale = this.cz;
-  let xx = this.cx + ((map.x + map.margin.x) * CFG.BLOCK_SIZE) * this.cz;
-  let yy = this.cy + ((map.y + map.margin.y) * CFG.BLOCK_SIZE) * this.cz;
-  let ww = ((map.width + map.margin.w) * CFG.BLOCK_SIZE) * scale;
-  let hh = ((map.height + map.margin.h) * CFG.BLOCK_SIZE) * scale;
+  let isResizing = (this.resizing.map === map);
+  let xx = this.cx + (map.x * CFG.BLOCK_SIZE) * this.cz;
+  let yy = this.cy + (map.y * CFG.BLOCK_SIZE) * this.cz;
+  let ww = (map.width * CFG.BLOCK_SIZE) * this.cz;
+  let hh = (map.height * CFG.BLOCK_SIZE) * this.cz;
   let lw = 0.55 * this.cz;
+  if (isResizing) {
+    let bounds = map.getMarginBoundings();
+    xx = this.cx + (bounds.x * CFG.BLOCK_SIZE) * this.cz;
+    yy = this.cy + (bounds.y * CFG.BLOCK_SIZE) * this.cz;
+    ww = (bounds.w * CFG.BLOCK_SIZE) * this.cz;
+    hh = (bounds.h * CFG.BLOCK_SIZE) * this.cz;
+  }
   ctx.lineWidth = lw;
   ctx.strokeStyle = `rgba(255,0,0,0.75)`;
   ctx.strokeRect(
