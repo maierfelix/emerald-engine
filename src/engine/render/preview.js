@@ -6,15 +6,8 @@ import {
 } from "../../utils";
 
 export function drawMousePreview() {
-  let mode = this.mode;
-  switch (mode) {
-    case CFG.ENGINE_MODE_TS:
-      this.drawTilesetSelectionPreview();
-    break;
-    case CFG.ENGINE_MODE_OBJ:
-      this.drawObjectPreview();
-    break;
-  };
+  if (this.isUIInTilesetMode()) this.drawTilesetSelectionPreview();
+  else if (this.isUIInObjectMode()) this.drawObjectPreview();
 };
 
 export function drawTilesetSelectionPreview() {

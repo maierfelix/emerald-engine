@@ -21,11 +21,8 @@ export function magicFillAt(x, y, tileset, layer, sx, sy) {
     if (table[ii] !== 1) continue;
     table[ii] = 2;
   };
-  if (this.drawPreview) {
-    this.drawPreviewTable(table);
-  } else {
-    this.drawTable(table, srcTile, tileset, layer);
-  }
+  if (this.drawPreview) this.drawPreviewTable(table);
+  else this.drawTable(table, srcTile, tileset, layer);
 };
 
 export function bucketFillAt(x, y, tileset, layer, sx, sy) {
@@ -43,11 +40,8 @@ export function bucketFillAt(x, y, tileset, layer, sx, sy) {
     x, y,
     layer
   );
-  if (this.drawPreview) {
-    this.drawPreviewTable(table);
-  } else {
-    this.drawTable(table, srcTile, tileset, layer);
-  }
+  if (this.drawPreview) this.drawPreviewTable(table);
+  else this.drawTable(table, srcTile, tileset, layer);
 };
 
 export function drawTable(table, tile, tileset, layer) {
@@ -58,28 +52,21 @@ export function drawTable(table, tile, tileset, layer) {
   let tx = tilePos.x | 0;
   let ty = tilePos.y | 0;
   let scale = CFG.BLOCK_SIZE;
-  let texture = this.textures[layer - 1];
-  let textureGL = this.texturesGL[layer - 1];
   // first draw into a buffer
   for (let ii = 0; ii < size; ++ii) {
     let x = (ii % width) | 0;
     let y = (ii / width) | 0;
     if (table[ii] !== 2) continue;
-    this.setTileAt(tileset, tx, ty, x, y, layer);
-    this.drawTileIntoTextureAt(tileset, tx, ty, x, y, layer);
+    this.drawTileBuffered(tileset, tx, ty, x, y, layer);
   };
   // finally update the gpu texture with the buffer
-  this.instance.gl.updateGLTextureByCanvas(
-    textureGL,
-    texture.canvas,
-    0, 0
-  );
+  this.refreshGLTexture(layer - 1);
 };
 
 export function drawPreviewTable(table) {
   let preview = this.textures.preview;
   this.clearPreviewTable();
-  preview.fillStyle = `black`;
+  preview.fillStyle = CFG.ENGINE_FILL_PREVIEW_COLOR;
   let width = this.width;
   let height = this.height;
   let size = width * height;
@@ -93,6 +80,7 @@ export function drawPreviewTable(table) {
       1, 1
     );
   };
+  this.fillPreviewCleared = false;
 };
 
 export function clearPreviewTable() {
@@ -101,6 +89,7 @@ export function clearPreviewTable() {
     0, 0,
     this.width, this.height
   );
+  this.fillPreviewCleared = true;
 };
 
 export function createFloodFillTable(dstTile, srcLayer) {
@@ -119,9 +108,9 @@ export function createFloodFillTable(dstTile, srcLayer) {
 
 export function floodFillAt(table, tileset, tile, x, y, layer) {
   let width = this.width | 0;
-  let stack = [y * width + x];
+  let stack = [(y * width + x) | 0];
   while (stack.length > 0) {
-    let index = stack.pop();
+    let index = stack.pop() | 0;
     let xx = (index % width) | 0;
     let yy = (index / width) | 0;
     let m = this.fillTileAt(table, tileset, tile, xx, yy, layer);

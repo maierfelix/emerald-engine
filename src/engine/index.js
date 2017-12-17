@@ -16,11 +16,13 @@ import {
 import extend from "../extend";
 
 import Map from "./map/index";
+import Storage from "../storage";
 import WebGLRenderer from "../webgl";
 import CanvasRecorder from "../canvas-recorder";
 
 import * as _map from "./map";
 import * as _init from "./init";
+import * as _undo from "./undo";
 import * as _camera from "./camera";
 import * as _tileset from "./tileset";
 import * as _listeners from "./listeners";
@@ -88,11 +90,15 @@ export default class MapEditor {
     this.redraw = {
       tileset: false
     };
+    this.lock = {
+      cameraZ: false
+    };
     this.session = engine.session;
     this.mode = -1;
     this.objMode = -1;
     this.tsEditMode = -1;
     this.modalMode = null;
+    this.forcedMapCreation = false;
     this.player = null;
     this.maps = [];
     this.bundles = {};
@@ -101,6 +107,8 @@ export default class MapEditor {
     this.currentBundle = null;
     this.currentTileset = null;
     this.entities = [];
+    this.pos = 0;
+    this.tasks = [];
     this.setup();
   }
 };
@@ -117,7 +125,7 @@ MapEditor.prototype.draw = function() {
   let tileset = this.currentTileset;
   this.clear();
   this.drawMaps();
-  if (this.mode === CFG.ENGINE_MODE_TS) this.drawTileset(tileset);
+  if (this.isUIInTilesetMode()) this.drawTileset(tileset);
   if (this.isUIInMapCreationMode()) this.drawMapPreview(this.creation.map);
   else if (this.isUIInMapResizeMode()) this.drawMapPreview(this.resizing.map);
   if (this.cz >= CFG.ENGINE_CAMERA_GRID_MIN_SCALE) {
@@ -140,6 +148,7 @@ MapEditor.prototype.resize = function(width, height) {
 };
 
 MapEditor.prototype.initUI = function() {
+  this.updateUIMouseStats();
   $("#engine-ui").style.display = "block";
   document.body.style.background = `#2c2d2e`;
 };
@@ -155,23 +164,16 @@ MapEditor.prototype.getPkmnNameList = function() {
   return list;
 };
 
-MapEditor.prototype.getMapObjectByPosition = function(x, y) {
-  let maps = this.maps;
-  for (let ii = 0; ii < maps.length; ++ii) {
-    let map = maps[ii];
-    let objects = map.objects;
-    for (let jj = 0; jj < objects.length; ++jj) {
-      let object = objects[jj];
-      let ox = map.x + object.x;
-      let oy = map.y + object.y;
-      if (ox === x && oy === y) return object;
-    };
-  };
-  return null;
+MapEditor.prototype.loadStorageSettings = function() {
+  let settings = Storage.read(`settings`);
+  if (!settings) settings = Storage.write(`settings`, {});
+  this.onUILockCameraZ(!!settings.lockCameraZ);
+  this.cz = settings.cameraOffsetZ || CFG.ENGINE_CAMERA_MIN_SCALE;
 };
 
 extend(MapEditor, _map);
 extend(MapEditor, _init);
+extend(MapEditor, _undo);
 extend(MapEditor, _camera);
 extend(MapEditor, _tileset);
 extend(MapEditor, _listeners);

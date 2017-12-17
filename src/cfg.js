@@ -49,7 +49,6 @@ export const TERRAIN_TILES = {
 };
 
 export const TERRAIN_SHEET_EDGES = {
-  "NSEW":{ x: 1, y: 1 },
   "NW":  { x: 0, y: 0 },
   "N+W": { x: 3, y: 0 },
   "N":   { x: 1, y: 0 },
@@ -65,6 +64,15 @@ export const TERRAIN_SHEET_EDGES = {
 };
 
 export const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER;
+
+export const ENGINE_TASK_UNDO = 1;
+export const ENGINE_TASK_REDO = 2;
+export const ENGINE_MAX_STATE_LEVELS = 50;
+export const ENGINE_TASKS = {
+  MAP_TILE_CHANGE: 1
+};
+
+export const STORAGE_MAIN_KEY = `EMERALD`;
 
 export const ENGINE_DEV_MODE = true;
 
@@ -92,6 +100,11 @@ export const ENGINE_UI_COLORS = {
   ERROR: `rgba(255,128,128,0.8)`
 };
 
+export const ENGINE_MAP_BORDER = {
+  ACTIVE: `rgba(255,0,0,0.75)`,
+  INACTIVE: `rgba(0,0,0,0.75)`
+};
+
 export const ENGINE_FILL_PREVIEW_COLOR = `black`;
 
 export const ENGINE_HOST_LOCATION = `localhost`;
@@ -107,7 +120,7 @@ export const ENGINE_INIT_SCREEN_SUCCESS_DELAY = 500;
 
 export const ENGINE_CAMERA_MIN_SCALE = 0.3;
 export const ENGINE_CAMERA_MAX_SCALE = 10.95;
-export const ENGINE_CAMERA_GRID_MIN_SCALE = 1.15;
+export const ENGINE_CAMERA_GRID_MIN_SCALE = 1.4;
 
 export const ENGINE_MODE_TS = 1;
 export const ENGINE_MODE_OBJ = 2;
@@ -117,11 +130,12 @@ export const ENGINE_OBJ_MODE = {
   0: "PERSON",
   1: "WARP",
   2: "SCRIPT",
-  3: "SIGN"
+  3: "SIGN",
+  4: "ENCOUNTER"
 };
 
 export const ENGINE_ENCOUNTER_MODE = {
-  0: "GRASS",
+  0: "GROUND",
   1: "WATER",
   2: "FISHING"
 };

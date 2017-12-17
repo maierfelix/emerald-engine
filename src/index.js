@@ -18,6 +18,8 @@ import {
   setLoadingModalTitleColor
 } from "./screens/index";
 
+import Storage from "./storage";
+
 import * as CFG from "./cfg";
 
 import SERVER_MSG from "./server-msg";
@@ -32,7 +34,6 @@ console.assert(
   (typeof Worker !== "undefined") &&
   (typeof FileReader !== "undefined") &&
   (typeof IDBDatabase !== "undefined") &&
-  (typeof WebAssembly !== "undefined") &&
   (typeof WebGLRenderingContext !== "undefined")
 );
 
@@ -224,7 +225,7 @@ Engine.prototype.showInitScreen = function() {
               return this.showInitScreen().then(resolve);
             }
             if (json.id) {
-              localStorage.setItem("emerald-user", login.user);
+              Storage.write("username", login.user);
               setLoadingModalTitle(`Loading...`);
               setTimeout(() => {
                 $("#ui-init-screen").style.display = "none";

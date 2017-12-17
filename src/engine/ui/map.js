@@ -15,14 +15,6 @@ import {
 
 import Map from "../map/index";
 
-export function isUIInMapCreationMode() {
-  return this.creation.map !== null;
-};
-
-export function isUIInMapResizeMode() {
-  return this.resizing.map !== null;
-};
-
 export function setUIMapCursor(cursor) {
   this.map.style.cursor = cursor;
 };
@@ -32,12 +24,12 @@ export function resetUIMapChooseList() {
   el.innerHTML = ``;
 };
 
-export function refreshUIMapChooseList(maps) {
+export function refreshUIMapChooseList() {
   this.resetUIMapChooseList();
   let el = $(`#engine-ui-map-select`);
-  maps.map((map, index) => {
+  this.maps.map((map, index) => {
     let child = document.createElement("option");
-    child.innerHTML = `Map [${index}]`;
+    child.innerHTML = map.getName();
     el.appendChild(child);
   });
 };
@@ -50,10 +42,34 @@ export function setUIActiveMap(map) {
       $(`#engine-ui-map-select`).selectedIndex = ii;
       this.currentMap = map;
       this.refreshUIMapMenuByMap(map);
+      this.refreshUIMapInteractions(map);
       return;
     }
   };
   console.warn(`Failed to set active map`, map);
+};
+
+export function refreshUIMapInteractions(map) {
+  let x = this.mx;
+  let y = this.my;
+  this.onUIMapFill(x, y, true);
+  this.updateUIMouseStats();
+};
+
+export function setUIActiveMapByName(name) {
+  let maps = this.maps;
+  for (let ii = 0; ii < maps.length; ++ii) {
+    let cmap = maps[ii];
+    if (cmap.name === name) return this.setUIActiveMap(cmap);
+  };
+  console.warn(`Failed to set active map by name`, name);
+};
+
+export function switchMapByUIContextMenu() {
+  let elActiveMap = $(`#engine-ui-context-switch-map`);
+  let rel = this.getRelativeMapTile(this.mx, this.my);
+  let map = this.getMapByPosition(rel.x, rel.y);
+  this.setUIActiveMap(map);
 };
 
 export function refreshUIMapMenuByMap(map) {
@@ -98,7 +114,7 @@ export function onUISetMapSize(map, width, height) {
 };
 
 export function onUIMapDelete(map) {
-  showAlertModal(`Do you really want to delete this map?`).then((answer) => {
+  showAlertModal(`Do you really want to delete "${map.getName()}"?`).then((answer) => {
     if (answer) this.removeMap(map);
     closeAlertModal();
   });
@@ -169,7 +185,7 @@ export function setUIMapStatsMapValidity(map, isPlaceable) {
   }
 };
 
-export function onUIMapAdd() {
+export function onUIMapAdd(forced = false) {
   let map = new Map(this).setBoundings(
     CFG.ENGINE_DEFAULT_MAP.WIDTH, CFG.ENGINE_DEFAULT_MAP.HEIGHT
   );
@@ -177,14 +193,17 @@ export function onUIMapAdd() {
   map.x = rel.x;
   map.y = rel.y;
   this.creation.map = map;
+  this.forcedMapCreation = forced;
   this.resetMapPreviewAnchor();
   this.setUIMapStatsModeVisibility(true);
   this.updateMapStatsModeUI(this.creation.map);
 };
 
 export function onUIMapAddAbort() {
-  this.creation.map = null;
-  this.setUIMapStatsModeVisibility(false);
+  if (!this.forcedMapCreation) {
+    this.creation.map = null;
+    this.setUIMapStatsModeVisibility(false);
+  }
 };
 
 export function onUIMapResize(map) {
@@ -230,7 +249,6 @@ export function onUIPlaceNewMap(map) {
 export function onUIPlaceResizedMap(map) {
   let bounds = map.getMarginBoundings();
   let valid = this.isFreeMapSpaceAt(bounds.x, bounds.y, bounds.w, bounds.h, map);
-  console.log(bounds, valid);
   if (valid) {
     map.resize(bounds.x, bounds.y, bounds.w, bounds.h);
     this.onUIMapResizeFinish();
@@ -245,32 +263,28 @@ export function onUIMapFill(x, y, preview = false) {
   let ny = rel.y - map.y;
   let sel = this.selection.tileset;
   let tileset = this.currentTileset;
-  switch (this.tsEditMode) {
-    // bucket filling
-    case CFG.ENGINE_TS_EDIT.BUCKET:
-      if (preview) map.drawPreview = true;
-      map.bucketFillAt(
-        nx, ny,
-        tileset,
-        this.currentLayer,
-        sel.x / CFG.BLOCK_SIZE,
-        sel.y / CFG.BLOCK_SIZE
-      );
-      map.drawPreview = false;
-    break;
-    // magic bucket filling
-    case CFG.ENGINE_TS_EDIT.MAGIC:
-      if (preview) map.drawPreview = true;
-      map.magicFillAt(
-        nx, ny,
-        tileset,
-        this.currentLayer,
-        sel.x / CFG.BLOCK_SIZE,
-        sel.y / CFG.BLOCK_SIZE
-      );
-      map.drawPreview = false;
-    break;
-  };
+  if (this.isUIInBucketFillMode()) {
+    if (preview) map.drawPreview = true;
+    map.bucketFillAt(
+      nx, ny,
+      tileset,
+      this.currentLayer,
+      sel.x / CFG.BLOCK_SIZE,
+      sel.y / CFG.BLOCK_SIZE
+    );
+    map.drawPreview = false;
+  }
+  else if (this.isUIInMagicFillMode()) {
+    if (preview) map.drawPreview = true;
+    map.magicFillAt(
+      nx, ny,
+      tileset,
+      this.currentLayer,
+      sel.x / CFG.BLOCK_SIZE,
+      sel.y / CFG.BLOCK_SIZE
+    );
+    map.drawPreview = false;
+  }
 };
 
 export function setUIMapPlacableCursor(map) {

@@ -54,7 +54,7 @@ export function loadWorldFromServer(name) {
 
 export function addMap(map) {
   this.maps.push(map);
-  this.refreshUIMapChooseList(this.maps);
+  this.refreshUIMapChooseList();
 };
 
 export function removeMap(map) {
@@ -66,7 +66,7 @@ export function removeMap(map) {
     }
   };
   this.currentMap = null;
-  this.refreshUIMapChooseList(this.maps);
+  this.refreshUIMapChooseList();
   if (this.maps.length) this.setUIActiveMap(this.maps[this.maps.length - 1]);
 };
 
@@ -122,7 +122,35 @@ export function isFreeMapSpaceAt(x, y, w, h, ignoreMap = null) {
   return true;
 };
 
+export function getMapByPosition(x, y) {
+  let maps = this.maps;
+  let length = maps.length;
+  for (let ii = 0; ii < length; ++ii) {
+    let map = maps[ii];
+    if (
+      (x >= map.x && x < map.x + map.width) &&
+      (y >= map.y && y < map.y + map.height)
+    ) return map;
+  };
+  return null;
+};
+
 export function resetMapPreviewAnchor() {
   this.selection.newMap.ax = 0;
   this.selection.newMap.ay = 0;
+};
+
+export function getMapObjectByPosition(x, y) {
+  let maps = this.maps;
+  for (let ii = 0; ii < maps.length; ++ii) {
+    let map = maps[ii];
+    let objects = map.objects;
+    for (let jj = 0; jj < objects.length; ++jj) {
+      let object = objects[jj];
+      let ox = map.x + object.x;
+      let oy = map.y + object.y;
+      if (ox === x && oy === y) return object;
+    };
+  };
+  return null;
 };

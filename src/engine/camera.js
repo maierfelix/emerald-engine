@@ -9,6 +9,8 @@ import {
   getRectangleFromSelection
 } from "../utils";
 
+import Storage from "../storage";
+
 export function zoom(e) {
   let x = e.clientX;
   let y = e.clientY;
@@ -25,6 +27,7 @@ export function zoom(e) {
   let zd = zoomScale(this.cz) - zoomScale(oscale);
   this.cx -= sx * zd;
   this.cy -= sy * zd;
+  Storage.write(`settings.cameraOffsetZ`, this.cz);
   this.refreshMouseLast();
   this.setUIMousePosition(x, y);
 };
@@ -32,7 +35,7 @@ export function zoom(e) {
 export function mouseWheel(e) {
   if (e.target === this.map) {
     e.preventDefault();
-    this.zoom(e);
+    if (!this.lock.cameraZ) this.zoom(e);
   }
   this.refreshMouseLast();
 };
@@ -46,14 +49,30 @@ export function refreshMouseLast() {
   this.last.rmy = CFG.MAX_SAFE_INTEGER;
 };
 
+export function updateMouseLast(x, y) {
+  this.last.rmx = x;
+  this.last.rmy = y;
+};
+
+export function isMouseMoveRedundant() {
+  let rel = this.getRelativeMapTile(this.mx, this.my);
+  return (
+    (rel.x === this.last.rmx) &&
+    (rel.y === this.last.rmy)
+  );
+};
+
 export function mouseClick(e) {
   this.refreshMouseLast();
   if (e.target !== this.map) return;
   e.preventDefault();
   let x = e.clientX;
   let y = e.clientY;
+  let map = this.currentMap;
   // left
   if (e.which === 1) {
+    // mouse already pressed, FIXUP!
+    if (this.drag.ldown) this.mouseUp(e);
     this.drag.ldown = true;
     // map add
     if (this.isUIInMapCreationMode()) {
@@ -84,9 +103,16 @@ export function mouseClick(e) {
         }
       }
     }
+    else {
+      if (map) map.createMutatorSession();
+    }
+  }
+  // middle
+  else if (e.which === 2) {
+    this.showUIContextMenu();
   }
   // right
-  if (e.which === 3) {
+  else if (e.which === 3) {
     this.drag.px = x | 0;
     this.drag.py = y | 0;
     this.drag.rdown = true;
@@ -100,6 +126,7 @@ export function mouseUp(e) {
   e.preventDefault();
   let x = e.clientX;
   let y = e.clientY;
+  let map = this.currentMap;
   this.refreshMouseLast();
   // left
   if (e.which === 1) {
@@ -117,9 +144,20 @@ export function mouseUp(e) {
       }
       this.onUIPlaceNewMap(this.creation.map);
     }
+    if (map && map.isRecordingMutations()) {
+      let mut = map.endMutatorSession();
+      if (mut.length) this.commitTask({
+        kind: CFG.ENGINE_TASKS.MAP_TILE_CHANGE,
+        changes: mut
+      });
+    }
+  }
+  // middle
+  else if (e.which === 2) {
+    this.closeUIContextMenu(e);
   }
   // right
-  if (e.which === 3) {
+  else if (e.which === 3) {
     this.drag.px = x | 0;
     this.drag.py = y | 0;
     this.drag.rdown = false;
@@ -128,12 +166,15 @@ export function mouseUp(e) {
 };
 
 export function mouseMove(e) {
-  e.preventDefault();
+  if (e.target === this.map) e.preventDefault();
   let x = e.clientX;
   let y = e.clientY;
+  let rel = this.getRelativeMapTile(x, y);
   if (e.target !== this.map) return;
+  this.mx = x;
+  this.my = y;
   // left mouse move
-  if (this.drag.ldown) {
+  if (this.drag.ldown && !this.isMouseMoveRedundant()) {
     if (!this.isUIInMapCreationMode()) this.processUIMouseInput(e);
   }
   // right mouse move
@@ -142,17 +183,11 @@ export function mouseMove(e) {
     this.cy -= (this.drag.py - y) | 0;
     this.drag.px = x | 0;
     this.drag.py = y | 0;
-    // redraw instantly
+    // redraw instantly for smoother dragging
     this.draw();
   }
-  this.mx = x;
-  this.my = y;
-  let rel = this.getRelativeMapTile(x, y);
-  if (this.last.rmx !== rel.x || this.last.rmy !== rel.y) {
-    this.setUIMousePosition(x, y);
-  }
-  this.last.rmx = rel.x;
-  this.last.rmy = rel.y;
+  if (!this.isMouseMoveRedundant()) this.setUIMousePosition(x, y);
+  this.updateMouseLast(rel.x, rel.y);
 };
 
 export function lookAtEntity(entity) {

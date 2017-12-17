@@ -27,6 +27,7 @@ export function showUIModalLoadingBall(rom) {
 };
 
 export function showUILoadingModal(rom, msg, color) {
+  let el = $(`#ui-modal-loading`);
   // no title color defined, use default color
   if (!color) setUILoadingModalTitleColor(CFG.ENGINE_UI_COLORS.DEFAULT);
   setUILoadingModalTitle(msg);
@@ -37,7 +38,6 @@ export function showUILoadingModal(rom, msg, color) {
     elBall.style.display = "none";
     elSpinner.style.display = "none";
   }
-  let el = $(`#ui-modal-loading`);
   el.style.display = "flex";
   el.style.opacity = 0.0;
   // delayed opacity<->display hack
@@ -92,6 +92,7 @@ export function showUIAlertModal(msg) {
   $(`#ui-modal-loading-title`).style.paddingTop = "0px";
   let elYes = $(`#ui-modal-interactive-yes`);
   let elNo = $(`#ui-modal-interactive-no`);
+  let elGlobal = $(`#ui-modal-loading`);
   return new Promise((resolve) => {
     let onYes = (e) => {
       elYes.removeEventListener("click", onYes, true);
@@ -101,8 +102,24 @@ export function showUIAlertModal(msg) {
       elNo.removeEventListener("click", onNo, true);
       resolve(false);
     };
+    let onGlobal = (e) => {
+      // only fire when clicking outside of dialog
+      if (e.target === elGlobal) {
+        elGlobal.removeEventListener("click", onGlobal, true);
+        resolve(false);
+      }
+    };
+    let onKeyDown = (e) => {
+      let key = e.key;
+      if (key === "Escape" || key === "Enter") {
+        window.removeEventListener("keydown", onKeyDown, true);
+        resolve(key === "Enter");
+      }
+    };
     elYes.onclick = onYes;
     elNo.onclick = onNo;
+    elGlobal.onclick = onGlobal;
+    window.onkeydown = onKeyDown;
   });
 };
 

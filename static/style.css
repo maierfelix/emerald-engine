@@ -152,7 +152,7 @@ img {
 }
 
 .ts-btn:hover {
-  background: rgba(255,255,255,0.0075);
+  background: rgba(255,255,255,0.0075) !important;
 }
 
 .ts-btn-active {
@@ -255,6 +255,10 @@ input[type=file] {
   color: rgba(229, 143, 143, 0.85) !important;
 }
 
+.locked {
+  background: rgba(255,255,0,0.025) !important;
+}
+
 label input {
   visibility: hidden;
   display: block;
@@ -273,6 +277,11 @@ label span {
   width: 10px;
   border: 1px solid grey;
   display: inline-block;
+}
+
+.label-hoverable:hover {
+  cursor: pointer;
+  background: rgba(255,255,255,0.05) !important;
 }
 
 [type=checkbox]:checked + span {
@@ -386,6 +395,13 @@ input[type=number]::-webkit-inner-spin-button {
   height: 48px;
   border-left: 1px solid black;
   border-top: 1px solid black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.engine-menu-top-right > .ts-btn {
+  margin-top: 0px;
 }
 
 .engine-menu-middle-right {
@@ -577,6 +593,7 @@ label.ts-btn:hover {
   text-transform: uppercase;
   border: 1px solid rgba(255,255,255,0.02);
   background: rgba(255,255,255,0.01);
+  max-width: 138px;
 }
 
 .engine-ui-btn-list > button:hover {
@@ -677,6 +694,10 @@ label.ts-btn:hover {
   padding: 18px;
   position: absolute;
   background: rgba(255,255,255,0.05);
+}
+
+.modal-only-yes > #ui-modal-interactive-no {
+  display: none;
 }
 
 .engine-ui-encount-btn-close {
@@ -994,6 +1015,29 @@ label.ts-btn:hover {
 
 .ui-init-login-wrapper > div > div > label {
   height: auto;
+}
+
+.ui-context-menu-container {
+  position: absolute;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(49, 49, 50, 0.95);
+  width: 268px;
+  z-index: 4;
+  border: 1px solid black;
+  flex-flow: row wrap;
+}
+
+.ui-context-menu-container > .ts-btn {
+  width: 100%;
+  padding: 0px;
+  margin: 4px;
+  background: rgba(44, 44, 45, 0.65);
+}
+
+#engine-ui-context-activate-map {
+  display: none;
 }
 
 .ui-party-pkmn-container {

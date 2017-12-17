@@ -4,6 +4,8 @@ import {
   cloneCanvas
 } from "../utils";
 
+import Storage from "../storage";
+
 let balls = [];
 
 export default function(instance) {
@@ -12,10 +14,8 @@ export default function(instance) {
   document.body.style.backgroundImage = `url('./img/bg.png')`;
 
   // search for a cached username to autofill
-  let cachedUsername = localStorage.getItem("emerald-user");
-  if (cachedUsername) {
-    $("#ui-init-screen-username").value = cachedUsername;
-  }
+  let cachedUsername = Storage.read("username");
+  if (cachedUsername) $("#ui-init-screen-username").value = cachedUsername;
 
   let items = instance.rom.graphics.items;
 

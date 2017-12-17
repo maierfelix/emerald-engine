@@ -59,6 +59,8 @@ export default class Map {
     };
     this.fillTable = null;
     this.drawPreview = false;
+    this.mutations = [];
+    this.recordMutations = false;
     this.init();
   }
 };
@@ -66,6 +68,35 @@ export default class Map {
 Map.prototype.init = function() {
   this.fillTable = new Uint8Array(this.width * this.height);
   this.setBoundings(this.width, this.height);
+};
+
+Map.prototype.createMutatorSession = function() {
+  this.resetMutatorSession();
+  this.recordMutations = true;
+};
+
+Map.prototype.resetMutatorSession = function() {
+  this.mutations = [];
+  this.recordMutations = false;
+};
+
+Map.prototype.isRecordingMutations = function() {
+  return this.recordMutations === true;
+};
+
+Map.prototype.endMutatorSession = function() {
+  let mutations = this.mutations;
+  this.resetMutatorSession();
+  return mutations;
+};
+
+Map.prototype.getName = function() {
+  let settings = this.settings;
+  if (!settings.name.length) {
+    return `Unnamed Map`;
+  } else {
+    return settings.name;
+  }
 };
 
 Map.prototype.setBoundings = function(width, height) {

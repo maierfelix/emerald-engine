@@ -36,6 +36,7 @@ export function addListeners() {
   this.addTilesetBundleListener();
   this.addSubTilesetListener();
   this.addMapOptionsListeners();
+  this.addContextMenuListeners();
 };
 
 export function keyDown(e) {
@@ -55,10 +56,17 @@ export function keyDown(e) {
       if (this.isUIInMapCreationMode()) this.onUIPlaceNewMap(this.creation.map);
       else if (this.isUIInMapResizeMode()) this.onUIPlaceResizedMap(this.resizing.map);
     break;
+    case "z": case "Z":
+      if (e.ctrlKey) this.undoTask();
+    break;
+    case "y": case "Y":
+      if (e.ctrlKey) this.redoTask();
+    break;
   };
 };
 
 export function addUIButtonListeners() {
+  $(`#engine-ui-mz`).onclick = () => this.onUILockCameraZ();
   $("#engine-ui-map-add").onclick = () => this.onUIMapAdd();
   $("#engine-ui-map-save").onclick = () => this.onUIMapSave();
   $("#engine-ui-mode-ts").onclick = () => this.setUIMode("ts");
@@ -106,6 +114,8 @@ export function addMapOptionsListeners() {
   let elResize = $(`#engine-ui-opt-resize`);
   elName.oninput = (e) => {
     this.onUIUpdateMapSettings(`name`, elName.value);
+    this.refreshUIMapChooseList();
+    this.setUIActiveMap(this.currentMap);
   };
   elShowName.onchange = (e) => {
     this.onUIUpdateMapSettings(`showName`, elShowName.checked);
@@ -121,7 +131,10 @@ export function addMapOptionsListeners() {
     this.onUIUpdateMapSettings(`music`, elMusic.selectedIndex);
   };
   elDelete.onclick = (e) => {
-    if (this.currentMap) this.onUIMapDelete(this.currentMap);
+    if (this.currentMap) {
+      elDelete.blur();
+      this.onUIMapDelete(this.currentMap);
+    }
   };
   elResize.onclick = (e) => {
     if (this.currentMap) this.onUIMapResize(this.currentMap);
@@ -197,4 +210,10 @@ export function addTilesetBundleListener() {
 export function addSubTilesetListener() {
   let el = $(`#engine-ui-cts-subts`);
   el.onchange = (e) => this.onUISubTilesetChange(el.selectedIndex);
+};
+
+export function addContextMenuListeners() {
+  $(`#engine-ui-context-switch-map`).onmouseup = (e) => this.switchMapByUIContextMenu(e);
+  $(`#engine-ui-context-create-object`).onmouseup = (e) => console.log(e);
+  $(`#engine-ui-context-delete-object`).onmouseup = (e) => console.log(e);
 };

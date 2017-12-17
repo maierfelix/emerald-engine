@@ -9,6 +9,7 @@ import {
 import Map from "./map/index";
 
 export function setup() {
+  this.loadStorageSettings();
   this.addListeners();
   this.resize(window.innerWidth, window.innerHeight);
   this.setUIMode("ts");
@@ -20,7 +21,7 @@ export function setup() {
 };
 
 export function loadDefaultMap() {
-  this.loadWorldFromServer("littleroot-town").then(() => {
+  this.loadWorldFromServer("test").then(() => {
     this.setUIActiveMap(this.maps[this.maps.length - 1]);
     this.loadTilesetBundleFromServer("dawn").then(bundle => {
       this.useTilesetBundle(bundle);

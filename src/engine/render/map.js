@@ -47,7 +47,7 @@ export function drawMap(map) {
     this.drawMapLayerTexture(2, map, sx, sy, sw, sh, dx, dy, dw, dh);
   }
   if (isCurrentMap && this.isActiveTilesetFillMode()) this.drawMapFillPreview(map);
-  if (this.mode === CFG.ENGINE_MODE_OBJ) this.drawMapObjects(map);
+  if (this.isUIInObjectMode()) this.drawMapObjects(map);
   this.drawMapSizeBorder(map);
 };
 
@@ -74,7 +74,6 @@ export function drawMapLayerTexture(layer, map, sx, sy, sw, sh, dx, dy, dw, dh) 
   let isCurrentMap = (currentMap === map) || (currentMap === null);
   if (layer !== currentLayer && currentLayer !== 3) ctx.globalAlpha = 0.4;
   if (!isCurrentMap) ctx.globalAlpha = 0.5;
-  //if (this.mode !== CFG.ENGINE_MODE_TS) ctx.globalAlpha = 1.0;
   ctx.drawImage(
     texture.canvas,
     sx, sy,
@@ -143,6 +142,7 @@ export function drawMapTileBased(map) {
 export function drawMapSizeBorder(map) {
   let ctx = this.ctx;
   let isResizing = (this.resizing.map === map);
+  let isCurrentMap = (this.currentMap === map);
   let xx = this.cx + (map.x * CFG.BLOCK_SIZE) * this.cz;
   let yy = this.cy + (map.y * CFG.BLOCK_SIZE) * this.cz;
   let ww = (map.width * CFG.BLOCK_SIZE) * this.cz;
@@ -156,7 +156,13 @@ export function drawMapSizeBorder(map) {
     hh = (bounds.h * CFG.BLOCK_SIZE) * this.cz;
   }
   ctx.lineWidth = lw;
-  ctx.strokeStyle = `rgba(255,0,0,0.75)`;
+  if (this.isUIInMapCreationMode() && this.creation.map === map) {
+    ctx.strokeStyle = CFG.ENGINE_MAP_BORDER.ACTIVE;
+  }
+  else {
+    if (!this.isUIInMapCreationMode() && isCurrentMap) ctx.strokeStyle = CFG.ENGINE_MAP_BORDER.ACTIVE;
+    else ctx.strokeStyle = CFG.ENGINE_MAP_BORDER.INACTIVE;
+  }
   ctx.strokeRect(
     xx, yy,
     ww, hh

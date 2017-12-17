@@ -72,6 +72,11 @@ export function drawTileIntoTextureAt(tileset, sx, sy, tx, ty, layer) {
   );
 };
 
+export function drawTileBuffered(tileset, sx, sy, tx, ty, layer) {
+  this.setTileAt(tileset, sx, sy, tx, ty, layer);
+  this.drawTileIntoTextureAt(tileset, sx, sy, tx, ty, layer);
+};
+
 export function getTileAt(x, y, layer) {
   // in bounds check
   if (!this.coordsInBounds(x, y)) return 0;
@@ -92,6 +97,15 @@ export function getTileAt(x, y, layer) {
 export function getTileInformationAt(x, y, layer) {
   // in bounds check
   if (!this.coordsInBounds(x, y)) return null;
+  // special case in preview layer
+  // we just search for the first tile we get and return it
+  if (layer === CFG.ENGINE_TS_LAYERS.PREVIEW) {
+    return (
+      this.getTileInformationAt(x, y, 3) ||
+      this.getTileInformationAt(x, y, 2) ||
+      this.getTileInformationAt(x, y, 1)
+    );
+  }
   let bundles = this.data;
   let tileIndex = (y * this.width + x) | 0;
   for (let bundleId in bundles) {
@@ -120,15 +134,32 @@ export function setTileAt(tileset, sx, sy, tx, ty, layer) {
   let height = this.height | 0;
   // tileset bundle or data doesn't exist yet
   if (this.dataLayerMissing(tileset)) this.createDataLayer(tileset, width, height);
+  // our map data changed, clear our fill preview
+  if (!this.fillPreviewCleared) this.clearPreviewTable();
   let data = this.data[bundleId][tsId];
-  let sIndex = (sy * (CFG.TILESET_HORIZONTAL_SIZE) + sx) | 0;
-  let dIndex = (ty * width + tx) | 0;
+  let srcIndex = (sy * (CFG.TILESET_HORIZONTAL_SIZE) + sx) | 0;
+  let dstIndex = (ty * width + tx) | 0;
+  let orgTile = data[layer][dstIndex] - 1 | 0;
+  if (this.recordMutations) {
+    let isRedundant = (orgTile === srcIndex);
+    let srcTile = getTilesetTilePositionByIndex(orgTile + 1);
+    if (!isRedundant) {
+      this.mutations.push({
+        map: this,
+        layer,
+        tileset,
+        tx: tx, ty: ty,
+        dx: sx, dy: sy,
+        sx: srcTile.x, sy: srcTile.y
+      });
+    }
+  }
   // delete previous data tiles and
   // data tiles in other tilesets
   this.deleteTileAt(tx, ty, layer);
   // increment tile index by 1
   // so we can detect empty tiles (whose value is zero)
-  if (tileset.usage[sIndex]) data[layer][dIndex] = sIndex + 1;
+  if (tileset.usage[srcIndex]) data[layer][dstIndex] = srcIndex + 1;
 };
 
 export function deleteTileAt(tx, ty, layer) {

@@ -27,7 +27,7 @@ export function drawAutotile(x, y, tileset, layer, sx, sy) {
     let autoTile = this.getAutoTileAt(x + xx, y + yy, layer, sx, sy);
     this.drawTileAt(
       tileset,
-      sx + autoTile.edge.x, sy + autoTile.edge.y,
+      sx + autoTile.x, sy + autoTile.y,
       x + xx, y + yy,
       layer
     );
@@ -46,8 +46,9 @@ export function getTileAutoAt(x, y, layer) {
 export function inTileRange(newTile, srcTile, srcTileX, srcTileY) {
   let newTilePos = getTilesetTilePositionByIndex(newTile + 1);
   return (
-    ((newTilePos.x >= srcTileX) && (newTilePos.x < (srcTileX + CFG.ENGINE_AUTOTILE_WIDTH))) &&
-    ((newTilePos.y >= srcTileY) && (newTilePos.y < (srcTileY + CFG.ENGINE_AUTOTILE_HEIGHT)))
+    (newTilePos.x >= srcTileX) && (newTilePos.y >= srcTileY) &&
+    (newTilePos.x < (srcTileX + CFG.ENGINE_AUTOTILE_WIDTH)) &&
+    (newTilePos.y < (srcTileY + CFG.ENGINE_AUTOTILE_HEIGHT))
   );
 };
 
@@ -68,48 +69,18 @@ export function getAutoTileAt(x, y, layer, sx, sy) {
   let se = this.getTileAt(x + 1, y + 1, layer);
   let sw = this.getTileAt(x - 1, y + 1, layer);
 
-  if ((!this.inTileRange(n, tile, sx, sy))) {
-    edges += "N";
-    edgeType = n.type;
-  }
-  if ((!this.inTileRange(s, tile, sx, sy))) {
-    edges += "S";
-    edgeType = s.type;
-  }
-  if ((!this.inTileRange(e, tile, sx, sy))) {
-    edges += "E";
-    edgeType = e.type;
-  }
-  if ((!this.inTileRange(w, tile, sx, sy))) {
-    edges += "W";
-    edgeType = w.type;
-  }
+  if (!this.inTileRange(n, tile, sx, sy)) edges += "N";
+  if (!this.inTileRange(s, tile, sx, sy)) edges += "S";
+  if (!this.inTileRange(e, tile, sx, sy)) edges += "E";
+  if (!this.inTileRange(w, tile, sx, sy)) edges += "W";
 
   if (edges === "") {
-    if ((!this.inTileRange(nw, tile, sx, sy))) {
-      edges = "N+W";
-      edgeType = nw.type;
-    }
-    else if ((!this.inTileRange(ne, tile, sx, sy))) {
-      edges = "N+E";
-      edgeType = ne.type;
-    }
-    if ((!this.inTileRange(se, tile, sx, sy))) {
-      edges = "S+E";
-      edgeType = se.type;
-    }
-    else if ((!this.inTileRange(sw, tile, sx, sy))) {
-      edges = "S+W";
-      edgeType = sw.type;
-    }
+    if (!this.inTileRange(nw, tile, sx, sy)) edges = "N+W";
+    else if (!this.inTileRange(ne, tile, sx, sy)) edges = "N+E";
+    if (!this.inTileRange(se, tile, sx, sy)) edges = "S+E";
+    else if (!this.inTileRange(sw, tile, sx, sy)) edges = "S+W";
   }
 
-  let edgeTile = CFG.TERRAIN_SHEET_EDGES[edges];
-  if (!edgeTile) edgeTile = { x: 1, y: 1 };
-
-  return {
-    type: edgeType,
-    edge: edgeTile
-  };
+  return CFG.TERRAIN_SHEET_EDGES[edges] || { x: 1, y: 1 };
 
 };

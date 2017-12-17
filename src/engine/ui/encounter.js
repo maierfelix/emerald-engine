@@ -76,7 +76,7 @@ export function addUIEncounterNodeByType(index) {
   let timer = 0;
   (function draw() {
     if (!removed) requestAnimationFrame(() => draw.call(this));
-    if (this.mode !== CFG.ENGINE_MODE_OPT) return;
+    if (!this.isUIInOptionMode()) return;
     timer += 0.1;
     let yFrame = (timer % 2) | 0;
     pkmnIconBuffer.clearRect(

@@ -50,7 +50,7 @@ export function setUIActiveEditMode(mode) {
     break;
   };
   if (el) el.classList.add("active-layer-btn");
-  if (this.isActiveUITilesetFillMode()) {
+  if (this.isUIInFillMode()) {
     this.forceUISingleTilesetSelection();
   }
   if (this.isUIInPipetteMode()) {
@@ -82,30 +82,10 @@ export function setUITilesetSelection(x, y, w, h) {
   sel.y = y;
   sel.w = w;
   sel.h = h;
-  if (this.isActiveUITilesetFillMode()) {
+  if (this.isUIInFillMode()) {
     this.forceUISingleTilesetSelection();
   }
   this.redrawTileset();
-};
-
-export function isActiveTilesetFillMode() {
-  return (
-    (this.mode === CFG.ENGINE_MODE_TS ) &&
-    (this.tsEditMode === CFG.ENGINE_TS_EDIT.BUCKET ||
-    this.tsEditMode === CFG.ENGINE_TS_EDIT.MAGIC)
-  );
-};
-
-export function isActiveUITilesetFillMode() {
-  return this.isActiveTilesetFillMode();
-};
-
-export function isUIInAutotileMode() {
-  return this.tsEditMode === CFG.ENGINE_TS_EDIT.AUTOTILE;
-};
-
-export function isUIInPipetteMode() {
-  return this.tsEditMode === CFG.ENGINE_TS_EDIT.PIPETTE;
 };
 
 export function updateTilesetSelectionPreview() {

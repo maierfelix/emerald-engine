@@ -67,14 +67,26 @@ export function refreshMapTextures() {
             xx * scale, yy * scale,
             scale, scale
           );
-          gl.updateGLTextureTileByCanvas(
-            textureGL,
-            tileset,
-            sx * scale, sy * scale,
-            xx * scale, yy * scale
-          );
         };
       };
     };
   };
+  // refresh gl textures
+  this.refreshGLTextures();
+};
+
+export function refreshGLTextures() {
+  this.refreshGLTexture(0);
+  this.refreshGLTexture(1);
+  this.refreshGLTexture(2);
+};
+
+export function refreshGLTexture(layer) {
+  let texture = this.textures[layer];
+  let textureGL = this.texturesGL[layer];
+  this.instance.gl.updateGLTextureByCanvas(
+    textureGL,
+    texture.canvas,
+    0, 0
+  );
 };

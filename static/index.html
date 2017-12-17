@@ -1,10 +1,10 @@
 <html>
   <head>
-    <title>Emerald Engine - Map Editor</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="//fonts.googleapis.com/css?family=Open+Sans:300italic,600italic,300,600&subset=latin-ext,latin" rel="stylesheet" type="text/css">
     <link href="style.css" rel="stylesheet" type="text/css">
+    <link rel="icon" type="image/png" href="./img/emerald-engine.png" />
   </head>
   <body>
 
@@ -131,6 +131,12 @@
 
 <div id="map-ui"></div>
 
+<div id="engine-ui-context-menu" class="ui-context-menu-container">
+  <button id="engine-ui-context-switch-map" class="ts-btn"></button>
+  <button id="engine-ui-context-create-object" class="ts-btn">Create Object</button>
+  <button id="engine-ui-context-delete-object" class="ts-btn">Remove Object</button>
+</div>
+
 <div id="engine-ui">
   <!-- TOP STATS MENU -->
   <div id="engine-ui-top-stats" class="ts-top-head">
@@ -149,8 +155,6 @@
     <button class="ts-btn">🌍 Publish</button>
     <button id="engine-ui-map-save" class="ts-btn">💾 Save</button>
     <button id="engine-ui-settings" class="ts-btn">⚙️ Settings</button>
-    <button class="ts-btn-invisible"></button>
-    <button class="ts-btn-invisible"></button>
     <button class="ts-btn-invisible ts-btn-head-fix"></button>
     <button id="engine-ui-map-add" class="ts-btn ts-btn-add-map">+</button>
     <div class="ts-top-head-item">
@@ -170,6 +174,7 @@
     <div class="ts-top-head-item">
       <label id="engine-ui-mx">X: 0</label>
       <label id="engine-ui-my">Y: 0</label>
+      <label id="engine-ui-mz" class="label-hoverable">Z: 0</label>
     </div>
   </div>
   <div id="engine-ui-right-menu">
@@ -200,16 +205,16 @@
     <div id="engine-ui-obj">
       <div class="engine-right-menu" style="height: calc(100% - 48px);">
         <div class="engine-right-menu-item engine-abs-item-center">
-          <button class="ts-btn">Create entity</button>
+          <button class="ts-btn">Create Object</button>
         </div>
         <!-- General entity position -->
-        <div class="engine-right-menu-item engine-abs-item-label"><label>Entity position:</label></div>
-        <div class="engine-right-menu-item engine-abs-item">
+        <div class="engine-right-menu-item engine-abs-item-label"><label>Object position:</label></div>
+        <div class="engine-right-menu-item engine-abs-item engine-item-no-outer">
           <label>Position:</label>
           <input type="number" class="ts-btn sm" placeholder="X:" />
           <input type="number" class="ts-btn sm" placeholder="Y:" />
         </div>
-        <div class="engine-right-menu-item engine-abs-item-label"><label>Entity Settings:</label></div>
+        <div class="engine-right-menu-item engine-abs-item-label"><label>Object Settings:</label></div>
         <div class="engine-right-menu-item">
           <label>Type:</label>
           <select id="engine-ui-obj-type" class="ts-btn ts-btn-select">
@@ -217,6 +222,7 @@
             <option>Warp</option>
             <option>Script</option>
             <option>Sign</option>
+            <option>Encounter</option>
           </select>
         </div>
         <!-- PERSON menu -->
@@ -256,7 +262,9 @@
         </div>
         <!-- SCRIPT menu -->
         <div id="engine-ui-obj-script">
-          <input type="text" class="ts-btn" />
+          <div class="engine-right-menu-item">
+            <input type="text" class="ts-btn" />
+          </div>
         </div>
         <!-- SIGN menu -->
         <div id="engine-ui-obj-sign">
@@ -268,6 +276,17 @@
               <option>Hero is facing down</option>
               <option>Hero is facing left</option>
               <option>Hero is facing right</option>
+            </select>
+          </div>
+        </div>
+        <!-- ENCOUNTER menu -->
+        <div id="engine-ui-obj-encounter">
+          <div class="engine-right-menu-item">
+            <label>Area:</label>
+            <select class="ts-btn ts-btn-select">
+              <option>Ground</option>
+              <option>Water</option>
+              <option>Fishing</option>
             </select>
           </div>
         </div>
@@ -326,16 +345,16 @@
         </div>
         <div class="engine-right-menu-item engine-abs-item-label"><label>Map Encounters:</label></div>
         <div class="engine-right-menu-item engine-abs-item-center">
-          <label>Type:</label>
+          <label>Area:</label>
           <select id="engine-ui-encounter-type" class="ts-btn ts-btn-select">
-            <option>Grass</option>
+            <option>Ground</option>
             <option>Water</option>
             <option>Fishing</option>
           </select>
           <button id="engine-ui-add-encounter" class="ts-btn">+</button>
         </div>
         <!-- GRASS encounter menu -->
-        <div id="engine-ui-opt-encount-grass" class="engine-right-menu-item"></div>
+        <div id="engine-ui-opt-encount-ground" class="engine-right-menu-item"></div>
         <!-- WATER encounter menu -->
         <div id="engine-ui-opt-encount-water" class="engine-right-menu-item"></div>
         <!-- FISHING encounter menu -->
