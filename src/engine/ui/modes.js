@@ -18,7 +18,8 @@ import {
 
 import {
   showAlertModal,
-  closeAlertModal
+  closeAlertModal,
+  isLoadingModalActive
 } from "../../screens/index";
 
 import Map from "../map/index";
@@ -29,6 +30,10 @@ export function isActiveTilesetFillMode() {
     this.isUIInTilesetMode() &&
     (this.isUIInBucketFillMode() || this.isUIInMagicFillMode())
   );
+};
+
+export function isUIInFillMode() {
+  return this.isActiveTilesetFillMode();
 };
 
 export function isUIInCreationMode() {
@@ -55,10 +60,6 @@ export function isUIInAutotileMode() {
   return this.tsEditMode === CFG.ENGINE_TS_EDIT.AUTOTILE;
 };
 
-export function isUIInFillMode() {
-  return this.isActiveTilesetFillMode();
-};
-
 export function isUIInTilesetMode() {
   return this.mode === CFG.ENGINE_MODE_TS;
 };
@@ -77,6 +78,23 @@ export function isUIInMapCreationMode() {
 
 export function isUIInMapResizeMode() {
   return this.resizing.map !== null;
+};
+
+export function isLeftMousePressed() {
+  return this.drag.ldown === true;
+};
+
+export function isRightMousePressed() {
+  return this.drag.rdown === true;
+};
+
+export function isUIInAnyActiveMode() {
+  return (
+    isLoadingModalActive() ||
+    this.isLeftMousePressed() ||
+    this.isUIInMapCreationMode() ||
+    this.isUIInMapResizeMode()
+  );
 };
 
 export function resetUIModeButtons() {
@@ -152,7 +170,7 @@ export function showUIContextMenu() {
   let elActiveMap = $(`#engine-ui-context-switch-map`);
   el.style.display = `flex`;
   let x = this.mx - (el.offsetWidth / 2);
-  let y = this.my - 18;
+  let y = this.my - (18 - CFG.ENGINE_UI_OFFSET_Y);
   el.style.left = x + `px`;
   el.style.top = y + `px`;
   this.resetUIContextMenu();
@@ -272,7 +290,7 @@ export function setUIMousePosition(x, y) {
   if (this.isUIInMapCreationMode()) {
     let map = this.creation.map;
     // we're resizing the added map
-    if (this.drag.ldown) {
+    if (this.isLeftMousePressed()) {
       // resize new map
       let sx = this.selection.newMap.sx;
       let sy = this.selection.newMap.sy;
@@ -313,9 +331,9 @@ export function setUIMousePosition(x, y) {
   if (this.isUIInMapResizeMode()) {
     let map = this.resizing.map;
     let resize = this.selection.mapResize;
-    if (!this.drag.ldown) this.setUIMapResizeCursor(map);
+    if (!this.isLeftMousePressed()) this.setUIMapResizeCursor(map);
     // drag-resize the map
-    if (this.drag.ldown) {
+    if (this.isLeftMousePressed()) {
       // update the cursor only one time
       if (resize.updateCursor) {
         this.setUIMapResizeCursor(map);

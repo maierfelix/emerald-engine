@@ -1,3 +1,5 @@
+import * as CFG from "../cfg";
+
 import {
   $,
   MD5,
@@ -11,7 +13,7 @@ let balls = [];
 export default function(instance) {
   let el = $("#ui-init-screen-balls");
   el.style.display = "block";
-  document.body.style.backgroundImage = `url('./img/bg.png')`;
+  document.body.style.backgroundColor = CFG.ENGINE_BACKGROUND_COLOR;
 
   // search for a cached username to autofill
   let cachedUsername = Storage.read("username");

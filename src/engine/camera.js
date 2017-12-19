@@ -13,7 +13,7 @@ import Storage from "../storage";
 
 export function zoom(e) {
   let x = e.clientX;
-  let y = e.clientY;
+  let y = e.clientY - CFG.ENGINE_UI_OFFSET_Y;
   let min = CFG.ENGINE_CAMERA_MIN_SCALE;
   let max = CFG.ENGINE_CAMERA_MAX_SCALE;
   let deltaY = e.deltaY > 0 ? -1 : 1;
@@ -67,12 +67,12 @@ export function mouseClick(e) {
   if (e.target !== this.map) return;
   e.preventDefault();
   let x = e.clientX;
-  let y = e.clientY;
+  let y = e.clientY - CFG.ENGINE_UI_OFFSET_Y;
   let map = this.currentMap;
   // left
   if (e.which === 1) {
     // mouse already pressed, FIXUP!
-    if (this.drag.ldown) this.mouseUp(e);
+    if (this.isLeftMousePressed()) this.mouseUp(e);
     this.drag.ldown = true;
     // map add
     if (this.isUIInMapCreationMode()) {
@@ -104,12 +104,12 @@ export function mouseClick(e) {
       }
     }
     else {
-      if (map) map.createMutatorSession();
+      if (map && !map.isRecordingMutations()) map.createMutatorSession();
     }
   }
   // middle
   else if (e.which === 2) {
-    this.showUIContextMenu();
+    if (!this.isUIInAnyActiveMode()) this.showUIContextMenu();
   }
   // right
   else if (e.which === 3) {
@@ -125,7 +125,7 @@ export function mouseClick(e) {
 export function mouseUp(e) {
   e.preventDefault();
   let x = e.clientX;
-  let y = e.clientY;
+  let y = e.clientY - CFG.ENGINE_UI_OFFSET_Y;
   let map = this.currentMap;
   this.refreshMouseLast();
   // left
@@ -144,13 +144,7 @@ export function mouseUp(e) {
       }
       this.onUIPlaceNewMap(this.creation.map);
     }
-    if (map && map.isRecordingMutations()) {
-      let mut = map.endMutatorSession();
-      if (mut.length) this.commitTask({
-        kind: CFG.ENGINE_TASKS.MAP_TILE_CHANGE,
-        changes: mut
-      });
-    }
+    this.processMutatorSessions();
   }
   // middle
   else if (e.which === 2) {
@@ -168,17 +162,21 @@ export function mouseUp(e) {
 export function mouseMove(e) {
   if (e.target === this.map) e.preventDefault();
   let x = e.clientX;
-  let y = e.clientY;
+  let y = e.clientY - CFG.ENGINE_UI_OFFSET_Y;
+  let map = this.currentMap;
   let rel = this.getRelativeMapTile(x, y);
   if (e.target !== this.map) return;
   this.mx = x;
   this.my = y;
   // left mouse move
-  if (this.drag.ldown && !this.isMouseMoveRedundant()) {
-    if (!this.isUIInMapCreationMode()) this.processUIMouseInput(e);
+  if (this.isLeftMousePressed() && !this.isMouseMoveRedundant()) {
+    if (!this.isUIInMapCreationMode()) {
+      if (map && !map.isRecordingMutations()) map.createMutatorSession();
+      this.processUIMouseInput(e);
+    }
   }
   // right mouse move
-  if (this.drag.rdown) {
+  if (this.isRightMousePressed()) {
     this.cx -= (this.drag.px - x) | 0;
     this.cy -= (this.drag.py - y) | 0;
     this.drag.px = x | 0;

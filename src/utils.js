@@ -356,6 +356,15 @@ export function getNormalizedResizeDirection(dir) {
   return { x: 0, y: 0 };
 };
 
+export function boundingsMatch(a, b) {
+  return (
+    (a.x === b.x) &&
+    (a.y === b.y) &&
+    (a.w === b.w) &&
+    (a.h === b.h)
+  );
+};
+
 export function JSONTilesetToCanvas(rom, json, width) {
   let buffer = createCanvasBuffer(width, CFG.TILESET_DEFAULT_HEIGHT).ctx;
   let tilesets = json;

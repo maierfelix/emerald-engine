@@ -7,31 +7,31 @@ const buble = require("rollup-plugin-buble");
 const resolve = require("rollup-plugin-node-resolve");
 const commonjs = require("rollup-plugin-commonjs");
 
-let config = {};
-config.entry = "src/index.js";
-config.moduleName = "poki";
-config.useStrict = true;
-config.format = "iife";
-config.dest = pkg.browser;
-config.external = [];
-config.plugins = [
-  json(),
-  buble(),
-  resolve({
-    browser: true
-  }),
-  commonjs()
-];
+let inputOptions = {
+  input: "src/index.js",
+  external: [],
+  plugins: [
+    json(),
+    buble(),
+    resolve({
+      jsnext: true,
+      browser: true
+    }),
+    commonjs({
+      namedExports: {}
+    })
+  ]
+};
 
-const outputOptions = {};
+let outputOptions = {
+  file: require("../package.json").browser,
+  format: "iife"
+};
 
 async function build() {
-
-  const bundle = await rollup.rollup(config);
-
-  const { code, map } = await bundle.generate(config);
-  fs.writeFileSync("dist/bundle.js", code, "utf-8");
-
-}
+  const bundle = await rollup.rollup(inputOptions);
+  const { code, map } = await bundle.generate(outputOptions);
+  await bundle.write(outputOptions);
+};
 
 build();

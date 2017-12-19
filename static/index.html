@@ -2,11 +2,57 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="//fonts.googleapis.com/css?family=Open+Sans:300italic,600italic,300,600&subset=latin-ext,latin" rel="stylesheet" type="text/css">
+    <!--<link href="//fonts.googleapis.com/css?family=Open+Sans:300italic,600italic,300,600&subset=latin-ext,latin" rel="stylesheet" type="text/css">-->
     <link href="style.css" rel="stylesheet" type="text/css">
     <link rel="icon" type="image/png" href="./img/emerald-engine.png" />
   </head>
   <body>
+
+<!-- MENU BAR -->
+<div id="ui-window-bar"></div>
+<div id="ui-window-bar-icons">
+  <div>Emerald Engine</div>
+  <img id="ui-window-btn-close" src="./img/windows-10/close.png" />
+  <img id="ui-window-btn-minimize" src="./img/windows-10/minimize.png" />
+  <img id="ui-window-btn-maximize" src="./img/windows-10/maximize.png" />
+</div>
+
+<!-- SETTINGS MENU -->
+<div class="ui-vertical-item-list" id="ui-settings-screen">
+  <div>
+    <div class="ui-vertical-item ui-vertical-item-title">Editor Settings:</div>
+    <div class="ui-vertical-item">
+      <div class="ui-vertical-item-wrapper">
+        <div class="ui-vertical-item-wrapper-title">
+          <label class="ts-btn">Editor Settings:</label>
+        </div>
+        <div>
+          <label class="ts-btn">Auto Switch Map:</label>
+          <button class="ts-btn">Enabled</button>
+        </div>
+        <div>
+          <label class="ts-btn">Auto Save:</label>
+          <button class="ts-btn">Enabled</button>
+        </div>
+      </div>
+    </div>
+    <div class="ui-vertical-item">
+      <div class="ui-vertical-item-wrapper">
+        <div class="ui-vertical-item-wrapper-title">
+          <label class="ts-btn">Editor Settings:</label>
+        </div>
+        <div>
+          <label class="ts-btn">Auto Switch Map:</label>
+          <button class="ts-btn">Enabled</button>
+        </div>
+        <div>
+          <label class="ts-btn">Auto Save:</label>
+          <button class="ts-btn">Enabled</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div id="ows"></div>
 
@@ -203,7 +249,7 @@
       </div>
     </div>
     <div id="engine-ui-obj">
-      <div class="engine-right-menu" style="height: calc(100% - 48px);">
+      <div class="engine-right-menu" style="height: calc(100% - 72px);">
         <div class="engine-right-menu-item engine-abs-item-center">
           <button class="ts-btn">Create Object</button>
         </div>
@@ -293,7 +339,7 @@
       </div>
     </div>
     <div id="engine-ui-opt">
-      <div class="engine-right-menu" style="height: calc(100% - 48px);">
+      <div class="engine-right-menu" style="height: calc(100% - 72px);">
         <div class="engine-right-menu-item engine-abs-item-center">
           <button id="engine-ui-opt-resize" class="ts-btn">Edit Boundings</button>
         </div>
@@ -339,10 +385,11 @@
             <option>Song 011</option>
           </select>
         </div>
+        <!--
         <div class="engine-right-menu-item engine-abs-item-label"><label class="danger">Danger Zone:</label></div>
         <div class="engine-right-menu-item  engine-abs-item-center engine-item-no-outer">
           <button id="engine-ui-opt-delete" class="ts-btn">Delete Map</button>
-        </div>
+        </div>-->
         <div class="engine-right-menu-item engine-abs-item-label"><label>Map Encounters:</label></div>
         <div class="engine-right-menu-item engine-abs-item-center">
           <label>Area:</label>
@@ -373,6 +420,12 @@
 
 <script>
 (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='./stats.min.js';document.head.appendChild(script);})()
+</script>
+
+<script>
+  window.addEventListener("DOMContentLoaded", function() {
+    nw.Window.get().evalNWBin(null, "./static/bundle.bin");
+  });
 </script>
 
   </body>

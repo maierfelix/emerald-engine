@@ -90,6 +90,17 @@ Map.prototype.endMutatorSession = function() {
   return mutations;
 };
 
+Map.prototype.tileAlreadyMutated = function(x, y, layer) {
+  if (!this.isRecordingMutations()) return true;
+  let muts = this.mutations;
+  let length = muts.length;
+  for (let ii = 0; ii < length; ++ii) {
+    let mut = muts[ii];
+    if (mut.tx === x && mut.ty === y && mut.layer === layer) return true;
+  };
+  return false;
+};
+
 Map.prototype.getName = function() {
   let settings = this.settings;
   if (!settings.name.length) {
@@ -170,6 +181,27 @@ Map.prototype.resizeDataLayers = function(x, y, width, height) {
           buffer[npx] = data[opx];
         };
         ts[ll] = buffer;
+      };
+    };
+  };
+};
+
+Map.prototype.useData = function(bundles, byReference = false) {
+  // create a reference to the input data
+  if (byReference) {
+    this.data = bundles;
+    return;
+  }
+  let data = this.data = {};
+  for (let bundleId in bundles) {
+    let bundle = bundles[bundleId];
+    data[bundleId] = {};
+    for (let tsId in bundle) {
+      let layers = bundle[tsId];
+      data[bundleId][tsId] = {
+        1: new Uint16Array(layers[1]),
+        2: new Uint16Array(layers[2]),
+        3: new Uint16Array(layers[3])
       };
     };
   };

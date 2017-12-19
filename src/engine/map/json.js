@@ -45,7 +45,7 @@ export function createLayerFromJSON(data, width, height) {
   return view;
 };
 
-export function createJSONFromData() {
+export function createJSONFromData(compressed = true) {
   let bundles = this.data;
   let data = {};
   for (let bundleId in bundles) {
@@ -53,11 +53,19 @@ export function createJSONFromData() {
     data[bundleId] = {};
     for (let tsId in bundle) {
       let layers = bundle[tsId];
-      data[bundleId][tsId] = {
-        1: mangleDataArray(layers[1]),
-        2: mangleDataArray(layers[2]),
-        3: mangleDataArray(layers[3])
-      };
+      if (compressed) {
+        data[bundleId][tsId] = {
+          1: mangleDataArray(layers[1]),
+          2: mangleDataArray(layers[2]),
+          3: mangleDataArray(layers[3])
+        };
+      } else {
+        data[bundleId][tsId] = {
+          1: new Uint16Array(layers[1]),
+          2: new Uint16Array(layers[2]),
+          3: new Uint16Array(layers[3])
+        };
+      }
     };
   };
   return data;
@@ -78,6 +86,17 @@ export function fromJSON(json) {
   });
 };
 
+export function fromJSONSync(json) {
+  this.validateJSON(json);
+  this.x = json.x;
+  this.y = json.y;
+  this.data = this.createDataFromJSON(json);
+  this.settings = json.settings;
+  this.setBoundings(json.width, json.height);
+  this.refreshMapTextures();
+  return this;
+};
+
 export function toJSON() {
   let object = {
     settings: {
@@ -95,4 +114,14 @@ export function toJSON() {
   };
   this.validateJSON(object);
   return JSON.stringify(object);
+};
+
+export function clone() {
+  let json = JSON.parse(this.toJSON());
+  return new Map(this.instance).fromJSONSync(json);
+};
+
+export function cloneData() {
+  let json = this.createJSONFromData(false);
+  return json;
 };

@@ -4,6 +4,7 @@ import {
   $,
   GET,
   assert,
+  boundingsMatch,
   getResizeDirection,
   coordsInMapBoundings
 } from "../../utils";
@@ -115,7 +116,13 @@ export function onUISetMapSize(map, width, height) {
 
 export function onUIMapDelete(map) {
   showAlertModal(`Do you really want to delete "${map.getName()}"?`).then((answer) => {
-    if (answer) this.removeMap(map);
+    if (answer) {
+      this.commitTask({
+        kind: CFG.ENGINE_TASKS.MAP_DELETE,
+        changes: [{ map }]
+      });
+      this.removeMap(map, false);
+    }
     closeAlertModal();
   });
 };
@@ -239,6 +246,10 @@ export function onUIMapSave() {
 export function onUIPlaceNewMap(map) {
   let valid = this.isFreeMapSpaceAt(map.x, map.y, map.width, map.height);
   if (valid) {
+    this.commitTask({
+      kind: CFG.ENGINE_TASKS.MAP_CREATE,
+      changes: [{ map }]
+    });
     map.setBoundings(map.width, map.height);
     this.addMap(map);
     this.onUIMapAddAbort();
@@ -247,10 +258,30 @@ export function onUIPlaceNewMap(map) {
 };
 
 export function onUIPlaceResizedMap(map) {
-  let bounds = map.getMarginBoundings();
-  let valid = this.isFreeMapSpaceAt(bounds.x, bounds.y, bounds.w, bounds.h, map);
+  let margin = map.getMarginBoundings();
+  let valid = this.isFreeMapSpaceAt(margin.x, margin.y, margin.w, margin.h, map);
   if (valid) {
-    map.resize(bounds.x, bounds.y, bounds.w, bounds.h);
+    let data = map.cloneData();
+    let current = map.getBoundings();
+    let resizedPos = this.selection.mapResize;
+    let original = {
+      x: resizedPos.ox,
+      y: resizedPos.oy,
+      w: resizedPos.ow,
+      h: resizedPos.oh
+    };
+    let task = {
+      map,
+      data,
+      current,
+      original,
+      margin
+    };
+    this.commitTask({
+      kind: CFG.ENGINE_TASKS.MAP_RESIZE,
+      changes: [task]
+    });
+    map.resize(margin.x, margin.y, margin.w, margin.h);
     this.onUIMapResizeFinish();
   }
 };

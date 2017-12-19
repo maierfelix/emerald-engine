@@ -22,7 +22,6 @@ export function setup() {
 
 export function loadDefaultMap() {
   this.loadWorldFromServer("test").then(() => {
-    this.setUIActiveMap(this.maps[this.maps.length - 1]);
     this.loadTilesetBundleFromServer("dawn").then(bundle => {
       this.useTilesetBundle(bundle);
       this.initUI();

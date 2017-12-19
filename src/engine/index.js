@@ -109,6 +109,7 @@ export default class MapEditor {
     this.entities = [];
     this.pos = 0;
     this.tasks = [];
+    this.currentCommit = null;
     this.setup();
   }
 };
@@ -162,6 +163,20 @@ MapEditor.prototype.getPkmnNameList = function() {
     list[ii] = name;
   };
   return list;
+};
+
+MapEditor.prototype.processMutatorSessions = function() {
+  let maps = this.maps;
+  for (let ii = 0; ii < maps.length; ++ii) {
+    let map = maps[ii];
+    if (!map.isRecordingMutations()) continue;
+    let mut = map.endMutatorSession();
+    if (mut.length) this.commitTask({
+      kind: CFG.ENGINE_TASKS.MAP_TILE_CHANGE,
+      changes: mut
+    });
+  };
+  this.endCommit();
 };
 
 MapEditor.prototype.loadStorageSettings = function() {

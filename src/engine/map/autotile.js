@@ -11,6 +11,7 @@ export function drawAutotile(x, y, tileset, layer, sx, sy) {
   if (layer === CFG.ENGINE_TS_LAYERS.PREVIEW) return;
   if (!this.coordsInBounds(x, y)) return this.clearPreviewTable();
   let texture = this.textures[layer - 1];
+  this.recordMutations = !this.recordMutations;
   for (let ii = 0; ii < 9; ++ii) {
     let xx = ((ii % 3) | 0) - 1;
     let yy = ((ii / 3) | 0) - 1;
@@ -21,6 +22,7 @@ export function drawAutotile(x, y, tileset, layer, sx, sy) {
       layer
     );
   };
+  this.recordMutations = !this.recordMutations;
   for (let ii = 0; ii < 9; ++ii) {
     let xx = ((ii % 3) | 0) - 1;
     let yy = ((ii / 3) | 0) - 1;
@@ -81,6 +83,6 @@ export function getAutoTileAt(x, y, layer, sx, sy) {
     else if (!this.inTileRange(sw, tile, sx, sy)) edges = "S+W";
   }
 
-  return CFG.TERRAIN_SHEET_EDGES[edges] || { x: 1, y: 1 };
+  return CFG.TERRAIN_SHEET_EDGES[edges] || CFG.TERRAIN_SHEET_EDGES.MID;
 
 };

@@ -1,40 +1,147 @@
 import * as CFG from "../cfg";
 
+export function startCommit() {
+  this.currentCommit = [];
+  this.tasks.push(this.currentCommit);
+};
+
+export function endCommit() {
+  this.currentCommit = null;
+};
+
+export function commitSingleTask(task) {
+  this.commitTask(task);
+  this.endCommit();
+};
+
 export function commitTask(task) {
-  if (this.pos) {
-    this.tasks.splice(this.tasks.length - this.pos, this.pos);
-    this.pos = 0;
+  let isNewCommit = !this.currentCommit;
+  if (isNewCommit) {
+    if (this.pos) this.spliceCommits();
+    this.startCommit();
   }
-  this.tasks.push(task);
-  if (this.tasks.length > CFG.ENGINE_MAX_STATE_LEVELS) this.tasks.shift();
+  this.currentCommit.push(task);
+  if (isNewCommit) {
+    if (this.tasks.length > CFG.ENGINE_MAX_STATE_LEVELS) this.shiftCommits();
+  }
+};
+
+export function spliceCommits() {
+  let items = this.tasks.splice(this.tasks.length - this.pos, this.pos);
+  this.pos = 0;
+  items.map(tasks => {
+    tasks.map(task => {
+      // if the spliced task is a map creation
+      // then make sure to free the map's gpu textures
+      if (task.kind === CFG.ENGINE_TASKS.MAP_CREATE) {
+        let changes = task.changes;
+        changes.map(change => this.removeMap(change.map));
+      }
+    });
+  });
+};
+
+export function shiftCommits() {
+  let tasks = this.tasks.shift();
+  tasks.map(task => {
+    // if the shifted task is a map delete
+    // then make sure to free the map's gpu textures
+    if (task.kind === CFG.ENGINE_TASKS.MAP_DELETE) {
+      let changes = task.changes;
+      changes.map(change => this.removeMap(change.map));
+    }
+  });
 };
 
 export function redoTask() {
   if (!this.pos) return;
-  let task = this.tasks[this.tasks.length - this.pos];
-  if (!task) return;
-  this.fireTask(task, CFG.ENGINE_TASK_REDO);
+  let tasks = this.tasks[this.tasks.length - this.pos];
+  if (!tasks) return;
+  this.fireTasks(tasks, CFG.ENGINE_TASK_REDO);
   this.pos--;
 };
 
 export function undoTask() {
-  let task = this.tasks[this.tasks.length - this.pos - 1];
-  if (!task) return;
-  this.fireTask(task, CFG.ENGINE_TASK_UNDO);
+  let tasks = this.tasks[this.tasks.length - this.pos - 1];
+  if (!tasks) return;
+  this.fireTasks(tasks, CFG.ENGINE_TASK_UNDO);
   this.pos++;
 };
 
-export function fireTask(task, state) {
-  let kind = task.kind;
-  switch (kind) {
-    case CFG.ENGINE_TASKS.MAP_TILE_CHANGE:
-      this.executeMapTileDraw(task, state);
-    break;
+export function fireTasks(tasks, state) {
+  for (let ii = 0; ii < tasks.length; ++ii) {
+    let task = tasks[ii];
+    switch (task.kind) {
+      case CFG.ENGINE_TASKS.MAP_DELETE:
+        this.executeMapLifeOperation(task, state);
+      break;
+      case CFG.ENGINE_TASKS.MAP_CREATE:
+        this.executeMapLifeOperation(task, (!state) | 0);
+      break;
+      case CFG.ENGINE_TASKS.MAP_RESIZE:
+        this.executeMapResize(task, state);
+      break;
+      case CFG.ENGINE_TASKS.MAP_TILE_CHANGE:
+        this.executeMapTileDraw(task, state);
+      break;
+    };
   };
 };
 
+export function executeMapResize(task, state) {
+  console.log("[TASK]: Map resize", task, state);
+  let isUndo = (state === CFG.ENGINE_TASK_UNDO);
+  let isRedo = (state === CFG.ENGINE_TASK_REDO);
+  let changes = task.changes;
+  if (isUndo) {
+    changes.map(change => {
+      let map = change.map;
+      let original = change.original;
+      map.destroy();
+      map.x = original.x;
+      map.y = original.y;
+      map.useData(change.data);
+      map.setBoundings(original.w, original.h);
+      map.refreshMapTextures();
+      map.resetMargins();
+    });
+  }
+  else if (isRedo) {
+    changes.map(change => {
+      let map = change.map;
+      let margin = change.margin;
+      let original = change.current;
+      map.x = original.x;
+      map.y = original.y;
+      map.width = original.w;
+      map.height = original.h;
+      map.resize(margin.x, margin.y, margin.w, margin.h);
+      map.resetMargins();
+    });
+  }
+};
+
+export function executeMapLifeOperation(task, state) {
+  let isUndo = (state === CFG.ENGINE_TASK_UNDO);
+  let isRedo = (state === CFG.ENGINE_TASK_REDO);
+  let changes = task.changes;
+  if (isUndo) {
+    changes.map(change => {
+      this.addMap(change.map);
+      this.setUIActiveMap(change.map);
+    });
+  }
+  else if (isRedo) {
+    changes.map(change => {
+      this.removeMap(change.map, false);
+    });
+  }
+};
+
 export function executeMapTileDraw(task, state) {
-  console.log(task, state);
+  console.log("[TASK]: Map tile draw", task, state);
+  let isUndo = (state === CFG.ENGINE_TASK_UNDO);
+  let isRedo = (state === CFG.ENGINE_TASK_REDO);
   let changes = task.changes;
   let maps = [];
   let updates = [];
@@ -42,9 +149,9 @@ export function executeMapTileDraw(task, state) {
     let change = changes[ii];
     let map = change.map;
     let layer = change.layer;
-    let tileset = change.tileset;
-    let sx = (state === CFG.ENGINE_TASK_UNDO) ? change.sx : change.dx;
-    let sy = (state === CFG.ENGINE_TASK_UNDO) ? change.sy : change.dy;
+    let tileset = isUndo ? change.oTileset : change.nTileset;
+    let sx = isUndo ? change.sx : change.dx;
+    let sy = isUndo ? change.sy : change.dy;
     // we allow to undo/redo on multiple maps in one task
     if (maps.indexOf(map) <= -1) {
       maps.push(map);

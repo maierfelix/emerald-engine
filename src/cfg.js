@@ -1,3 +1,7 @@
+import {
+  $
+} from "./utils";
+
 export const TILE_EDITOR_BG_COLOR = `rgba(87, 87, 87, 1)`;
 
 export const TILESET_DEFAULT_WIDTH = 192;
@@ -49,6 +53,7 @@ export const TERRAIN_TILES = {
 };
 
 export const TERRAIN_SHEET_EDGES = {
+  "MID": { x: 1, y: 1 },
   "NW":  { x: 0, y: 0 },
   "N+W": { x: 3, y: 0 },
   "N":   { x: 1, y: 0 },
@@ -63,18 +68,31 @@ export const TERRAIN_SHEET_EDGES = {
   "W":   { x: 0, y: 1 }
 };
 
+export const WINDOW_CLOSE_BUTTON = $(`#ui-window-btn-close`);
+export const WINDOW_MINIMIZE_BUTTON = $(`#ui-window-btn-minimize`);
+export const WINDOW_MAXIMIZE_BUTTON = $(`#ui-window-btn-maximize`);
+
+export const IS_DESKTOP = (typeof nw !== "undefined");
+
+export const ENGINE_UI_OFFSET_Y = IS_DESKTOP ? 24 : 0;
+
 export const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER;
 
-export const ENGINE_TASK_UNDO = 1;
-export const ENGINE_TASK_REDO = 2;
-export const ENGINE_MAX_STATE_LEVELS = 50;
+export const ENGINE_TASK_UNDO = 0;
+export const ENGINE_TASK_REDO = 1;
+export const ENGINE_MAX_STATE_LEVELS = 25;
 export const ENGINE_TASKS = {
-  MAP_TILE_CHANGE: 1
+  MAP_TILE_CHANGE: 1,
+  MAP_DELETE: 2,
+  MAP_CREATE: 3,
+  MAP_RESIZE: 4
 };
 
 export const STORAGE_MAIN_KEY = `EMERALD`;
 
 export const ENGINE_DEV_MODE = true;
+
+export const ENGINE_BACKGROUND_COLOR = `rgb(44, 45, 46)`;
 
 export const ENGINE_TILESET_SCALE = 1.5;
 export const ENGINE_TILESET_SELECT_COLOR = `rgba(255,0,0,1)`;

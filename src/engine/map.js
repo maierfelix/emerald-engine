@@ -57,10 +57,10 @@ export function addMap(map) {
   this.refreshUIMapChooseList();
 };
 
-export function removeMap(map) {
+export function removeMap(map, destroy = true) {
   for (let ii = 0; ii < this.maps.length; ++ii) {
     if (this.maps[ii] === map) {
-      this.maps[ii].destroy();
+      if (destroy) this.maps[ii].destroy();
       this.maps.splice(ii, 1);
       break;
     }

@@ -94,6 +94,23 @@ export function getTileAt(x, y, layer) {
   return 0;
 };
 
+export function getUsedTilesetAt(x, y, layer) {
+  // in bounds check
+  if (!this.coordsInBounds(x, y)) return null;
+  let bundles = this.data;
+  let tileIndex = (y * this.width + x) | 0;
+  for (let bundleId in bundles) {
+    let bundle = bundles[bundleId];
+    for (let tsId in bundle) {
+      let tileset = bundle[tsId];
+      let dataLayer = tileset[layer];
+      let tile = dataLayer[tileIndex];
+      if (tile > 0) return this.instance.getTilesetFromBundle(bundleId, tsId);
+    };
+  };
+  return null;
+};
+
 export function getTileInformationAt(x, y, layer) {
   // in bounds check
   if (!this.coordsInBounds(x, y)) return null;
@@ -139,15 +156,26 @@ export function setTileAt(tileset, sx, sy, tx, ty, layer) {
   let data = this.data[bundleId][tsId];
   let srcIndex = (sy * (CFG.TILESET_HORIZONTAL_SIZE) + sx) | 0;
   let dstIndex = (ty * width + tx) | 0;
-  let orgTile = data[layer][dstIndex] - 1 | 0;
-  if (this.recordMutations) {
-    let isRedundant = (orgTile === srcIndex);
-    let srcTile = getTilesetTilePositionByIndex(orgTile + 1);
+  if (this.isRecordingMutations()) {
+    let orgTile = this.getTileAt(tx, ty, layer) | 0;
+    let isRedundant = (
+      // tile on tile equal
+      (orgTile === srcIndex) ||
+      // empty tile on empty tile
+      (tileset.usage[srcIndex] === 0 && orgTile === -1) ||
+      // tile got already mutated and recorded
+      this.tileAlreadyMutated(tx, ty, layer)
+    );
     if (!isRedundant) {
+      // get the used tileset of the original tile
+      // if the tileset is null it means the tile is empty
+      let oTileset = this.getUsedTilesetAt(tx, ty, layer) || tileset;
+      let srcTile = getTilesetTilePositionByIndex(orgTile + 1);
       this.mutations.push({
         map: this,
-        layer,
-        tileset,
+        layer: layer,
+        nTileset: tileset,
+        oTileset: oTileset,
         tx: tx, ty: ty,
         dx: sx, dy: sy,
         sx: srcTile.x, sy: srcTile.y

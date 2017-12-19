@@ -41,12 +41,8 @@ export function addListeners() {
 
 export function keyDown(e) {
   let key = e.key;
-  let win = nw.Window.get();
+  let isInActiveMode = this.isUIInAnyActiveMode();
   switch (key) {
-    case "F11":
-      if (!win.isFullscreen) win.toggleFullscreen();
-      else win.leaveFullscreen();
-    break;
     case "Escape":
       this.closeUIModal();
       if (this.isUIInMapCreationMode()) this.onUIMapAddAbort();
@@ -56,11 +52,14 @@ export function keyDown(e) {
       if (this.isUIInMapCreationMode()) this.onUIPlaceNewMap(this.creation.map);
       else if (this.isUIInMapResizeMode()) this.onUIPlaceResizedMap(this.resizing.map);
     break;
+    case "Delete":
+      if (this.currentMap && !isInActiveMode) this.onUIMapDelete(this.currentMap);
+    break;
     case "z": case "Z":
-      if (e.ctrlKey) this.undoTask();
+      if (e.ctrlKey && !isInActiveMode) this.undoTask();
     break;
     case "y": case "Y":
-      if (e.ctrlKey) this.redoTask();
+      if (e.ctrlKey && !isInActiveMode) this.redoTask();
     break;
   };
 };
@@ -108,7 +107,7 @@ export function addMapOptionsListeners() {
   let elType = $(`#engine-ui-opt-type`);
   let elWeather = $(`#engine-ui-opt-weather`);
   let elMusic = $(`#engine-ui-opt-music`);
-  let elDelete = $(`#engine-ui-opt-delete`);
+  //let elDelete = $(`#engine-ui-opt-delete`);
   let elWidth = $(`#engine-ui-opt-width`);
   let elHeight = $(`#engine-ui-opt-height`);
   let elResize = $(`#engine-ui-opt-resize`);
@@ -130,12 +129,12 @@ export function addMapOptionsListeners() {
   elMusic.onchange = (e) => {
     this.onUIUpdateMapSettings(`music`, elMusic.selectedIndex);
   };
-  elDelete.onclick = (e) => {
+  /*elDelete.onclick = (e) => {
     if (this.currentMap) {
       elDelete.blur();
       this.onUIMapDelete(this.currentMap);
     }
-  };
+  };*/
   elResize.onclick = (e) => {
     if (this.currentMap) this.onUIMapResize(this.currentMap);
   };

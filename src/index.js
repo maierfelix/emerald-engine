@@ -37,8 +37,6 @@ console.assert(
   (typeof WebGLRenderingContext !== "undefined")
 );
 
-console.clear();
-
 class Engine {
   constructor() {
     this.mode = null;
@@ -275,5 +273,36 @@ Engine.prototype.showInitScreen = function() {
     });
   });
 };
+
+if (CFG.IS_DESKTOP) {
+  let win = nw.Window.get();
+  let isMaximized = false;
+
+  window.addEventListener("keydown", (e) => {
+    let key = e.key;
+    if (key === "F11") {
+      e.preventDefault();
+      //if (!win.isFullscreen) win.toggleFullscreen();
+      //else win.leaveFullscreen();
+    }
+  });
+  win.on("maximize", (e) => isMaximized = true);
+  win.on("minimize", (e) => isMaximized = false);
+  win.on("restore", (e) => {
+    isMaximized = false;
+  });
+  CFG.WINDOW_CLOSE_BUTTON.onclick = (e) => {
+    win.close();
+  };
+  CFG.WINDOW_MINIMIZE_BUTTON.onclick = (e) => {
+    win.minimize();
+  };
+  CFG.WINDOW_MAXIMIZE_BUTTON.onclick = (e) => {
+    if (!isMaximized) win.maximize();
+    else win.restore();
+  };
+}
+
+$(`#engine-ui`).style.top = CFG.ENGINE_UI_OFFSET_Y + "px";
 
 let engine = new Engine();

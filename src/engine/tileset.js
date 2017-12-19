@@ -53,6 +53,12 @@ export function loadTilesetBundleFromServer(name) {
           // create an usage map, so we can detect empty tiles fast
           let usage = getPixelUsageData(canvas, CFG.BLOCK_SIZE);
           bundle.tilesets[ts] = { canvas, usage };
+          bundle.tilesets[ts] = {
+            name: ts,
+            bundle,
+            usage,
+            canvas
+          };
           if (++count >= max) {
             bundle.loaded = true;
             resolve(bundle);
@@ -74,31 +80,24 @@ export function useTilesetBundle(bundle) {
   this.setUITilesetBundle(bundle);
 };
 
-export function getTilesetFromBundle(bundle, name) {
-  let tileset = bundle.tilesets[name];
-  return {
-    id: bundle.name + ":" + name,
-    name: name,
-    bundle: bundle,
-    usage: tileset.usage,
-    canvas: tileset.canvas
-  };
+export function getTilesetFromBundle(bundleId, tsId) {
+  return this.bundles[bundleId].tilesets[tsId];
 };
 
-export function useTilesetFromBundle(bundle, name) {
+export function useTilesetFromBundle(bundle, tsId) {
   // get the tileset index by it's name
   let el = $(`#engine-ui-cts-subts`);
   let index = 0;
   for (let ii = 0; ii < el.childNodes.length; ++ii) {
     let child = el.childNodes[ii];
-    if (child.innerHTML === name) {
+    if (child.innerHTML === tsId) {
       index = ii;
       break;
     }
   };
   // change the selected tileset in ui
   el.selectedIndex = index;
-  let tileset = this.getTilesetFromBundle(bundle, name);
+  let tileset = this.getTilesetFromBundle(bundle.name, tsId);
   this.useTileset(tileset);
   this.resetTilesetSelection();
 };
