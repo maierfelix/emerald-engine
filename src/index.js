@@ -8,6 +8,9 @@ import {
 } from "./utils";
 
 import {
+  showAlertModal,
+  closeAlertModal,
+  showBootScreen,
   showInitScreen,
   showLoadingModal,
   closeLoadingModal,
@@ -42,7 +45,9 @@ class Engine {
     this.mode = null;
     this.ppTimer = null;
     this.session = null;
-    this.init();
+    showBootScreen().then(() => {
+      this.init();
+    });
   }
 };
 
@@ -97,6 +102,10 @@ Engine.prototype.initSessionTicker = function() {
             setLoadingModalBottom(`Authenticating...`);
             this.reAuthenticateToServer();
           }
+        } else if (json.status === `SERVER_ALERT_MSG`) {
+          showAlertModal(json.msg).then(answer => {
+            closeAlertModal();
+          });
         } else {
           //if (isLoadingModalActive()) closeLoadingModal();
         }

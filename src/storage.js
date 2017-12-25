@@ -4,6 +4,7 @@ class Storage {
   constructor(key) {
     this.key = key;
     this.data = this.getCachedState();
+    this.deferredSync = null;
   }
 };
 
@@ -40,7 +41,12 @@ Storage.prototype.write = function(key, value) {
   } else {
     this.data[key] = value;
   }
-  this.syncWithStorage();
+  // we save stuff deferred to the local storage
+  // since writing into it is expensive
+  clearTimeout(this.deferredSync);
+  this.deferredSync = setTimeout(() => {
+    this.syncWithStorage();
+  }, 250);
   return this.data[key];
 };
 

@@ -157,6 +157,7 @@ export function resolveBundleList(list) {
   let count = 0;
   let max = Object.keys(list).length;
   return new Promise(resolve => {
+    if (max <= 0) return resolve();
     for (let bundleId in list) {
       this.loadTilesetBundleFromServer(bundleId).then(() => {
         if (++count >= max) resolve();

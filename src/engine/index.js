@@ -103,6 +103,7 @@ export default class MapEditor {
     this.maps = [];
     this.bundles = {};
     this.currentMap = null;
+    this.currentWorld = null;
     this.currentLayer = -1;
     this.currentBundle = null;
     this.currentTileset = null;
@@ -110,6 +111,7 @@ export default class MapEditor {
     this.pos = 0;
     this.tasks = [];
     this.currentCommit = null;
+    this.autoTiling = null;
     this.setup();
   }
 };
@@ -165,16 +167,26 @@ MapEditor.prototype.getPkmnNameList = function() {
   return list;
 };
 
-MapEditor.prototype.processMutatorSessions = function() {
+MapEditor.prototype.endCommitSession = function() {
   let maps = this.maps;
   for (let ii = 0; ii < maps.length; ++ii) {
     let map = maps[ii];
     if (!map.isRecordingMutations()) continue;
     let mut = map.endMutatorSession();
-    if (mut.length) this.commitTask({
-      kind: CFG.ENGINE_TASKS.MAP_TILE_CHANGE,
-      changes: mut
-    });
+    if (mut.length) {
+      if (this.autoTiling) {
+        this.commitTask({
+          kind: CFG.ENGINE_TASKS.MAP_AUTOTILE,
+          changes: mut,
+          original: this.autoTiling
+        });
+      } else {
+        this.commitTask({
+          kind: CFG.ENGINE_TASKS.MAP_TILE_CHANGE,
+          changes: mut
+        });
+      }
+    }
   };
   this.endCommit();
 };
@@ -184,6 +196,8 @@ MapEditor.prototype.loadStorageSettings = function() {
   if (!settings) settings = Storage.write(`settings`, {});
   this.onUILockCameraZ(!!settings.lockCameraZ);
   this.cz = settings.cameraOffsetZ || CFG.ENGINE_CAMERA_MIN_SCALE;
+  this.cx = settings.cameraOffsetX || 0.0;
+  this.cy = settings.cameraOffsetY || 0.0;
 };
 
 extend(MapEditor, _map);

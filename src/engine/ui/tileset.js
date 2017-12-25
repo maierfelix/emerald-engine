@@ -104,7 +104,7 @@ export function updateTilesetSelectionPreview() {
 };
 
 export function setUITilesetBundle(bundle) {
-  $("#engine-ui-cts-name").innerHTML = `🎨 ${bundle.name}`;
+  $("#engine-ui-cts-name-txt").innerHTML = bundle.name;
   $("#engine-ui-cts-subts").innerHTML = ``;
   // collect all sub-tileset names
   let tilesets = [];

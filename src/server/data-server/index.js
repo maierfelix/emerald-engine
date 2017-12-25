@@ -59,17 +59,32 @@ DataServer.prototype.processHTTPRequestQuery = function(queries, resp) {
   resp.setHeader(`Access-Control-Allow-Headers`, `X-Requested-With,content-type`);
   let cmd = queries.cmd;
   let user = queries.user;
-  let session = queries.session;
+  let sessionId = queries.session;
+  // validate the session
+  if (!this.isValidSession(user, sessionId)) return send404(resp);
   switch (cmd) {
-    case "GET_BUNDLE_LIST": {
-      let valid = this.isValidSession(user, session);
-      if (valid) resp.write(this.getTilesetList());
-    }
+    case "GET_BUNDLE_LIST":
+      resp.write(this.getTilesetList());
     break;
     case "GET_BUNDLE": {
       let bundle = queries.bundle;
-      let valid = this.isValidSession(user, session);
-      if (valid) resp.write(this.getTileset(bundle));
+      resp.write(this.getTileset(bundle));
+    }
+    break;
+    case "GET_WORLD": {
+      let world = queries.world;
+      if (world && world.length) resp.write(this.getWorld(world, sessionId));
+    }
+    break;
+    case "SAVE_WORLD": {
+      let world = queries.world;
+      let data = queries.data;
+      if (
+        (world && world.length) &&
+        (data && data.length)
+      ) {
+        resp.write(this.saveWorld(world, data, sessionId));
+      }
     }
     break;
     default:
@@ -77,6 +92,38 @@ DataServer.prototype.processHTTPRequestQuery = function(queries, resp) {
     break;
   };
   resp.end();
+};
+
+DataServer.prototype.saveWorld = function(world, data, sessionId) {
+  let username = this.LoginServer.getUsernameByTicket(sessionId);
+  let path = CFG.TS_SERVER_WORLD_DIR + username + "/" + world + ".json";
+  if (fs.existsSync(path)) {
+    // make sure the data is valid
+    try {
+      JSON.parse(data);
+    } catch (e) {
+      return "false";
+    }
+    fs.writeFileSync(path, data);
+    return "true";
+  }
+  return "false";
+};
+
+DataServer.prototype.getWorld = function(world, sessionId) {
+  let username = this.LoginServer.getUsernameByTicket(sessionId);
+  let path = CFG.TS_SERVER_WORLD_DIR + username + "/" + world + ".json";
+  if (fs.existsSync(path)) {
+    return fs.readFileSync(path);
+  }
+  return "[]";
+};
+
+DataServer.prototype.createUserFolder = function(username) {
+  let path = CFG.TS_SERVER_WORLD_DIR + username;
+  if (!fs.existsSync(path)) fs.mkdirSync(path);
+  let world = { maps: [] };
+  fs.writeFileSync(path + "/test.json", JSON.stringify(world));
 };
 
 DataServer.prototype.refreshTilesetList = function() {

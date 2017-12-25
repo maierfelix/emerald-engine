@@ -1,6 +1,7 @@
 export const HTTP_SERVER_RESP_TYPE = { "Content-Type": "text/plain" };
 
 export const TS_SERVER_TILESET_DIR = `./data/tilesets/`;
+export const TS_SERVER_WORLD_DIR = `./data/worlds/`;
 export const TS_SERVER_PNG_MAGIC_HEADER = `data:image/png;base64,`;
 
 export const HTTP_SERVER_HTTP_PORT = 80;
@@ -8,8 +9,9 @@ export const HTTP_SERVER_HTTP_PORT = 80;
 export const TS_SERVER_HTTP_PORT = 9000;
 export const LOGIN_SERVER_HTTP_PORT = 9001;
 export const GAME_SERVER_HTTP_PORT = 9002;
+export const UPDATE_SERVER_HTTP_PORT = 9003;
 
-export const GAME_SERVER_WS_PORT = 9003;
+export const GAME_SERVER_WS_PORT = 9009;
 
 export const SERVER_LOCAL_IP = `::ffff:127.0.0.1`;
 

@@ -80,12 +80,13 @@ export const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER;
 
 export const ENGINE_TASK_UNDO = 0;
 export const ENGINE_TASK_REDO = 1;
-export const ENGINE_MAX_STATE_LEVELS = 25;
+export const ENGINE_MAX_STATE_LEVELS = 42;
 export const ENGINE_TASKS = {
   MAP_TILE_CHANGE: 1,
   MAP_DELETE: 2,
   MAP_CREATE: 3,
-  MAP_RESIZE: 4
+  MAP_RESIZE: 4,
+  MAP_AUTOTILE: 5
 };
 
 export const STORAGE_MAIN_KEY = `EMERALD`;
@@ -128,6 +129,7 @@ export const ENGINE_FILL_PREVIEW_COLOR = `black`;
 export const ENGINE_HOST_LOCATION = `localhost`;
 export const ENGINE_TS_SERVER_LOC = `http://${ENGINE_HOST_LOCATION}:9000`;
 export const ENGINE_LOGIN_SERVER_LOC = `http://${ENGINE_HOST_LOCATION}:9001`;
+export const ENGINE_UPDATE_SERVER_LOC = `http://${ENGINE_HOST_LOCATION}:9003`;
 
 export const ENGINE_SESSION_TIMEOUT = 1250;
 
@@ -172,6 +174,13 @@ export const ENGINE_TS_EDIT = {
   BUCKET: 3,
   MAGIC: 4,
   AUTOTILE: 5
+};
+
+export const ENGINE_ENCOUNTER_DEFAULTS = {
+  PKMN: 1,
+  CHANCE: 0,
+  MIN_LVL: 1,
+  MAX_LVL: 5
 };
 
 export const ENGINE_DEFAULT_MAP = {

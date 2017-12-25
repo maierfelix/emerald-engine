@@ -1,13 +1,18 @@
 {
   "name": "emerald-engine",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/maierfelix/emerald-engine.git"
   },
-  "main": "./static/main.js",
+  "title": "Emerald Engine",
+  "main": "./static/index.html?mode=map-editor",
+  "window": {
+    "frame": false,
+    "toolbar": false
+  },
   "browser": "dist/bundle-browser.js",
   "server": "dist/bundle-server.js",
   "keywords": [],

@@ -2,16 +2,18 @@
 
 let options = {
   frame: false,
-  icon: "./static/img/emerald-engine.png"
+  title: require("../package.json").title,
+  icon: "./static/img/emerald-engine.png",
+  width: 1280,
+  height: 640,
+  position: "center"
 };
 
-nw.Window.open("static/index.html?mode=map-editor", options, (win) => {
-  win.title = require("../package.json").title;
-  win.icon = options.icon;
-  win.width = 1280;
-  win.height = 640;
-  win.showDevTools();
-  win.setMinimumSize(1280, 640);
-  win.focus();
-  //win.maximize();
-});
+let win = nw.Window.get();
+for (let key in options) {
+  win[key] = options[key];
+};
+win.showDevTools();
+win.setMinimumSize(1280, 640);
+win.focus();
+//win.maximize();

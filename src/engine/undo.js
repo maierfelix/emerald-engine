@@ -84,6 +84,9 @@ export function fireTasks(tasks, state) {
       case CFG.ENGINE_TASKS.MAP_TILE_CHANGE:
         this.executeMapTileDraw(task, state);
       break;
+      case CFG.ENGINE_TASKS.MAP_AUTOTILE:
+        this.executeMapAutoTileDraw(task, state);
+      break;
     };
   };
 };
@@ -122,6 +125,7 @@ export function executeMapResize(task, state) {
 };
 
 export function executeMapLifeOperation(task, state) {
+  console.log("[TASK]: Map life", task, state);
   let isUndo = (state === CFG.ENGINE_TASK_UNDO);
   let isRedo = (state === CFG.ENGINE_TASK_REDO);
   let changes = task.changes;
@@ -174,4 +178,28 @@ export function executeMapTileDraw(task, state) {
   };
   // when UI is in fill mode, redraw the fill preview
   if (this.isUIInFillMode()) this.onUIMapFill(this.mx, this.my, true);
+};
+
+export function executeMapAutoTileDraw(task, state) {
+  console.log("[TASK]: Map autotile draw", task, state);
+  let isUndo = (state === CFG.ENGINE_TASK_UNDO);
+  let isRedo = (state === CFG.ENGINE_TASK_REDO);
+  let changes = task.changes;
+  let original = task.original;
+  let maps = [];
+  if (isUndo) {
+    changes.map(change => {
+      let map = change.map;
+      // refresh all chanegd maps, but only one time
+      if (maps.indexOf(map.id) <= -1) {
+        map.useData(original);
+        map.refreshMapTextures();
+        maps.push(map.id);
+        console.log("Refreshing map", map);
+      }
+    });
+  }
+  else if (isRedo) {
+    this.executeMapTileDraw(task, state);
+  }
 };

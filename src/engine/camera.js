@@ -27,6 +27,8 @@ export function zoom(e) {
   let zd = zoomScale(this.cz) - zoomScale(oscale);
   this.cx -= sx * zd;
   this.cy -= sy * zd;
+  Storage.write(`settings.cameraOffsetX`, this.cx);
+  Storage.write(`settings.cameraOffsetY`, this.cy);
   Storage.write(`settings.cameraOffsetZ`, this.cz);
   this.refreshMouseLast();
   this.setUIMousePosition(x, y);
@@ -144,7 +146,8 @@ export function mouseUp(e) {
       }
       this.onUIPlaceNewMap(this.creation.map);
     }
-    this.processMutatorSessions();
+    this.endCommitSession();
+    this.autoTiling = null;
   }
   // middle
   else if (e.which === 2) {
@@ -181,6 +184,8 @@ export function mouseMove(e) {
     this.cy -= (this.drag.py - y) | 0;
     this.drag.px = x | 0;
     this.drag.py = y | 0;
+    Storage.write(`settings.cameraOffsetX`, this.cx);
+    Storage.write(`settings.cameraOffsetY`, this.cy);
     // redraw instantly for smoother dragging
     this.draw();
   }

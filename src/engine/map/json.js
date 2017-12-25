@@ -7,12 +7,15 @@ import {
   unmangleDataArray
 } from "../../utils";
 
+import { Encounter } from "./encounters";
+
 export function validateJSON(json) {
   assert(json.x !== void 0);
   assert(json.y !== void 0);
   assert(json.data !== void 0);
   assert(json.width !== void 0);
   assert(json.height !== void 0);
+  assert(json.encounters !== void 0);
   assert(json.settings !== void 0);
   assert(json.settings.name !== void 0);
   assert(json.settings.type !== void 0);
@@ -71,13 +74,48 @@ export function createJSONFromData(compressed = true) {
   return data;
 };
 
-export function fromJSON(json) {
-  this.validateJSON(json);
+export function createJSONFromEncounters() {
+  let encounters = [];
+  for (let ii = 0; ii < this.encounters.length; ++ii) {
+    let encounter = this.encounters[ii];
+    encounters.push({
+      id: encounter.id,
+      area: encounter.area,
+      chance: encounter.chance,
+      minLvl: encounter.minLvl,
+      maxLvl: encounter.maxLvl
+    });
+  };
+  return encounters;
+};
+
+export function createEncountersFromJSON(json) {
+  let encounters = json.encounters;
+  for (let ii = 0; ii < encounters.length; ++ii) {
+    let encounter = encounters[ii];
+    this.encounters.push(new Encounter(
+      encounter.id,
+      encounter.area,
+      encounter.chance,
+      encounter.minLvl,
+      encounter.maxLvl
+    ));
+  };
+  return this.encounters;
+};
+
+export function readJSONData(json) {
   this.x = json.x;
   this.y = json.y;
   this.data = this.createDataFromJSON(json);
   this.settings = json.settings;
+  this.encounters = this.createEncountersFromJSON(json);
   this.setBoundings(json.width, json.height);
+};
+
+export function fromJSON(json) {
+  this.validateJSON(json);
+  this.readJSONData(json);
   return new Promise(resolve => {
     this.instance.resolveBundleList(json.data).then(() => {
       this.refreshMapTextures();
@@ -88,11 +126,7 @@ export function fromJSON(json) {
 
 export function fromJSONSync(json) {
   this.validateJSON(json);
-  this.x = json.x;
-  this.y = json.y;
-  this.data = this.createDataFromJSON(json);
-  this.settings = json.settings;
-  this.setBoundings(json.width, json.height);
+  this.readJSONData(json);
   this.refreshMapTextures();
   return this;
 };
@@ -109,6 +143,7 @@ export function toJSON() {
     x: this.x,
     y: this.y,
     data: this.createJSONFromData(),
+    encounters: this.createJSONFromEncounters(),
     width: this.width,
     height: this.height
   };

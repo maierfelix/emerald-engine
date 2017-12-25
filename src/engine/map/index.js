@@ -101,6 +101,16 @@ Map.prototype.tileAlreadyMutated = function(x, y, layer) {
   return false;
 };
 
+Map.prototype.getTileMutationAt = function(x, y, layer) {
+  let muts = this.mutations;
+  let length = muts.length;
+  for (let ii = 0; ii < length; ++ii) {
+    let mut = muts[ii];
+    if (mut.tx === x && mut.ty === y && mut.layer === layer) return mut;
+  };
+  return null;
+};
+
 Map.prototype.getName = function() {
   let settings = this.settings;
   if (!settings.name.length) {

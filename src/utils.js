@@ -74,6 +74,18 @@ export function setImageSmoothing(ctx, state) {
   ctx.oImageSmoothingEnabled = state;
 };
 
+export function setCanvasHDPI(ctx) {
+  let canvas = ctx.canvas;
+  let ratio = window.devicePixelRatio || 1;
+  let width = canvas.width;
+  let height = canvas.height;
+  canvas.width = width * ratio;
+  canvas.height = height * ratio;
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+};
+
 export function loadImage(path) {
   return new Promise(resolve => {
     let img = new Image();
@@ -131,17 +143,21 @@ export function loadJSONFile(path) {
   });
 };
 
-export function GET(url, delay = 0) {
+export function REQUEST(url, delay = 0, kind, type = "text") {
   return new Promise(resolve => {
     let xhr = new XMLHttpRequest();
-    xhr.open("GET", url, true);
-    xhr.responseType = "text";
+    xhr.open(kind, url, true);
+    xhr.responseType = type;
     xhr.onerror = (e) => {
       resolve(null);
     };
     xhr.onload = (e) => {
       if (xhr.readyState === xhr.DONE) {
-        if (xhr.status === 200) return resolve(xhr.responseText);
+        if (xhr.status === 200) {
+          if (type === "text") return resolve(xhr.responseText);
+          else if (type === "arraybuffer") return resolve(xhr.response);
+          else console.warn(`Unsupported XHR type`);
+        }
       }
       resolve(null);
     };
@@ -152,6 +168,26 @@ export function GET(url, delay = 0) {
     } else {
       xhr.send();
     }
+  });
+};
+
+export function GET_BINARY(url, delay = 0) {
+  return new Promise(resolve => {
+    REQUEST(url, delay, "GET", "arraybuffer").then((result) => {
+      resolve(new Uint8Array(result));
+    });
+  });
+};
+
+export function GET(url, delay = 0) {
+  return new Promise(resolve => {
+    REQUEST(url, delay, "GET").then(resolve);
+  });
+};
+
+export function POST(url, delay = 0) {
+  return new Promise(resolve => {
+    REQUEST(url, delay, "POST").then(resolve);
   });
 };
 

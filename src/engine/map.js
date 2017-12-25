@@ -4,7 +4,8 @@ import {
   $,
   GET,
   rectIntersect,
-  getRelativeTile
+  getRelativeTile,
+  addSessionToQuery
 } from "../utils";
 
 import Map from "./map/index";
@@ -45,16 +46,26 @@ export function loadMapList(maps, index = 0) {
 
 export function loadWorldFromServer(name) {
   return new Promise(resolve => {
-    GET(`../data/maps/${name}.json`).then(res => {
-      let maps = JSON.parse(res);
-      this.loadMapList(maps).then(() => resolve());
+    let query = CFG.ENGINE_TS_SERVER_LOC + "/?cmd=GET_WORLD&world=" + name;
+    GET(addSessionToQuery(query, this.session)).then(json => {
+      let world = JSON.parse(json);
+      world.name = name;
+      this.setWorld(world).then(resolve);
     });
+  });
+};
+
+export function setWorld(world) {
+  return new Promise(resolve => {
+    this.currentWorld = world;
+    if (!world.maps.length) resolve();
+    else this.loadMapList(world.maps).then(resolve);
   });
 };
 
 export function addMap(map) {
   this.maps.push(map);
-  this.refreshUIMapChooseList();
+  this.refreshUIMaps();
 };
 
 export function removeMap(map, destroy = true) {
@@ -66,7 +77,7 @@ export function removeMap(map, destroy = true) {
     }
   };
   this.currentMap = null;
-  this.refreshUIMapChooseList();
+  this.refreshUIMaps();
   if (this.maps.length) this.setUIActiveMap(this.maps[this.maps.length - 1]);
 };
 

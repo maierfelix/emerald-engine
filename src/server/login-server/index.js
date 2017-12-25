@@ -262,6 +262,7 @@ LoginServer.prototype.processHTTPRegistrationRequest = function(queries, resp) {
       return sendObject({ kind: "ERROR", msg: "USERNAME_TAKEN" }, resp);
     }
     console.log(`[LoginServer] ${user} registered`);
+    this.DataServer.createUserFolder(user);
     let ticket = this.createSessionTicket(user);
     return sendObject({ kind: "STATUS", msg: "REGISTRATION_SUCCESSFUL", id: ticket.id }, resp);
   });
@@ -295,6 +296,12 @@ LoginServer.prototype.getTicketByUsername = function(username) {
     let ticket = tickets[ii];
     if (ticket.user === username) return ticket;
   };
+  return null;
+};
+
+LoginServer.prototype.getUsernameByTicket = function(ticketId) {
+  let ticket = this.getTicketById(ticketId);
+  if (ticket !== null) return ticket.user;
   return null;
 };
 

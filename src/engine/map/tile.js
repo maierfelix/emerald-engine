@@ -158,28 +158,30 @@ export function setTileAt(tileset, sx, sy, tx, ty, layer) {
   let dstIndex = (ty * width + tx) | 0;
   if (this.isRecordingMutations()) {
     let orgTile = this.getTileAt(tx, ty, layer) | 0;
+    let tileAlreadyMutated = this.tileAlreadyMutated(tx, ty, layer);
     let isRedundant = (
-      // tile on tile equal
-      (orgTile === srcIndex) ||
       // empty tile on empty tile
-      (tileset.usage[srcIndex] === 0 && orgTile === -1) ||
-      // tile got already mutated and recorded
-      this.tileAlreadyMutated(tx, ty, layer)
+      (tileset.usage[srcIndex] === 0 && orgTile === -1)
     );
     if (!isRedundant) {
       // get the used tileset of the original tile
       // if the tileset is null it means the tile is empty
       let oTileset = this.getUsedTilesetAt(tx, ty, layer) || tileset;
       let srcTile = getTilesetTilePositionByIndex(orgTile + 1);
-      this.mutations.push({
-        map: this,
-        layer: layer,
-        nTileset: tileset,
-        oTileset: oTileset,
-        tx: tx, ty: ty,
-        dx: sx, dy: sy,
-        sx: srcTile.x, sy: srcTile.y
-      });
+      if (tileAlreadyMutated) {
+        let tile = this.getTileMutationAt(tx, ty, layer);
+        tile.dx = sx; tile.dy = sy;
+      } else {
+        this.mutations.push({
+          map: this,
+          layer: layer,
+          nTileset: tileset,
+          oTileset: oTileset,
+          tx: tx, ty: ty,
+          dx: sx, dy: sy,
+          sx: srcTile.x, sy: srcTile.y
+        });
+      }
     }
   }
   // delete previous data tiles and

@@ -49,11 +49,20 @@ export function keyDown(e) {
       else if (this.isUIInMapResizeMode()) this.onUIMapResizeAbort();
     break;
     case "Enter":
-      if (this.isUIInMapCreationMode()) this.onUIPlaceNewMap(this.creation.map);
-      else if (this.isUIInMapResizeMode()) this.onUIPlaceResizedMap(this.resizing.map);
+      if (this.isUIInMapCreationMode()) {
+        this.onUIPlaceNewMap(this.creation.map);
+        this.endCommitSession();
+      }
+      else if (this.isUIInMapResizeMode()) {
+        this.onUIPlaceResizedMap(this.resizing.map);
+        this.endCommitSession();
+      }
     break;
     case "Delete":
-      if (this.currentMap && !isInActiveMode) this.onUIMapDelete(this.currentMap);
+      if (this.currentMap && !isInActiveMode) {
+        this.onUIMapDelete(this.currentMap);
+        this.endCommitSession();
+      }
     break;
     case "z": case "Z":
       if (e.ctrlKey && !isInActiveMode) this.undoTask();
@@ -88,7 +97,28 @@ export function addUIEncounterListeners() {
     this.setUIEncounterMode(index);
   };
   $("#engine-ui-add-encounter").onclick = (e) => {
-    this.addUIEncounterNodeByType(el.selectedIndex);
+    if (!this.currentMap) return;
+    let area = el.selectedIndex;
+    let pkmnId = CFG.ENGINE_ENCOUNTER_DEFAULTS.PKMN;
+    let chance = CFG.ENGINE_ENCOUNTER_DEFAULTS.CHANCE;
+    let minLvl = CFG.ENGINE_ENCOUNTER_DEFAULTS.MIN_LVL;
+    let maxLvl = CFG.ENGINE_ENCOUNTER_DEFAULTS.MAX_LVL;
+    let node = this.addUIEncounterNode(
+      pkmnId,
+      area,
+      chance,
+      minLvl,
+      maxLvl
+    );
+    this.currentMap.addEncounter(
+      pkmnId,
+      area,
+      chance,
+      minLvl,
+      maxLvl,
+      node
+    );
+    node.querySelector(".ts-btn-select").focus();
   };
 };
 
@@ -112,22 +142,23 @@ export function addMapOptionsListeners() {
   let elHeight = $(`#engine-ui-opt-height`);
   let elResize = $(`#engine-ui-opt-resize`);
   elName.oninput = (e) => {
-    this.onUIUpdateMapSettings(`name`, elName.value);
-    this.refreshUIMapChooseList();
-    this.setUIActiveMap(this.currentMap);
+    if (this.currentMap) {
+      this.onUIUpdateMapSettings(`name`, elName.value);
+      this.refreshUIMaps();
+      this.setUIActiveMap(this.currentMap);
+    }
   };
   elShowName.onchange = (e) => {
-    this.onUIUpdateMapSettings(`showName`, elShowName.checked);
+    if (this.currentMap) this.onUIUpdateMapSettings(`showName`, elShowName.checked);
   };
   elType.onchange = (e) => {
-    console.log(elType, elType.selectedIndex);
-    this.onUIUpdateMapSettings(`type`, elType.selectedIndex);
+    if (this.currentMap) this.onUIUpdateMapSettings(`type`, elType.selectedIndex);
   };
   elWeather.onchange = (e) => {
-    this.onUIUpdateMapSettings(`weather`, elWeather.selectedIndex);
+    if (this.currentMap) this.onUIUpdateMapSettings(`weather`, elWeather.selectedIndex);
   };
   elMusic.onchange = (e) => {
-    this.onUIUpdateMapSettings(`music`, elMusic.selectedIndex);
+    if (this.currentMap) this.onUIUpdateMapSettings(`music`, elMusic.selectedIndex);
   };
   /*elDelete.onclick = (e) => {
     if (this.currentMap) {

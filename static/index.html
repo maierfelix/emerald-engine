@@ -198,17 +198,23 @@
   </div>
   <!-- TOP MENU -->
   <div id="engine-ui-top-menu" class="ts-top-head">
-    <button class="ts-btn">🌍 Publish</button>
-    <button id="engine-ui-map-save" class="ts-btn">💾 Save</button>
-    <button id="engine-ui-settings" class="ts-btn">⚙️ Settings</button>
+    <button class="ts-btn"><img class="ts-btn-icon" src="./img/new.png"/>New</button>
+    <button id="engine-ui-map-save" class="ts-btn">
+      <img class="ts-btn-icon" src="./img/save.png"/>
+      <div id="engine-ui-map-save-txt">Save</div>
+    </button>
+    <button id="engine-ui-settings" class="ts-btn"><img class="ts-btn-icon" src="./img/settings.png"/>Settings</button>
     <button class="ts-btn-invisible ts-btn-head-fix"></button>
     <button id="engine-ui-map-add" class="ts-btn ts-btn-add-map">+</button>
     <div class="ts-top-head-item">
-      <label id="engine-ui-cmap-name" class="ts-btn">🌄 Map</label>
+      <label id="engine-ui-cmap-name" class="ts-btn"><img class="ts-btn-icon" src="./img/map.png"/>Map</label>
       <select id="engine-ui-map-select" class="ts-btn ts-btn-select"></select>
     </div>
     <div class="ts-top-head-item">
-      <label id="engine-ui-cts-name" class="ts-btn"></label>
+      <label id="engine-ui-cts-name" class="ts-btn">
+        <img class="ts-btn-icon" src="./img/color.png"/>
+        <div id="engine-ui-cts-name-txt"></div>
+      </label>
       <select id="engine-ui-cts-subts" class="ts-btn ts-btn-select"></select>
     </div>
     <button class="ts-btn-invisible" style="float: right;"></button>
@@ -225,24 +231,24 @@
   </div>
   <div id="engine-ui-right-menu">
     <div class="ts-top-head engine-menu-top-right">
-      <button id="engine-ui-mode-ts" class="ts-btn">🗻 Tiles</button>
-      <button id="engine-ui-mode-obj" class="ts-btn">🚐 Objects</button>
-      <button id="engine-ui-mode-opt" class="ts-btn">🔩 Options</button>
+      <button id="engine-ui-mode-ts" class="ts-btn"><img class="ts-btn-icon" src="./img/paint.png"/>Tiles</button>
+      <button id="engine-ui-mode-obj" class="ts-btn"><img class="ts-btn-icon" src="./img/cube.png"/>Objects</button>
+      <button id="engine-ui-mode-opt" class="ts-btn"><img class="ts-btn-icon" src="./img/support.png"/>Options</button>
     </div>
     <div id="engine-ui-ts">
       <div class="ts-top-head engine-menu-middle-right">
-        <label id="engine-layer-btn-1" class="ts-btn ts-img-btn"><img src="./img/windows-10/layer-1.png"></label>
-        <label id="engine-layer-btn-2" class="ts-btn ts-img-btn"><img src="./img/windows-10/layer-2.png"></label>
-        <label id="engine-layer-btn-3" class="ts-btn ts-img-btn"><img src="./img/windows-10/layer-3.png"></label>
-        <label id="engine-layer-btn-4" class="ts-btn ts-img-btn"><img src="./img/windows-10/layer-0.png"></label>
-        <label id="engine-layer-btn-5" class="ts-btn ts-img-btn"><img src="./img/windows-10/layer-4.png"></label>
+        <label id="engine-layer-btn-1" class="ts-btn ts-img-btn"><img src="./img/sheets-1.png"></label>
+        <label id="engine-layer-btn-2" class="ts-btn ts-img-btn"><img src="./img/sheets-2.png"></label>
+        <label id="engine-layer-btn-3" class="ts-btn ts-img-btn"><img src="./img/sheets-3.png"></label>
+        <label id="engine-layer-btn-4" class="ts-btn ts-img-btn"><img src="./img/sheets-0.png"></label>
+        <label id="engine-layer-btn-5" class="ts-btn ts-img-btn"><img src="./img/sheets-4.png"></label>
       </div>
       <div class="ts-top-head engine-menu-bottom-right">
-        <label id="engine-edit-mode-pencil" class="ts-btn ts-img-btn"><img src="./img/windows-10/pencil-edit.png"></label>
-        <label id="engine-edit-mode-pipette" class="ts-btn ts-img-btn"><img src="./img/windows-10/color-dropper.png"></label>
-        <label id="engine-edit-mode-bucket" class="ts-btn ts-img-btn"><img src="./img/windows-10/paint-bucket.png"></label>
-        <label id="engine-edit-mode-magic" class="ts-btn ts-img-btn"><img src="./img/windows-10/magic-bucket.png"></label>
-        <label id="engine-edit-mode-autotile" class="ts-btn ts-img-btn"><img src="./img/windows-10/auto-tile.png"></label>
+        <label id="engine-edit-mode-pencil" class="ts-btn ts-img-btn"><img src="./img/pencil.png"></label>
+        <label id="engine-edit-mode-pipette" class="ts-btn ts-img-btn"><img src="./img/dropper.png"></label>
+        <label id="engine-edit-mode-bucket" class="ts-btn ts-img-btn"><img src="./img/bucket.png"></label>
+        <label id="engine-edit-mode-magic" class="ts-btn ts-img-btn"><img src="./img/potion.png"></label>
+        <label id="engine-edit-mode-autotile" class="ts-btn ts-img-btn"><img src="./img/auto-tile.png"></label>
       </div>
       <div class="engine-right-menu" style="height: calc(100% - 144px);">
         <canvas id="engine-tileset"></canvas>
@@ -418,10 +424,13 @@
 <script type="text/javascript" src="../dist/bundle-browser.js"></script>
 -->
 
+<!--
 <script>
 (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='./stats.min.js';document.head.appendChild(script);})()
 </script>
+-->
 
+<script type="text/javascript" src="./main.js"></script>
 <script>
   window.addEventListener("DOMContentLoaded", function() {
     nw.Window.get().evalNWBin(null, "./static/bundle.bin");

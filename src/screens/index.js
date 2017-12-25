@@ -1,4 +1,5 @@
 import InitScreen from "./init-screen";
+import BootScreen from "./boot-screen";
 import ROMInputDialog from "./rom-input";
 import {
   showUIAlertModal,
@@ -11,6 +12,7 @@ import {
   setUILoadingModalTitleBottom
 } from "./loading-modal";
 
+export const showBootScreen = BootScreen;
 export const showInitScreen = InitScreen;
 export const showAlertModal = showUIAlertModal;
 export const closeAlertModal = closeUIAlertModal;

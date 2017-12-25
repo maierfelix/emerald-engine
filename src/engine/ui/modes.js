@@ -240,6 +240,7 @@ export function processUIMouseInput(e) {
     // autotile
     else if (this.isUIInAutotileMode()) {
       if (this.isSelectionInAutotileFormat(tsSelection)) {
+        if (!this.autoTiling) this.autoTiling = map.cloneData();
         map.drawAutotile(
           nx, ny,
           tileset,
@@ -276,10 +277,8 @@ export function updateUIMouseStats() {
   $("#engine-ui-my").innerHTML = `Y: ${rel.y}`;
   $("#engine-ui-mz").innerHTML = `Z: ${(this.cz).toFixed(2)}${this.lock.cameraZ ? " 🔒" : ""}`;
   // relative to current map position
-  if (map) {
-    $("#engine-ui-rmx").innerHTML = `X: ${rel.x - map.x}`;
-    $("#engine-ui-rmy").innerHTML = `Y: ${rel.y - map.y}`;
-  }
+  $("#engine-ui-rmx").innerHTML = `X: ${rel.x - (map ? map.x : 0)}`;
+  $("#engine-ui-rmy").innerHTML = `Y: ${rel.y - (map ? map.y : 0)}`;
 };
 
 export function setUIMousePosition(x, y) {

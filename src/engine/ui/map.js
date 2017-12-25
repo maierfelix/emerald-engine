@@ -3,8 +3,10 @@ import * as CFG from "../../cfg";
 import {
   $,
   GET,
+  POST,
   assert,
   boundingsMatch,
+  addSessionToQuery,
   getResizeDirection,
   coordsInMapBoundings
 } from "../../utils";
@@ -18,6 +20,11 @@ import Map from "../map/index";
 
 export function setUIMapCursor(cursor) {
   this.map.style.cursor = cursor;
+};
+
+export function refreshUIMaps() {
+  this.refreshUIMapChooseList();
+  this.refreshUIMapOptions();
 };
 
 export function resetUIMapChooseList() {
@@ -42,7 +49,7 @@ export function setUIActiveMap(map) {
     if (cmap === map) {
       $(`#engine-ui-map-select`).selectedIndex = ii;
       this.currentMap = map;
-      this.refreshUIMapMenuByMap(map);
+      this.refreshUIMapOptions(map);
       this.refreshUIMapInteractions(map);
       return;
     }
@@ -73,16 +80,40 @@ export function switchMapByUIContextMenu() {
   this.setUIActiveMap(map);
 };
 
-export function refreshUIMapMenuByMap(map) {
-  this.setUIActiveMapObjects(map);
-  this.setUIActiveMapOptions(map);
+export function refreshUIMapOptions(map) {
+  if (map) {
+    this.setUIActiveMapObjects(map);
+    this.setUIActiveMapOptions(map);
+  } else {
+    this.resetUIActiveMapObjects();
+    this.resetUIActiveMapOptions();
+  }
+};
+
+export function resetUIActiveMapObjects(map) {
+
 };
 
 export function setUIActiveMapObjects(map) {
 
 };
 
+export function resetUIActiveMapOptions() {
+  let elName = $(`#engine-ui-opt-name`);
+  let elShowName = $(`#engine-ui-opt-show-name`);
+  let elType = $(`#engine-ui-opt-type`);
+  let elWeather = $(`#engine-ui-opt-weather`);
+  let elMusic = $(`#engine-ui-opt-music`);
+  elName.value = ``;
+  elShowName.checked = false;
+  elType.selectedIndex = 0;
+  elWeather.selectedIndex = 0;
+  elMusic.selectedIndex = 0;
+  this.resetUIActiveMapEncounters();
+};
+
 export function setUIActiveMapOptions(map) {
+  this.resetUIActiveMapOptions();
   let settings = map.settings;
   let elName = $(`#engine-ui-opt-name`);
   let elShowName = $(`#engine-ui-opt-show-name`);
@@ -94,7 +125,7 @@ export function setUIActiveMapOptions(map) {
   elType.selectedIndex = settings.type || 0;
   elWeather.selectedIndex = settings.weather || 0;
   elMusic.selectedIndex = settings.music || 0;
-  this.onUISetMapSize(map, map.width, map.height);
+  this.setUIActiveMapEncounters(map);
 };
 
 export function onUIUpdateMapSettings(property, value) {
@@ -103,15 +134,6 @@ export function onUIUpdateMapSettings(property, value) {
     console.warn(`Invalid map property ${property}`, map);
   }
   map.settings[property] = value;
-};
-
-export function onUISetMapSize(map, width, height) {
-  let elWidth = $(`#engine-ui-opt-width`);
-  let elHeight = $(`#engine-ui-opt-height`);
-  let dataLoss = (width < map.width || height < map.height);
-  //$(`#engine-ui-resize-map-warning`).style.display = dataLoss ? `flex` : `none`;
-  //elWidth.value = Math.max(1, width || 1);
-  //elHeight.value = Math.max(1, height || 1);
 };
 
 export function onUIMapDelete(map) {
@@ -239,8 +261,14 @@ export function onUIMapResizeFinish() {
 };
 
 export function onUIMapSave() {
-  let json = this.mapsToJSON();
-  console.log(json);
+  let maps = JSON.parse(this.mapsToJSON());
+  let world = this.currentWorld;
+  let data = JSON.stringify({ maps: maps });
+  let query = CFG.ENGINE_TS_SERVER_LOC + `/?cmd=SAVE_WORLD&world=` + world.name + `&data=${data}`;
+  $("#engine-ui-map-save-txt").innerHTML = `Saving...`;
+  POST(addSessionToQuery(query, this.session), 500).then(res => {
+    $("#engine-ui-map-save-txt").innerHTML = `Save`;
+  });
 };
 
 export function onUIPlaceNewMap(map) {

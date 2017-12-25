@@ -25,7 +25,6 @@ export function loadDefaultMap() {
     this.loadTilesetBundleFromServer("dawn").then(bundle => {
       this.useTilesetBundle(bundle);
       this.initUI();
-      this.useTilesetFromBundleByIndex(bundle, $(`#engine-ui-cts-subts`).childNodes.length - 1);
       this.setUIActiveMap(this.maps[0]);
     });
   });
