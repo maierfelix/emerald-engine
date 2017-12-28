@@ -56,6 +56,8 @@ export default function(instance) {
   let checkForUpdate = false;
   let continueProgress = true;
 
+  let currentMessage = "Checking for Updates";
+
   (function update() {
     if (letters.length <= text.length) {
       letters.push(text[letters.length - 1]);
@@ -69,12 +71,25 @@ export default function(instance) {
     let query = CFG.ENGINE_UPDATE_SERVER_LOC + `/?cmd=GET_LATEST_VERSION`;
     GET(query).then(latestVersion => {
       if (latestVersion > version) {
+        currentMessage = "There is an update available!";
         let query = CFG.ENGINE_UPDATE_SERVER_LOC + `/?cmd=GET_UPDATE&version=${latestVersion}`;
         GET_BINARY(query).then(data => {
-          fs.writeFileSync(process.cwd() + "/emerald-engine.exe", data);
-          chrome.runtime.reload();
+          currentMessage = "Installing update";
+          setTimeout(() => {
+            fs.writeFile(__dirname + "/update.bin", data, (err) => {
+              if (err) console.warn(err);
+              currentMessage = "Restarting client";
+              setTimeout(() => {
+                const { spawn } = require("child_process");
+                const subprocess = spawn("node", [__dirname + "/update.js"], {
+                  detached: true,
+                  stdio: "ignore"
+                });
+                nw.App.quit();
+              }, 500);
+            });
+          }, 1e3);
         });
-        console.log("There is an update available!");
       } else {
         continueProgress = true;
       }
@@ -82,7 +97,7 @@ export default function(instance) {
   };
 
   (function draw() {
-    requestAnimationFrame(draw);
+    if (progress <= 100) requestAnimationFrame(draw);
     let msg = letters.join("");
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = "#212123";
@@ -140,7 +155,7 @@ export default function(instance) {
       ctx.fillStyle = "#fff";
       ctx.font = `10px Open sans, sans-serif`;
       let msgBoot = (
-        progress <= 30 ? "Checking for Updates" :
+        progress <= 30 ? currentMessage :
         (progress > 30 && progress <= 70) ? "Resolving assets" :
         "Booting Engine"
       );

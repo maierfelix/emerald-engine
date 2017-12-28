@@ -46,7 +46,10 @@ export function drawMap(map) {
     this.drawMapLayerTexture(1, map, sx, sy, sw, sh, dx, dy, dw, dh);
     this.drawMapLayerTexture(2, map, sx, sy, sw, sh, dx, dy, dw, dh);
   }
-  if (isCurrentMap && this.isActiveTilesetFillMode()) this.drawMapFillPreview(map);
+  if (isCurrentMap) {
+    if (this.isUIInSelectMode()) this.drawMapSelection(map);
+    else if (this.isActiveTilesetFillMode()) this.drawMapFillPreview(map);
+  }
   if (this.isUIInObjectMode()) this.drawMapObjects(map);
   this.drawMapSizeBorder(map);
 };
@@ -96,6 +99,29 @@ export function drawMapFillPreview(map) {
     (map.width * CFG.BLOCK_SIZE) * this.cz, (map.height * CFG.BLOCK_SIZE) * this.cz
   );
   ctx.globalAlpha = 1.0;
+};
+
+export function drawMapSelection(map) {
+  let ctx = this.ctx;
+  let color = CFG.ENGINE_TILESET_SELECT_COLOR;
+  let selection = this.selection.map;
+  let xx = this.cx + ((map.x + selection.x) * CFG.BLOCK_SIZE) * this.cz;
+  let yy = this.cy + ((map.y + selection.y) * CFG.BLOCK_SIZE) * this.cz;
+  let ww = (((selection.w - selection.x) * CFG.BLOCK_SIZE) + CFG.BLOCK_SIZE) * this.cz;
+  let hh = (((selection.h - selection.y) * CFG.BLOCK_SIZE) + CFG.BLOCK_SIZE) * this.cz;
+  ctx.globalAlpha = 0.25;
+  ctx.fillStyle = color;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.0;
+  ctx.fillRect(
+    xx, yy,
+    ww, hh
+  );
+  ctx.globalAlpha = 1.0;
+  ctx.strokeRect(
+    xx, yy,
+    ww, hh
+  );
 };
 
 export function drawMapTileBased(map) {

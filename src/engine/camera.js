@@ -71,6 +71,7 @@ export function mouseClick(e) {
   let x = e.clientX;
   let y = e.clientY - CFG.ENGINE_UI_OFFSET_Y;
   let map = this.currentMap;
+  let rel = this.getRelativeMapTile(x, y);
   // left
   if (e.which === 1) {
     // mouse already pressed, FIXUP!
@@ -78,14 +79,12 @@ export function mouseClick(e) {
     this.drag.ldown = true;
     // map add
     if (this.isUIInMapCreationMode()) {
-      let rel = this.getRelativeMapTile(x, y);
       let add = this.selection.newMap;
       add.sx = rel.x;
       add.sy = rel.y;
     }
     // map resize
     else if (this.isUIInMapResizeMode()) {
-      let rel = this.getRelativeMapTile(x, y);
       let map = this.resizing.map;
       let move = this.selection.mapMove;
       let resize = this.selection.mapResize;
@@ -106,7 +105,13 @@ export function mouseClick(e) {
       }
     }
     else {
-      if (map && !map.isRecordingMutations()) map.createMutatorSession();
+      // start map selection
+      if (this.isUIInSelectMode()) {
+        let selection = this.selection.map;
+        selection.sx = rel.x - map.x;
+        selection.sy = rel.y - map.y;
+      }
+      else if (map && !map.isRecordingMutations()) map.createMutatorSession();
     }
   }
   // middle

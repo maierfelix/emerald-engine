@@ -76,6 +76,7 @@ export default class MapEditor {
       mapMove: { sx: 0, sy: 0, ox: 0, oy: 0 },
       mapResize: { sx: 0, sy: 0, ox: 0, oy: 0, ow: 0, oh: 0, updateCursor: false },
       newMap: { sx: 0, sy: 0, ex: 0, ey: 0, ax: 0, ay: 0, justResized: false },
+      map: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0, ax: 0, ay: 0 },
       tileset: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 }
     };
     this.creation = {
@@ -85,6 +86,7 @@ export default class MapEditor {
       map: null
     };
     this.preview = {
+      map: null,
       tileset: null
     };
     this.redraw = {

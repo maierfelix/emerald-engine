@@ -33,6 +33,9 @@ export function setUIActiveEditMode(mode) {
   this.resetUIActiveEditModes();
   let el = null;
   switch (mode) {
+    case CFG.ENGINE_TS_EDIT.SELECT:
+      el = $(`#engine-edit-mode-select`);
+    break;
     case CFG.ENGINE_TS_EDIT.PENCIL:
       el = $(`#engine-edit-mode-pencil`);
     break;

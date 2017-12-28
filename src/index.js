@@ -32,6 +32,9 @@ import MapEditor from "./engine/";
 import ROMTilesetEditor from "./rom-ts-editor/"
 import TerrainGenerator from "./terrain-generator/";
 
+const path = require("path");
+window.__dirname = path.dirname(process.execPath);
+
 // check browser compatibility
 console.assert(
   (typeof Worker !== "undefined") &&

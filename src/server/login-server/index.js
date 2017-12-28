@@ -26,6 +26,7 @@ class Ticket {
     this.user = user;
     this.timeout = 0; // session timeout
     this.duration = duration; // how long the ticket is valid
+    this.aliveTicker = null; // keeps the mysql connection alive
     this.resetTimeout();
   }
   resetTimeout() {
@@ -108,6 +109,10 @@ LoginServer.prototype.createMySQLConnection = function() {
       if (err) console.log(err);
       else console.log(`[LoginServer] MySQL connection created`);
       this.connection = connection;
+      clearInterval(this.aliveTicker);
+      this.aliveTicker = setInterval(() => {
+        this.connection.query("SELECT 1");
+      }, 75e2);
       resolve();
     });
   });

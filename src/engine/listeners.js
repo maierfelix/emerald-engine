@@ -70,6 +70,9 @@ export function keyDown(e) {
     case "y": case "Y":
       if (e.ctrlKey && !isInActiveMode) this.redoTask();
     break;
+    case "c": case "C":
+      if (this.isUIInSelectMode()) this.updateMapSelectionPreview();
+    break;
   };
 };
 
@@ -225,6 +228,7 @@ export function addTilesetLayerListeners() {
 };
 
 export function addTilesetEditModeListeners() {
+  $(`#engine-edit-mode-select`).onclick = (e) => this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.SELECT);
   $(`#engine-edit-mode-pencil`).onclick = (e) => this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.PENCIL);
   $(`#engine-edit-mode-pipette`).onclick = (e) => this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.PIPETTE);
   $(`#engine-edit-mode-bucket`).onclick = (e) => this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.BUCKET);

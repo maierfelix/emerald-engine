@@ -216,6 +216,7 @@ img {
 #engine-ui-ts * .ts-img-btn {
   height: 16px;
   padding-top: 5px;
+  margin-left: 4px;
 }
 
 #final-layer-wrapper-title {
@@ -278,7 +279,6 @@ img {
 .ts-img-btn {
   margin-top: 0px !important;
   display: flex;
-  justify-content: center;
   align-items: center;
   padding: 10px;
   padding-bottom: 4px;

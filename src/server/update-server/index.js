@@ -65,10 +65,12 @@ UpdateServer.prototype.processHTTPLatestVersionRequest = function(queries, resp)
 UpdateServer.prototype.processHTTPUpdateRequest = function(queries, resp) {
   let version = path.basename(queries.version);
   let loc = process.cwd() + `/data/updates/${version}.exe`;
-  if (fs.existsSync(loc)) {
-    resp.write(fs.readFileSync(loc));
-    resp.end();
-  } else {
-    send404(resp);
-  }
+  fs.exists(loc, exists => {
+    if (exists) {
+      resp.write(fs.readFileSync(loc));
+      resp.end();
+    } else {
+      send404(resp);
+    }
+  });
 };

@@ -6,8 +6,43 @@ import {
 } from "../../utils";
 
 export function drawMousePreview() {
-  if (this.isUIInTilesetMode()) this.drawTilesetSelectionPreview();
+  if (this.isUIInTilesetMode()) {
+    if (this.isUIInSelectMode()) {
+      this.drawSelectionPreview();
+    } else {
+      this.drawTilesetSelectionPreview();
+    }
+  }
   else if (this.isUIInObjectMode()) this.drawObjectPreview();
+};
+
+export function drawSelectionPreview() {
+  let ctx = this.ctx;
+  let buffer = this.preview.map;
+  let sel = this.selection.map;
+  let rel = getRelativeTile(this.mx - this.cx, this.my - this.cy, this.cz);
+  let x = rel.x - (sel.ax * CFG.BLOCK_SIZE);
+  let y = rel.y - (sel.ay * CFG.BLOCK_SIZE);
+  if (buffer === null) return;
+  let xx = this.cx + (x * this.cz);
+  let yy = this.cy + (y * this.cz);
+  let ww = buffer.width * this.cz;
+  let hh = buffer.height * this.cz;
+  ctx.globalAlpha = 0.4;
+  ctx.drawImage(
+    buffer,
+    0, 0,
+    buffer.width, buffer.height,
+    xx, yy,
+    ww, hh
+  );
+  ctx.lineWidth = 2.0;
+  ctx.strokeStyle = CFG.ENGINE_TILESET_SELECT_COLOR;
+  ctx.strokeRect(
+    xx, yy,
+    ww, hh
+  );
+  ctx.globalAlpha = 1.0;
 };
 
 export function drawTilesetSelectionPreview() {

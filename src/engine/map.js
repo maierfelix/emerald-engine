@@ -5,7 +5,8 @@ import {
   GET,
   rectIntersect,
   getRelativeTile,
-  addSessionToQuery
+  addSessionToQuery,
+  createCanvasBuffer
 } from "../utils";
 
 import Map from "./map/index";
@@ -164,4 +165,56 @@ export function getMapObjectByPosition(x, y) {
     };
   };
   return null;
+};
+
+export function resetMapSelection() {
+  this.preview.map = null;
+  this.selection.map = { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 };
+};
+
+export function setMapSelection(x, y, w, h) {
+  let selection = this.selection.map;
+  selection.x = x;
+  selection.y = y;
+  selection.w = w;
+  selection.h = h;
+  if (this.isUIInSelectMode()) this.updateMapSelectionPreview();
+};
+
+export function updateMapSelectionPreview() {
+  let sel = this.selection.map;
+  let map = this.currentMap;
+  let layer = this.currentLayer;
+  let buffer = this.bufferMapSelectionPreview(map, sel, layer);
+  this.preview.map = buffer;
+};
+
+export function bufferMapSelectionPreview(map, sel, layer) {
+  let xx = sel.x;
+  let yy = sel.y;
+  let ww = (sel.w - xx + 1);
+  let hh = (sel.h - yy + 1);
+  let scale = CFG.BLOCK_SIZE;
+  let buffer = createCanvasBuffer(ww * scale, hh * scale).ctx;
+  let tiles = [];
+  let layers = layer === 4 ? 4 : 1;
+  for (let ll = 1; ll <= layers; ++ll) {
+    let ly = layers === 4 ? ll : layer;
+    for (let ii = 0; ii < ww * hh; ++ii) {
+      let x = (ii % ww) | 0;
+      let y = (ii / ww) | 0;
+      let tile = map.getTileInformationAt(x + xx, y + yy, ly);
+      if (tile === null) continue;
+      let tileset = this.bundles[tile.bundleId].tilesets[tile.tilesetId].canvas;
+      buffer.drawImage(
+        tileset,
+        tile.x * scale, tile.y * scale,
+        scale, scale,
+        x * scale, y * scale,
+        scale, scale
+      );
+      tiles.push(tile);
+    };
+  };
+  return buffer.canvas;
 };

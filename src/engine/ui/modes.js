@@ -40,6 +40,10 @@ export function isUIInCreationMode() {
   return this.isUIInMapCreationMode();
 };
 
+export function isUIInSelectMode() {
+  return this.tsEditMode === CFG.ENGINE_TS_EDIT.SELECT;
+};
+
 export function isUIInPencilMode() {
   return this.tsEditMode === CFG.ENGINE_TS_EDIT.PENCIL;
 };
@@ -214,13 +218,25 @@ export function processUIMouseInput(e) {
       entity.y = rel.y;
     }
   }
-  // tile drawing
+  // ts mode
   else if (this.isUIInTilesetMode()) {
     // normalized coordinates
     let nx = rel.x - map.x;
     let ny = rel.y - map.y;
+    // selection
+    if (this.isUIInSelectMode()) {
+      let selection = this.selection.map;
+      let sel = getNormalizedSelection(
+        nx, ny,
+        selection.sx, selection.sy
+      );
+      this.selection.map.ax = rel.x - sel.x;
+      this.selection.map.ay = rel.y - sel.y;
+      this.setMapSelection(sel.x, sel.y, sel.w, sel.h);
+      this.updateMapSelectionPreview();
+    }
     // pencil
-    if (this.isUIInPencilMode()) {
+    else if (this.isUIInPencilMode()) {
       let normalizedSel = {
         x: tsSelection.x / CFG.BLOCK_SIZE,
         y: tsSelection.y / CFG.BLOCK_SIZE,

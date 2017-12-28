@@ -169,11 +169,12 @@ export const ENGINE_TS_LAYERS = {
 };
 
 export const ENGINE_TS_EDIT = {
-  PENCIL: 1,
-  PIPETTE: 2,
-  BUCKET: 3,
-  MAGIC: 4,
-  AUTOTILE: 5
+  SELECT: 1,
+  PENCIL: 2,
+  PIPETTE: 3,
+  BUCKET: 4,
+  MAGIC: 5,
+  AUTOTILE: 6
 };
 
 export const ENGINE_ENCOUNTER_DEFAULTS = {

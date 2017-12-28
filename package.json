@@ -1,6 +1,6 @@
 {
   "name": "emerald-engine",
-  "version": "0.3.2",
+  "version": "0.3.5",
   "description": "",
   "license": "MIT",
   "repository": {
@@ -11,7 +11,13 @@
   "main": "./static/index.html?mode=map-editor",
   "window": {
     "frame": false,
-    "toolbar": false
+    "toolbar": false,
+    "position": "center",
+    "icon": "./static/img/emerald-engine.png",
+    "width": 1280,
+    "height": 640,
+    "min_width": 1280,
+    "min_height": 640
   },
   "browser": "dist/bundle-browser.js",
   "server": "dist/bundle-server.js",
