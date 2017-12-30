@@ -108,8 +108,8 @@ export function mouseClick(e) {
       // start map selection
       if (this.isUIInSelectMode()) {
         let selection = this.selection.map;
-        selection.sx = rel.x - map.x;
-        selection.sy = rel.y - map.y;
+        selection.sx = rel.x;
+        selection.sy = rel.y;
       }
       else if (map && !map.isRecordingMutations()) map.createMutatorSession();
     }

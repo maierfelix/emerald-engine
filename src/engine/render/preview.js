@@ -24,15 +24,17 @@ export function drawSelectionPreview() {
   let x = rel.x - (sel.ax * CFG.BLOCK_SIZE);
   let y = rel.y - (sel.ay * CFG.BLOCK_SIZE);
   if (buffer === null) return;
+  let width = ((sel.w - sel.x) + 1) * CFG.BLOCK_SIZE;
+  let height = ((sel.h - sel.y) + 1) * CFG.BLOCK_SIZE;
   let xx = this.cx + (x * this.cz);
   let yy = this.cy + (y * this.cz);
-  let ww = buffer.width * this.cz;
-  let hh = buffer.height * this.cz;
+  let ww = width * this.cz;
+  let hh = height * this.cz;
   ctx.globalAlpha = 0.4;
   ctx.drawImage(
     buffer,
     0, 0,
-    buffer.width, buffer.height,
+    width, height,
     xx, yy,
     ww, hh
   );

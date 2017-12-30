@@ -64,6 +64,9 @@ export function keyDown(e) {
         this.endCommitSession();
       }
     break;
+    case "s": case "S":
+      if (e.ctrlKey && !isInActiveMode) this.onUIMapSave();
+    break;
     case "z": case "Z":
       if (e.ctrlKey && !isInActiveMode) this.undoTask();
     break;
@@ -71,7 +74,13 @@ export function keyDown(e) {
       if (e.ctrlKey && !isInActiveMode) this.redoTask();
     break;
     case "c": case "C":
-      if (this.isUIInSelectMode()) this.updateMapSelectionPreview();
+      if (e.ctrlKey && !isInActiveMode) if (this.isUIInSelectMode()) this.onUICopyMapSelection();
+    break;
+    case "v": case "V":
+      if (e.ctrlKey && !isInActiveMode) if (this.isUIInSelectMode()) this.onUIPasteMapSelection();
+    break;
+    case "x": case "X":
+      if (e.ctrlKey && !isInActiveMode) if (this.isUIInSelectMode()) this.onUICutMapSelection();
     break;
   };
 };

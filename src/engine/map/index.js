@@ -10,13 +10,16 @@ import extend from "../../extend";
 
 import Engine from "../index";
 
+import * as _data from "./data";
 import * as _fill from "./fill";
 import * as _tile from "./tile";
 import * as _json from "./json";
+import * as _mutator from "./mutator";
 import * as _objects from "./objects";
 import * as _settings from "./settings";
 import * as _textures from "./texture";
 import * as _autotile from "./autotile";
+import * as _boundings from "./boundings";
 import * as _encounters from "./encounters";
 
 export default class Map {
@@ -40,13 +43,7 @@ export default class Map {
       1: null,
       2: null
     };
-    this.objects = [
-      {
-        x: 3, y: 2,
-        kind: CFG.ENGINE_BOX_TYPES.ENTITY,
-        width: 1, height: 1
-      }
-    ];
+    this.objects = [];
     this.instance = instance;
     this.collisions = [];
     this.encounters = [];
@@ -70,96 +67,10 @@ Map.prototype.init = function() {
   this.setBoundings(this.width, this.height);
 };
 
-Map.prototype.createMutatorSession = function() {
-  this.resetMutatorSession();
-  this.recordMutations = true;
-};
-
-Map.prototype.resetMutatorSession = function() {
-  this.mutations = [];
-  this.recordMutations = false;
-};
-
-Map.prototype.isRecordingMutations = function() {
-  return this.recordMutations === true;
-};
-
-Map.prototype.endMutatorSession = function() {
-  let mutations = this.mutations;
-  this.resetMutatorSession();
-  return mutations;
-};
-
-Map.prototype.tileAlreadyMutated = function(x, y, layer) {
-  if (!this.isRecordingMutations()) return true;
-  let muts = this.mutations;
-  let length = muts.length;
-  for (let ii = 0; ii < length; ++ii) {
-    let mut = muts[ii];
-    if (mut.tx === x && mut.ty === y && mut.layer === layer) return true;
-  };
-  return false;
-};
-
-Map.prototype.getTileMutationAt = function(x, y, layer) {
-  let muts = this.mutations;
-  let length = muts.length;
-  for (let ii = 0; ii < length; ++ii) {
-    let mut = muts[ii];
-    if (mut.tx === x && mut.ty === y && mut.layer === layer) return mut;
-  };
-  return null;
-};
-
 Map.prototype.getName = function() {
   let settings = this.settings;
-  if (!settings.name.length) {
-    return `Unnamed Map`;
-  } else {
-    return settings.name;
-  }
-};
-
-Map.prototype.setBoundings = function(width, height) {
-  this.width = width;
-  this.height = height;
-  this.initTextures(width * CFG.BLOCK_SIZE, height * CFG.BLOCK_SIZE);
-  this.resizeTextures(width * CFG.BLOCK_SIZE, height * CFG.BLOCK_SIZE);
-  return this;
-};
-
-Map.prototype.getBoundings = function() {
-  return {
-    x: this.x,
-    y: this.y,
-    w: this.width,
-    h: this.height
-  };
-};
-
-Map.prototype.getMarginBoundings = function() {
-  let bounds = this.getBoundings();
-  let margin = this.margin;
-  return {
-    x: bounds.x + margin.x,
-    y: bounds.y + margin.y,
-    w: bounds.w + margin.w - margin.x,
-    h: bounds.h + margin.h - margin.y
-  };
-};
-
-Map.prototype.isMarginBoundingsValid = function() {
-  let bounds = this.getMarginBoundings();
-  return (
-    bounds.w >= CFG.ENGINE_MAP_MIN_WIDTH &&
-    bounds.h >= CFG.ENGINE_MAP_MIN_HEIGHT
-  );
-};
-
-Map.prototype.resetMargins = function() {
-  let margin = this.margin;
-  margin.x = margin.y = 0;
-  margin.w = margin.h = 0;
+  if (!settings.name.length) return CFG.ENGINE_DEFAULT_MAP_NAME;
+  return settings.name;
 };
 
 Map.prototype.resize = function(x, y, width, height) {
@@ -172,107 +83,14 @@ Map.prototype.resize = function(x, y, width, height) {
   this.resetMargins();
 };
 
-Map.prototype.resizeDataLayers = function(x, y, width, height) {
-  let bundles = this.data;
-  let instance = this.instance;
-  for (let bundleId in bundles) {
-    let bundle = bundles[bundleId];
-    for (let tsId in bundle) {
-      let ts = bundle[tsId];
-      for (let ll in ts) {
-        let data = ts[ll];
-        let buffer = new Uint16Array(width * height);
-        for (let ii = 0; ii < this.width * this.height; ++ii) {
-          let xx = (ii % this.width) | 0;
-          let yy = (ii / this.width) | 0;
-          let opx = (yy * this.width + xx) | 0;
-          let npx = opx + (yy * (width - this.width)) + (this.x - x) + ((this.y - y) * width);
-          if (xx < (x - this.x) || yy < (y - this.y)) continue;
-          buffer[npx] = data[opx];
-        };
-        ts[ll] = buffer;
-      };
-    };
-  };
-};
-
-Map.prototype.useData = function(bundles, byReference = false) {
-  // create a reference to the input data
-  if (byReference) {
-    this.data = bundles;
-    return;
-  }
-  let data = this.data = {};
-  for (let bundleId in bundles) {
-    let bundle = bundles[bundleId];
-    data[bundleId] = {};
-    for (let tsId in bundle) {
-      let layers = bundle[tsId];
-      data[bundleId][tsId] = {
-        1: new Uint16Array(layers[1]),
-        2: new Uint16Array(layers[2]),
-        3: new Uint16Array(layers[3])
-      };
-    };
-  };
-};
-
-Map.prototype.destroy = function() {
-  this.textures[0] = null;
-  this.textures[1] = null;
-  this.textures[2] = null;
-  this.textures["preview"] = null;
-  this.instance.gl.freeTexture(this.texturesGL[0]); this.texturesGL[0] = null;
-  this.instance.gl.freeTexture(this.texturesGL[1]); this.texturesGL[1] = null;
-  this.instance.gl.freeTexture(this.texturesGL[2]); this.texturesGL[2] = null;
-};
-
-Map.prototype.dataLayerMissing = function(tileset) {
-  let tsId = tileset.name;
-  let bundleId = tileset.bundle.name;
-  return (
-    (this.data[bundleId] === void 0) ||
-    (this.data[bundleId][tsId] === void 0)
-  );
-};
-
-Map.prototype.createDataLayer = function(tileset, width, height) {
-  let size = (width * height) | 0;
-  let tsId = tileset.name;
-  let bundleId = tileset.bundle.name;
-  // allocate bundle data
-  if (!this.data[bundleId]) this.data[bundleId] = {};
-  this.data[bundleId][tsId] = {
-    1: new Uint16Array(size),
-    2: new Uint16Array(size),
-    3: new Uint16Array(size)
-  };
-};
-
-Map.prototype.coordsInBounds = function(x, y) {
-  return (
-    (x >= 0 && x < this.width) &&
-    (y >= 0 && y < this.height)
-  );
-};
-
-Map.prototype.isInView = function() {
-  let instance = this.instance;
-  let xx = instance.cx + ((this.x * CFG.BLOCK_SIZE) * instance.cz) | 0;
-  let yy = instance.cy + ((this.y * CFG.BLOCK_SIZE) * instance.cz) | 0;
-  let ww = ((this.width * CFG.BLOCK_SIZE) * instance.cz) | 0;
-  let hh = ((this.height * CFG.BLOCK_SIZE) * instance.cz) | 0;
-  return (
-    (xx + ww >= 0 && xx <= instance.width) &&
-    (yy + hh >= 0 && yy <= instance.height)
-  );
-};
-
+extend(Map, _data);
 extend(Map, _fill);
 extend(Map, _tile);
 extend(Map, _json);
+extend(Map, _mutator);
 extend(Map, _objects);
 extend(Map, _settings);
 extend(Map, _textures);
 extend(Map, _autotile);
+extend(Map, _boundings);
 extend(Map, _encounters);

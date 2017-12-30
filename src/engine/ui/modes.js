@@ -40,40 +40,74 @@ export function isUIInCreationMode() {
   return this.isUIInMapCreationMode();
 };
 
+export function isUIInMapEditingMode() {
+  return (
+    this.isUIInMapResizeMode() ||
+    this.isUIInCreationMode()
+  );
+};
+
 export function isUIInSelectMode() {
-  return this.tsEditMode === CFG.ENGINE_TS_EDIT.SELECT;
+  return (
+    this.isUIInTilesetMode() &&
+    this.tsEditMode === CFG.ENGINE_TS_EDIT.SELECT
+  );
 };
 
 export function isUIInPencilMode() {
-  return this.tsEditMode === CFG.ENGINE_TS_EDIT.PENCIL;
+  return (
+    this.isUIInTilesetMode() &&
+    this.tsEditMode === CFG.ENGINE_TS_EDIT.PENCIL
+  );
 };
 
 export function isUIInPipetteMode() {
-  return this.tsEditMode === CFG.ENGINE_TS_EDIT.PIPETTE;
+  return (
+    this.isUIInTilesetMode() &&
+    this.tsEditMode === CFG.ENGINE_TS_EDIT.PIPETTE
+  );
 };
 
 export function isUIInBucketFillMode() {
-  return this.tsEditMode === CFG.ENGINE_TS_EDIT.BUCKET;
+  return (
+    this.isUIInTilesetMode() &&
+    this.tsEditMode === CFG.ENGINE_TS_EDIT.BUCKET
+  );
 };
 
 export function isUIInMagicFillMode() {
-  return this.tsEditMode === CFG.ENGINE_TS_EDIT.MAGIC;
+  return (
+    this.isUIInTilesetMode() &&
+    this.tsEditMode === CFG.ENGINE_TS_EDIT.MAGIC
+  );
 };
 
 export function isUIInAutotileMode() {
-  return this.tsEditMode === CFG.ENGINE_TS_EDIT.AUTOTILE;
+  return (
+    this.isUIInTilesetMode() &&
+    this.tsEditMode === CFG.ENGINE_TS_EDIT.AUTOTILE
+  );
 };
 
 export function isUIInTilesetMode() {
-  return this.mode === CFG.ENGINE_MODE_TS;
+  return (
+    !this.isUIInMapEditingMode() &&
+    this.mode === CFG.ENGINE_MODE_TS
+  );
 };
 
 export function isUIInObjectMode() {
-  return this.mode === CFG.ENGINE_MODE_OBJ;
+  return (
+    !this.isUIInMapEditingMode() &&
+    this.mode === CFG.ENGINE_MODE_OBJ
+  );
 };
 
 export function isUIInOptionMode() {
-  return this.mode === CFG.ENGINE_MODE_OPT;
+  return (
+    !this.isUIInMapEditingMode() &&
+    this.mode === CFG.ENGINE_MODE_OPT
+  );
 };
 
 export function isUIInMapCreationMode() {
@@ -96,8 +130,7 @@ export function isUIInAnyActiveMode() {
   return (
     isLoadingModalActive() ||
     this.isLeftMousePressed() ||
-    this.isUIInMapCreationMode() ||
-    this.isUIInMapResizeMode()
+    this.isUIInMapEditingMode()
   );
 };
 
@@ -227,11 +260,11 @@ export function processUIMouseInput(e) {
     if (this.isUIInSelectMode()) {
       let selection = this.selection.map;
       let sel = getNormalizedSelection(
-        nx, ny,
+        rel.x, rel.y,
         selection.sx, selection.sy
       );
-      this.selection.map.ax = rel.x - sel.x;
-      this.selection.map.ay = rel.y - sel.y;
+      this.selection.map.ax = (rel.x - sel.x);
+      this.selection.map.ay = (rel.y - sel.y);
       this.setMapSelection(sel.x, sel.y, sel.w, sel.h);
       this.updateMapSelectionPreview();
     }

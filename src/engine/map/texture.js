@@ -5,6 +5,19 @@ import {
   createCanvasBuffer
 } from "../../utils";
 
+export function destroy() {
+  this.textures[0] = null;
+  this.textures[1] = null;
+  this.textures[2] = null;
+  this.textures["preview"] = null;
+  this.instance.gl.freeTexture(this.texturesGL[0]);
+  this.instance.gl.freeTexture(this.texturesGL[1]);
+  this.instance.gl.freeTexture(this.texturesGL[2]);
+  this.texturesGL[0] = null;
+  this.texturesGL[1] = null;
+  this.texturesGL[2] = null;
+};
+
 export function initTextures(width, height) {
   this.textures[0] = createCanvasBuffer(width, height).ctx;
   this.textures[1] = createCanvasBuffer(width, height).ctx;

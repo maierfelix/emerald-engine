@@ -18,6 +18,7 @@ export function drawMaps() {
 export function drawMap(map) {
   if (map === null) return;
   let ctx = this.ctx;
+  let layer = this.currentLayer;
   let isResizing = (this.resizing.map === map);
   let isCurrentMap = (this.currentMap === map);
   let sx = 0;
@@ -48,7 +49,7 @@ export function drawMap(map) {
   }
   if (isCurrentMap) {
     if (this.isUIInSelectMode()) this.drawMapSelection(map);
-    else if (this.isActiveTilesetFillMode()) this.drawMapFillPreview(map);
+    else if (this.isActiveTilesetFillMode() && layer !== 4) this.drawMapFillPreview(map);
   }
   if (this.isUIInObjectMode()) this.drawMapObjects(map);
   this.drawMapSizeBorder(map);
@@ -105,8 +106,8 @@ export function drawMapSelection(map) {
   let ctx = this.ctx;
   let color = CFG.ENGINE_TILESET_SELECT_COLOR;
   let selection = this.selection.map;
-  let xx = this.cx + ((map.x + selection.x) * CFG.BLOCK_SIZE) * this.cz;
-  let yy = this.cy + ((map.y + selection.y) * CFG.BLOCK_SIZE) * this.cz;
+  let xx = this.cx + (selection.x * CFG.BLOCK_SIZE) * this.cz;
+  let yy = this.cy + (selection.y * CFG.BLOCK_SIZE) * this.cz;
   let ww = (((selection.w - selection.x) * CFG.BLOCK_SIZE) + CFG.BLOCK_SIZE) * this.cz;
   let hh = (((selection.h - selection.y) * CFG.BLOCK_SIZE) + CFG.BLOCK_SIZE) * this.cz;
   ctx.globalAlpha = 0.25;

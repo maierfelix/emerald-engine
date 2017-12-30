@@ -80,7 +80,7 @@ export const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER;
 
 export const ENGINE_TASK_UNDO = 0;
 export const ENGINE_TASK_REDO = 1;
-export const ENGINE_MAX_STATE_LEVELS = 42;
+export const ENGINE_MAX_STATE_LEVELS = 48;
 export const ENGINE_TASKS = {
   MAP_TILE_CHANGE: 1,
   MAP_DELETE: 2,
@@ -123,6 +123,8 @@ export const ENGINE_MAP_BORDER = {
   ACTIVE: `rgba(255,0,0,0.75)`,
   INACTIVE: `rgba(0,0,0,0.75)`
 };
+
+export const ENGINE_DEFAULT_MAP_NAME = `Unnamed Map`;
 
 export const ENGINE_FILL_PREVIEW_COLOR = `black`;
 

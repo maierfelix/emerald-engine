@@ -114,6 +114,8 @@ export default class MapEditor {
     this.tasks = [];
     this.currentCommit = null;
     this.autoTiling = null;
+    this.selectedTiles = [];
+    this.tileCopy = null;
     this.setup();
   }
 };
@@ -174,18 +176,18 @@ MapEditor.prototype.endCommitSession = function() {
   for (let ii = 0; ii < maps.length; ++ii) {
     let map = maps[ii];
     if (!map.isRecordingMutations()) continue;
-    let mut = map.endMutatorSession();
-    if (mut.length) {
+    let mutations = map.endMutatorSession();
+    if (mutations.length) {
       if (this.autoTiling) {
         this.commitTask({
           kind: CFG.ENGINE_TASKS.MAP_AUTOTILE,
-          changes: mut,
+          changes: mutations,
           original: this.autoTiling
         });
       } else {
         this.commitTask({
           kind: CFG.ENGINE_TASKS.MAP_TILE_CHANGE,
-          changes: mut
+          changes: mutations
         });
       }
     }

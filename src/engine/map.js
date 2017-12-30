@@ -185,26 +185,39 @@ export function updateMapSelectionPreview() {
   let sel = this.selection.map;
   let map = this.currentMap;
   let layer = this.currentLayer;
-  let buffer = this.bufferMapSelectionPreview(map, sel, layer);
-  this.preview.map = buffer;
+  let buffer = this.bufferMapSelection(map, sel, layer);
+  this.selectedTiles = buffer.tiles;
+  this.preview.map = buffer.preview;
 };
 
-export function bufferMapSelectionPreview(map, sel, layer) {
-  let xx = sel.x;
-  let yy = sel.y;
-  let ww = (sel.w - xx + 1);
-  let hh = (sel.h - yy + 1);
+export function bufferMapSelection(map, sel, layer) {
+  let xx = sel.x - map.x;
+  let yy = sel.y - map.y;
+  let ww = ((sel.w - map.x) - xx + 1);
+  let hh = ((sel.h - map.y) - yy + 1);
   let scale = CFG.BLOCK_SIZE;
   let buffer = createCanvasBuffer(ww * scale, hh * scale).ctx;
   let tiles = [];
   let layers = layer === 4 ? 4 : 1;
+  let currentBundleId = this.currentTileset.bundle.name;
+  let currentTilesetId = this.currentTileset.name;
   for (let ll = 1; ll <= layers; ++ll) {
     let ly = layers === 4 ? ll : layer;
+    if (ly === 4) continue; // ignore layer 4
     for (let ii = 0; ii < ww * hh; ++ii) {
       let x = (ii % ww) | 0;
       let y = (ii / ww) | 0;
       let tile = map.getTileInformationAt(x + xx, y + yy, ly);
-      if (tile === null) continue;
+      // tile is empty, create a fake tile
+      if (tile === null) {
+        tile = {
+          x: -1,
+          y: -1,
+          tile: -1,
+          bundleId: currentBundleId,
+          tilesetId: currentTilesetId
+        };
+      }
       let tileset = this.bundles[tile.bundleId].tilesets[tile.tilesetId].canvas;
       buffer.drawImage(
         tileset,
@@ -213,8 +226,14 @@ export function bufferMapSelectionPreview(map, sel, layer) {
         x * scale, y * scale,
         scale, scale
       );
+      tile.tx = x;
+      tile.ty = y;
+      tile.layer = ly;
       tiles.push(tile);
     };
   };
-  return buffer.canvas;
+  return {
+    tiles,
+    preview: buffer.canvas
+  }
 };

@@ -159,7 +159,9 @@ export function executeMapTileDraw(task, state) {
     // we allow to undo/redo on multiple maps in one task
     if (maps.indexOf(map) <= -1) {
       maps.push(map);
-      updates.push({ map, layer });
+      updates.push({ map, layers: [layer] });
+    } else {
+      updates[maps.indexOf(map)].layers.push(layer);
     }
     map.drawTileBuffered(tileset, sx, sy, change.tx, change.ty, layer);
   };
@@ -167,14 +169,17 @@ export function executeMapTileDraw(task, state) {
   for (let ii = 0; ii < updates.length; ++ii) {
     let update = updates[ii];
     let map = update.map;
-    let layer = update.layer;
-    let texture = map.textures[layer - 1];
-    let textureGL = map.texturesGL[layer - 1];
-    this.gl.updateGLTextureByCanvas(
-      textureGL,
-      texture.canvas,
-      0, 0
-    );
+    let layers = update.layers;
+    for (let ll = 0; ll < layers.length; ++ll) {
+      let layer = layers[ll];
+      let texture = map.textures[layer - 1];
+      let textureGL = map.texturesGL[layer - 1];
+      this.gl.updateGLTextureByCanvas(
+        textureGL,
+        texture.canvas,
+        0, 0
+      );
+    };
   };
   // when UI is in fill mode, redraw the fill preview
   if (this.isUIInFillMode()) this.onUIMapFill(this.mx, this.my, true);
