@@ -9,22 +9,29 @@ export function drawMapObjects(map) {
     let y = this.cy + ((map.y + object.y) * CFG.BLOCK_SIZE) * this.cz;
     let width = (object.width * CFG.BLOCK_SIZE) * this.cz;
     let height = (object.height * CFG.BLOCK_SIZE) * this.cz;
+    let isActiveObject = this.currentObject === object;
     this.drawTextBox(
       x, y,
       width, height,
       object.kind.label,
-      object.kind.color
+      object.kind.color,
+      isActiveObject
     );
   };
 };
 
-export function drawTextBox(x, y, width, height, text, boxColor) {
+export function drawTextBox(x, y, width, height, text, boxColor, isActive) {
   let ctx = this.ctx;
   let fontSize = 14 * this.cz;
-  let strokeColor = `rgba(${boxColor[0]},${boxColor[1]},${boxColor[2]},0.925)`;
+  let strokeColor = `rgba(${boxColor[0]},${boxColor[1]},${boxColor[2]},0.95)`;
+  let fillColor = `rgba(${boxColor[0]},${boxColor[1]},${boxColor[2]},0.55)`;
+
+  if (isActive) ctx.fillStyle = `rgba(255,0,0,0.75)`;
+  else ctx.fillStyle = fillColor;
+  if (isActive) ctx.strokeStyle = `rgba(255,0,0,0.95)`;
+  else ctx.strokeStyle = strokeColor;
+
   // fill box
-  ctx.fillStyle = `rgba(${boxColor[0]},${boxColor[1]},${boxColor[2]},0.4)`;
-  ctx.strokeStyle = strokeColor;
   ctx.lineWidth = 0.65 * this.cz;
   ctx.fillRect(
     x, y,
@@ -34,6 +41,7 @@ export function drawTextBox(x, y, width, height, text, boxColor) {
     x, y,
     width, height
   );
+  ctx.globalAlpha = 1.0;
   // measure text size
   ctx.font = `${fontSize}px Open Sans`;
   let xpad = ctx.measureText(`E`).width;

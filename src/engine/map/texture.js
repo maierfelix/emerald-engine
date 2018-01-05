@@ -64,7 +64,6 @@ export function refreshMapTextures() {
         let data = ts[ll];
         let layer = (ll | 0) - 1;
         let texture = this.textures[layer];
-        let textureGL = this.texturesGL[layer];
         let size = width * height;
         for (let ii = 0; ii < size; ++ii) {
           let xx = (ii % width) | 0;
@@ -101,5 +100,20 @@ export function refreshGLTexture(layer) {
     textureGL,
     texture.canvas,
     0, 0
+  );
+};
+
+export function clearTextures(width, height) {
+  this.clearTexture(this.textures[0]);
+  this.clearTexture(this.textures[1]);
+  this.clearTexture(this.textures[2]);
+  this.clearTexture(this.textures["preview"]);
+};
+
+export function clearTexture(texture) {
+  let canvas = texture.canvas;
+  texture.clearRect(
+    0, 0,
+    canvas.width, canvas.height
   );
 };

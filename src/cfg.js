@@ -86,7 +86,11 @@ export const ENGINE_TASKS = {
   MAP_DELETE: 2,
   MAP_CREATE: 3,
   MAP_RESIZE: 4,
-  MAP_AUTOTILE: 5
+  MAP_AUTOTILE: 5,
+  OBJECT_MOVE: 6,
+  OBJECT_CREATE: 7,
+  OBJECT_DELETE: 8,
+  OBJECT_PROPERTY: 9
 };
 
 export const STORAGE_MAIN_KEY = `EMERALD`;
@@ -149,11 +153,12 @@ export const ENGINE_MODE_OBJ = 2;
 export const ENGINE_MODE_OPT = 3;
 
 export const ENGINE_OBJ_MODE = {
-  0: "PERSON",
-  1: "WARP",
-  2: "SCRIPT",
-  3: "SIGN",
-  4: "ENCOUNTER"
+  0: "ENTITY",
+  1: "PERSON",
+  2: "WARP",
+  3: "SCRIPT",
+  4: "SIGN",
+  5: "ENCOUNTER"
 };
 
 export const ENGINE_ENCOUNTER_MODE = {
@@ -166,8 +171,7 @@ export const ENGINE_TS_LAYERS = {
   BG: 1,
   BGB: 2,
   FG: 3,
-  PREVIEW: 4,
-  COLLISION: 5
+  PREVIEW: 4
 };
 
 export const ENGINE_TS_EDIT = {
@@ -198,6 +202,9 @@ export const ENGINE_MAP_MAX_WIDTH = 96;
 export const ENGINE_MAP_MAX_HEIGHT = 96;
 
 export const ENGINE_WEBGL_TEX_LIMIT = 256;
+
+export const ENGINE_PLUGIN_PATH = `./plugins/`;
+export const ENGINE_PLUGIN_ENTITY_PATH = ENGINE_PLUGIN_PATH + "entities/";
 
 export const ENGINE_RENDERER = {
   GL: 1,

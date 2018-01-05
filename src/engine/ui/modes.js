@@ -18,121 +18,11 @@ import {
 
 import {
   showAlertModal,
-  closeAlertModal,
-  isLoadingModalActive
+  closeAlertModal
 } from "../../screens/index";
 
 import Map from "../map/index";
 import Storage from "../../storage";
-
-export function isActiveTilesetFillMode() {
-  return (
-    this.isUIInTilesetMode() &&
-    (this.isUIInBucketFillMode() || this.isUIInMagicFillMode())
-  );
-};
-
-export function isUIInFillMode() {
-  return this.isActiveTilesetFillMode();
-};
-
-export function isUIInCreationMode() {
-  return this.isUIInMapCreationMode();
-};
-
-export function isUIInMapEditingMode() {
-  return (
-    this.isUIInMapResizeMode() ||
-    this.isUIInCreationMode()
-  );
-};
-
-export function isUIInSelectMode() {
-  return (
-    this.isUIInTilesetMode() &&
-    this.tsEditMode === CFG.ENGINE_TS_EDIT.SELECT
-  );
-};
-
-export function isUIInPencilMode() {
-  return (
-    this.isUIInTilesetMode() &&
-    this.tsEditMode === CFG.ENGINE_TS_EDIT.PENCIL
-  );
-};
-
-export function isUIInPipetteMode() {
-  return (
-    this.isUIInTilesetMode() &&
-    this.tsEditMode === CFG.ENGINE_TS_EDIT.PIPETTE
-  );
-};
-
-export function isUIInBucketFillMode() {
-  return (
-    this.isUIInTilesetMode() &&
-    this.tsEditMode === CFG.ENGINE_TS_EDIT.BUCKET
-  );
-};
-
-export function isUIInMagicFillMode() {
-  return (
-    this.isUIInTilesetMode() &&
-    this.tsEditMode === CFG.ENGINE_TS_EDIT.MAGIC
-  );
-};
-
-export function isUIInAutotileMode() {
-  return (
-    this.isUIInTilesetMode() &&
-    this.tsEditMode === CFG.ENGINE_TS_EDIT.AUTOTILE
-  );
-};
-
-export function isUIInTilesetMode() {
-  return (
-    !this.isUIInMapEditingMode() &&
-    this.mode === CFG.ENGINE_MODE_TS
-  );
-};
-
-export function isUIInObjectMode() {
-  return (
-    !this.isUIInMapEditingMode() &&
-    this.mode === CFG.ENGINE_MODE_OBJ
-  );
-};
-
-export function isUIInOptionMode() {
-  return (
-    !this.isUIInMapEditingMode() &&
-    this.mode === CFG.ENGINE_MODE_OPT
-  );
-};
-
-export function isUIInMapCreationMode() {
-  return this.creation.map !== null;
-};
-
-export function isUIInMapResizeMode() {
-  return this.resizing.map !== null;
-};
-
-export function isLeftMousePressed() {
-  return this.drag.ldown === true;
-};
-
-export function isRightMousePressed() {
-  return this.drag.rdown === true;
-};
-
-export function isUIInAnyActiveMode() {
-  return (
-    isLoadingModalActive() ||
-    this.isLeftMousePressed() ||
-    this.isUIInMapEditingMode()
-  );
-};
 
 export function resetUIModeButtons() {
   $("#engine-ui-mode-ts").setAttribute("class", "ts-btn");
@@ -160,29 +50,10 @@ export function setUIMode(mode) {
   elBtn.setAttribute("class", "ts-btn ts-btn-active");
   elMenu.style.display = "block";
   this.mode = CFG[`ENGINE_MODE_${mode.toUpperCase()}`];
+  // auto refresh the map object settings menu
+  if (this.mode === CFG.ENGINE_MODE_OBJ) this.refreshUIMapObject(this.currentObject);
   if (this.mode === void 0) console.warn(`Unexpected mode switch!`);
   this.redrawTileset();
-};
-
-export function resetUIObjMenus() {
-  for (let key in CFG.ENGINE_OBJ_MODE) {
-    let mode = CFG.ENGINE_OBJ_MODE[key].toLowerCase();
-    let elMenu = $(`#engine-ui-obj-${mode}`);
-    elMenu.style.display = "none";
-  };
-};
-
-export function setUIObjMode(index) {
-  this.resetUIObjMenus();
-  this.objMode = index;
-  if (index < 0) return;
-  let mode = CFG.ENGINE_OBJ_MODE[index].toLowerCase();
-  let elMenu = $(`#engine-ui-obj-${mode}`);
-  elMenu.style.display = "block";
-};
-
-export function isUIContextMenuActive() {
-  return this.drag.context === true;
 };
 
 export function onUILockCameraZ(state) {
@@ -193,127 +64,6 @@ export function onUILockCameraZ(state) {
   else el.classList.remove("locked");
   Storage.write(`settings.lockCameraZ`, this.lock.cameraZ);
   this.updateUIMouseStats();
-};
-
-export function resetUIContextMenu(e) {
-  $(`#engine-ui-context-switch-map`).style.display = "none";
-  $(`#engine-ui-context-create-object`).style.display = "none";
-  $(`#engine-ui-context-delete-object`).style.display = "none";
-};
-
-export function showUIContextMenu() {
-  this.drag.context = true;
-  let el = $(`#engine-ui-context-menu`);
-  let elActiveMap = $(`#engine-ui-context-switch-map`);
-  el.style.display = `flex`;
-  let x = this.mx - (el.offsetWidth / 2);
-  let y = this.my - (18 - CFG.ENGINE_UI_OFFSET_Y);
-  el.style.left = x + `px`;
-  el.style.top = y + `px`;
-  this.resetUIContextMenu();
-  let rel = this.getRelativeMapTile(this.mx, this.my);
-  let map = this.getMapByPosition(rel.x, rel.y);
-  if (map && this.currentMap !== map) {
-    elActiveMap.innerHTML = `Switch to "${map.getName()}"`;
-    elActiveMap.style.display = `block`;
-  } else {
-    $(`#engine-ui-context-create-object`).style.display = "block";
-    $(`#engine-ui-context-delete-object`).style.display = "block";
-  }
-};
-
-export function closeUIContextMenu(e) {
-  this.drag.context = false;
-  let el = $(`#engine-ui-context-menu`);
-  el.style.display = `none`;
-};
-
-export function processUIMouseInput(e) {
-  let x = this.mx;
-  let y = this.my;
-  let map = this.currentMap;
-  let rel = this.getRelativeMapTile(x, y);
-  let layer = this.currentLayer;
-  let tileset = this.currentTileset;
-  let etSelection = this.selection.entity;
-  let tsSelection = this.selection.tileset;
-  // there is no active map
-  if (!map) return;
-  // we're in map adding mode, abort
-  if (this.isUIInMapCreationMode()) return;
-  // object dragging
-  if (this.isUIInObjectMode()) {
-    let entity = this.getMapObjectByPosition(rel.x, rel.y);
-    if (entity !== null && etSelection === null) this.selection.entity = entity;
-    if (etSelection !== null) {
-      let entity = this.selection.entity;
-      entity.x = rel.x;
-      entity.y = rel.y;
-    }
-  }
-  // ts mode
-  else if (this.isUIInTilesetMode()) {
-    // normalized coordinates
-    let nx = rel.x - map.x;
-    let ny = rel.y - map.y;
-    // selection
-    if (this.isUIInSelectMode()) {
-      let selection = this.selection.map;
-      let sel = getNormalizedSelection(
-        rel.x, rel.y,
-        selection.sx, selection.sy
-      );
-      this.selection.map.ax = (rel.x - sel.x);
-      this.selection.map.ay = (rel.y - sel.y);
-      this.setMapSelection(sel.x, sel.y, sel.w, sel.h);
-      this.updateMapSelectionPreview();
-    }
-    // pencil
-    else if (this.isUIInPencilMode()) {
-      let normalizedSel = {
-        x: tsSelection.x / CFG.BLOCK_SIZE,
-        y: tsSelection.y / CFG.BLOCK_SIZE,
-        w: tsSelection.w / CFG.BLOCK_SIZE,
-        h: tsSelection.h / CFG.BLOCK_SIZE
-      };
-      map.drawTileSelectionAt(
-        nx, ny,
-        layer,
-        normalizedSel
-      );
-    }
-    // fill
-    else if (this.isUIInFillMode()) {
-      this.onUIMapFill(x, y, false);
-    }
-    // autotile
-    else if (this.isUIInAutotileMode()) {
-      if (this.isSelectionInAutotileFormat(tsSelection)) {
-        if (!this.autoTiling) this.autoTiling = map.cloneData();
-        map.drawAutotile(
-          nx, ny,
-          tileset,
-          layer,
-          tsSelection.x / CFG.BLOCK_SIZE,
-          tsSelection.y / CFG.BLOCK_SIZE
-        );
-      }
-    }
-    // pipette
-    else if (this.isUIInPipetteMode()) {
-      let tile = map.getTileInformationAt(nx, ny, layer);
-      if (tile !== null) {
-        let bundle = this.bundles[tile.bundleId];
-        this.useTilesetBundle(bundle);
-        this.useTilesetFromBundle(bundle, tile.tilesetId);
-        this.setUITilesetSelection(
-          tile.x * CFG.BLOCK_SIZE, tile.y * CFG.BLOCK_SIZE,
-          tile.x * CFG.BLOCK_SIZE, tile.y * CFG.BLOCK_SIZE
-        );
-        //console.log(tile.bundleId + ":" + tile.tilesetId);
-      }
-    }
-  }
 };
 
 export function updateUIMouseStats() {
@@ -333,6 +83,9 @@ export function updateUIMouseStats() {
 export function setUIMousePosition(x, y) {
   let rel = this.getRelativeMapTile(x, y);
   let map = this.currentMap;
+  let layer = this.currentLayer;
+  let tileset = this.currentTileset;
+  let tsSelection = this.selection.tileset;
   this.updateUIMouseStats();
   // we're in add map mode
   if (this.isUIInMapCreationMode()) {
@@ -366,11 +119,23 @@ export function setUIMousePosition(x, y) {
   }
   // there is no active map
   if (!map) return;
-  // change cursor when hovering over an object
-  // only do this when in object mode
+  // object dragging
   if (this.isUIInObjectMode()) {
-    let entity = this.getMapObjectByPosition(rel.x, rel.y);
-    this.setUIMapCursor(entity !== null ? "pointer" : "default");
+    let object = this.selection.object;
+    if (this.isLeftMousePressed() && object !== null) {
+      let map = object.map;
+      let norm = map.normalizeCoordinates(
+        rel.x - map.x,
+        rel.y - map.y
+      );
+      object.x = norm.x;
+      object.y = norm.y;
+      this.refreshUIMapObject(object);
+    }
+    let focusedObject = this.getMapObjectByPosition(rel.x, rel.y);
+    // gives the active object a higher priority than unactive objects
+    focusedObject = focusedObject && this.currentObject ? this.currentObject : focusedObject;
+    this.setUIObjectCursor(focusedObject);
   }
   else if (this.isUIInFillMode() && !this.isUIInMapCreationMode()) {
     this.onUIMapFill(x, y, true);
@@ -430,6 +195,82 @@ export function setUIMousePosition(x, y) {
         map
       );
       this.setUIMapStatsMapValidity(map, isPlaceable);
+    }
+  }
+  // we're in object creation mode
+  else if (this.isUIInObjectCreationMode()) {
+    let object = this.creation.object;
+    let map = object.map;
+    let norm = map.normalizeCoordinates(
+      rel.x - map.x,
+      rel.y - map.y
+    );
+    object.x = norm.x;
+    object.y = norm.y;
+    this.updateMapStatsModeUI(map);
+    this.setUIObjectPlacableCursor(object);
+  }
+  // ts mode
+  else if (this.isUIInTilesetMode() && this.isLeftMousePressed()) {
+    // normalized coordinates
+    let nx = rel.x - map.x;
+    let ny = rel.y - map.y;
+    // selection
+    if (this.isUIInSelectMode()) {
+      let selection = this.selection.map;
+      let sel = getNormalizedSelection(
+        rel.x, rel.y,
+        selection.sx, selection.sy
+      );
+      this.selection.map.ax = (rel.x - sel.x);
+      this.selection.map.ay = (rel.y - sel.y);
+      this.setMapSelection(sel.x, sel.y, sel.w, sel.h);
+      this.updateMapSelectionPreview();
+    }
+    // pencil
+    else if (this.isUIInPencilMode()) {
+      let normalizedSel = {
+        x: tsSelection.x / CFG.BLOCK_SIZE,
+        y: tsSelection.y / CFG.BLOCK_SIZE,
+        w: tsSelection.w / CFG.BLOCK_SIZE,
+        h: tsSelection.h / CFG.BLOCK_SIZE
+      };
+      map.drawTileSelectionAt(
+        nx, ny,
+        layer,
+        normalizedSel
+      );
+    }
+    // fill
+    else if (this.isUIInFillMode()) {
+      this.onUIMapFill(x, y, false);
+    }
+    // autotile
+    else if (this.isUIInAutotileMode()) {
+      if (this.isSelectionInAutotileFormat(tsSelection)) {
+        if (!this.autoTiling) this.autoTiling = map.cloneData();
+        map.drawAutotile(
+          nx, ny,
+          tileset,
+          layer,
+          tsSelection.x / CFG.BLOCK_SIZE,
+          tsSelection.y / CFG.BLOCK_SIZE
+        );
+      }
+    }
+    // pipette
+    else if (this.isUIInPipetteMode()) {
+      let tile = map.getTileInformationAt(nx, ny, layer);
+      if (tile !== null) {
+        let bundle = this.bundles[tile.bundleId];
+        this.useTilesetBundle(bundle);
+        this.useTilesetFromBundle(bundle, tile.tilesetId);
+        this.setUITilesetSelection(
+          tile.x * CFG.BLOCK_SIZE, tile.y * CFG.BLOCK_SIZE,
+          tile.x * CFG.BLOCK_SIZE, tile.y * CFG.BLOCK_SIZE
+        );
+        //console.log(tile.bundleId + ":" + tile.tilesetId);
+      }
     }
   }
 };

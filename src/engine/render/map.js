@@ -6,36 +6,39 @@ import {
 } from "../../utils";
 
 export function drawMaps() {
+  //this.gl.createBatch();
   let maps = this.maps;
   let length = maps.length;
   for (let ii = 0; ii < length; ++ii) {
     let map = maps[ii];
     if (map.isInView()) this.drawMap(map);
   };
+  //this.gl.drawBatch();
   if (!this.isUIInMapCreationMode()) this.drawMousePreview();
 };
 
 export function drawMap(map) {
   if (map === null) return;
   let ctx = this.ctx;
+  let scale = CFG.BLOCK_SIZE;
   let layer = this.currentLayer;
   let isResizing = (this.resizing.map === map);
   let isCurrentMap = (this.currentMap === map);
   let sx = 0;
   let sy = 0;
-  let sw = map.width * CFG.BLOCK_SIZE;
-  let sh = map.height * CFG.BLOCK_SIZE;
-  let dx = this.cx + (map.x * CFG.BLOCK_SIZE) * this.cz;
-  let dy = this.cy + (map.y * CFG.BLOCK_SIZE) * this.cz;
-  let dw = (map.width * CFG.BLOCK_SIZE) * this.cz;
-  let dh = (map.height * CFG.BLOCK_SIZE) * this.cz;
+  let sw = map.width * scale;
+  let sh = map.height * scale;
+  let dx = this.cx + (map.x * scale) * this.cz;
+  let dy = this.cy + (map.y * scale) * this.cz;
+  let dw = (map.width * scale) * this.cz;
+  let dh = (map.height * scale) * this.cz;
   // draw texture with original dimensions when in resize mode
   if (isResizing) {
     let resize = this.selection.mapResize;
-    sw = resize.ow * CFG.BLOCK_SIZE;
-    sh = resize.oh * CFG.BLOCK_SIZE;
-    dw = (resize.ow * CFG.BLOCK_SIZE) * this.cz;
-    dh = (resize.oh * CFG.BLOCK_SIZE) * this.cz;
+    sw = resize.ow * scale;
+    sh = resize.oh * scale;
+    dw = (resize.ow * scale) * this.cz;
+    dh = (resize.oh * scale) * this.cz;
   }
   if (this.drawingMode === CFG.ENGINE_RENDERER.GL) {
     this.drawMapGL(0, map, sx, sy, sw, sh, dx, dy, dw, dh);
@@ -43,9 +46,9 @@ export function drawMap(map) {
     this.drawMapGL(2, map, sx, sy, sw, sh, dx, dy, dw, dh);
   }
   else if (this.drawingMode === CFG.ENGINE_RENDERER.CANVAS) {
-    this.drawMapLayerTexture(0, map, sx, sy, sw, sh, dx, dy, dw, dh);
-    this.drawMapLayerTexture(1, map, sx, sy, sw, sh, dx, dy, dw, dh);
-    this.drawMapLayerTexture(2, map, sx, sy, sw, sh, dx, dy, dw, dh);
+    this.drawMapCanvas(0, map, sx, sy, sw, sh, dx, dy, dw, dh);
+    this.drawMapCanvas(1, map, sx, sy, sw, sh, dx, dy, dw, dh);
+    this.drawMapCanvas(2, map, sx, sy, sw, sh, dx, dy, dw, dh);
   }
   if (isCurrentMap) {
     if (this.isUIInSelectMode()) this.drawMapSelection(map);
@@ -62,15 +65,18 @@ export function drawMapGL(layer, map, sx, sy, sw, sh, dx, dy, dw, dh) {
   let isCurrentMap = (currentMap === map) || (currentMap === null);
   if (layer !== currentLayer && currentLayer !== 3) this.gl.alpha = 0.4;
   if (!isCurrentMap) this.gl.alpha = 0.5;
-  this.gl.drawTexture(
+  else if (this.mode !== CFG.ENGINE_MODE_TS) this.gl.alpha = 1.0;
+  this.gl.drawImage(
     texture,
+    sx, sy,
+    sw, sh,
     dx, dy,
     dw, dh
   );
   this.gl.alpha = 1.0;
 };
 
-export function drawMapLayerTexture(layer, map, sx, sy, sw, sh, dx, dy, dw, dh) {
+export function drawMapCanvas(layer, map, sx, sy, sw, sh, dx, dy, dw, dh) {
   let ctx = this.ctx;
   let texture = map.textures[layer];
   let currentMap = this.currentMap;
@@ -78,6 +84,7 @@ export function drawMapLayerTexture(layer, map, sx, sy, sw, sh, dx, dy, dw, dh) 
   let isCurrentMap = (currentMap === map) || (currentMap === null);
   if (layer !== currentLayer && currentLayer !== 3) ctx.globalAlpha = 0.4;
   if (!isCurrentMap) ctx.globalAlpha = 0.5;
+  else if (this.mode !== CFG.ENGINE_MODE_TS) ctx.globalAlpha = 1.0;
   ctx.drawImage(
     texture.canvas,
     sx, sy,

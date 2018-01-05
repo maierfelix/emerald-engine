@@ -23,14 +23,21 @@ import CanvasRecorder from "../canvas-recorder";
 import * as _map from "./map";
 import * as _init from "./init";
 import * as _undo from "./undo";
+import * as _tasks from "./tasks";
 import * as _camera from "./camera";
 import * as _tileset from "./tileset";
 import * as _listeners from "./listeners";
 
 import * as _ui_map from "./ui/map";
+import * as _ui_ipc from "./ui/ipc";
 import * as _ui_modes from "./ui/modes";
 import * as _ui_modal from "./ui/modal";
+import * as _ui_stats from "./ui/stats";
+import * as _ui_state from "./ui/state";
+import * as _ui_cursor from "./ui/cursor";
+import * as _ui_object from "./ui/object";
 import * as _ui_tileset from "./ui/tileset";
+import * as _ui_context from "./ui/context";
 import * as _ui_encounter from "./ui/encounter";
 
 import * as _render_map from "./render/map";
@@ -72,15 +79,17 @@ export default class MapEditor {
       px: 0, py: 0
     };
     this.selection = {
-      entity: null,
+      object: null,
       mapMove: { sx: 0, sy: 0, ox: 0, oy: 0 },
+      objectMove: { sx: 0, sy: 0, ox: 0, oy: 0 },
       mapResize: { sx: 0, sy: 0, ox: 0, oy: 0, ow: 0, oh: 0, updateCursor: false },
       newMap: { sx: 0, sy: 0, ex: 0, ey: 0, ax: 0, ay: 0, justResized: false },
       map: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0, ax: 0, ay: 0 },
       tileset: { x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 }
     };
     this.creation = {
-      map: null
+      map: null,
+      object: null
     };
     this.resizing = {
       map: null
@@ -100,19 +109,22 @@ export default class MapEditor {
     this.objMode = -1;
     this.tsEditMode = -1;
     this.modalMode = null;
-    this.forcedMapCreation = false;
     this.player = null;
     this.maps = [];
     this.bundles = {};
     this.currentMap = null;
     this.currentWorld = null;
     this.currentLayer = -1;
+    this.currentObject = null;
     this.currentBundle = null;
     this.currentTileset = null;
     this.entities = [];
     this.pos = 0;
     this.tasks = [];
     this.currentCommit = null;
+    this.plugins = {
+      entities: []
+    };
     this.autoTiling = null;
     this.selectedTiles = [];
     this.tileCopy = null;
@@ -129,6 +141,7 @@ MapEditor.prototype.clear = function() {
 };
 
 MapEditor.prototype.draw = function() {
+  let layer = this.currentLayer;
   let tileset = this.currentTileset;
   this.clear();
   this.drawMaps();
@@ -207,14 +220,21 @@ MapEditor.prototype.loadStorageSettings = function() {
 extend(MapEditor, _map);
 extend(MapEditor, _init);
 extend(MapEditor, _undo);
+extend(MapEditor, _tasks);
 extend(MapEditor, _camera);
 extend(MapEditor, _tileset);
 extend(MapEditor, _listeners);
 
 extend(MapEditor, _ui_map);
+extend(MapEditor, _ui_ipc);
 extend(MapEditor, _ui_modes);
 extend(MapEditor, _ui_modal);
+extend(MapEditor, _ui_stats);
+extend(MapEditor, _ui_state);
+extend(MapEditor, _ui_cursor);
+extend(MapEditor, _ui_object);
 extend(MapEditor, _ui_tileset);
+extend(MapEditor, _ui_context);
 extend(MapEditor, _ui_encounter);
 
 extend(MapEditor, _render_map);

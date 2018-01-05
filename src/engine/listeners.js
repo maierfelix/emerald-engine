@@ -3,6 +3,7 @@ import * as CFG from "../cfg";
 import {
   $,
   getRelativeTile,
+  getFocusedDOMNode,
   getNormalizedSelection
 } from "../utils";
 
@@ -41,18 +42,25 @@ export function addListeners() {
 
 export function keyDown(e) {
   let key = e.key;
+  let ctrl = !!e.ctrlKey;
   let isInActiveMode = this.isUIInAnyActiveMode();
   switch (key) {
     case "Escape":
       this.closeUIModal();
+      // abort map creation
       if (this.isUIInMapCreationMode()) this.onUIMapAddAbort();
+      // abort map resizing
       else if (this.isUIInMapResizeMode()) this.onUIMapResizeAbort();
+      // abort object creation
+      else if (this.isUIInObjectCreationMode()) this.onUIObjectAddAbort(true);
     break;
     case "Enter":
+      // submit map creation
       if (this.isUIInMapCreationMode()) {
         this.onUIPlaceNewMap(this.creation.map);
         this.endCommitSession();
       }
+      // submit map resize
       else if (this.isUIInMapResizeMode()) {
         this.onUIPlaceResizedMap(this.resizing.map);
         this.endCommitSession();
@@ -60,42 +68,160 @@ export function keyDown(e) {
     break;
     case "Delete":
       if (this.currentMap && !isInActiveMode) {
-        this.onUIMapDelete(this.currentMap);
-        this.endCommitSession();
+        // delete object
+        if (this.currentObject) this.onUIObjectDelete(this.currentObject);
+        // delete map
+        else this.onUIMapDelete(this.currentMap);
       }
     break;
+    case "ArrowUp":
+    case "ArrowDown": {
+      let el = getFocusedDOMNode();
+      if (!el) {
+        e.preventDefault();
+        let node = $(`#engine-ui-cts-subts`);
+        let length = node.parentNode.children.length;
+        let index = (node.selectedIndex + 1) % length;
+        this.onUISubTilesetChange(index);
+      }
+    } break;
+    case "1":
+    case "2":
+    case "3":
+    case "4": {
+      let layer = key | 0;
+      if (!isInActiveMode) this.setUIActiveTilesetLayer(layer);
+    } break;
+    case "n": case "N":
+    if (!ctrl && !isInActiveMode) {
+      this.onUIMapAdd();
+      break;
+    }
+    case "b": case "B":
+    if (!ctrl && !isInActiveMode) {
+      if (this.currentMap) this.onUIMapResize(this.currentMap);
+      break;
+    }
+    case "r": case "R":
+    if (!ctrl && !isInActiveMode) {
+      this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.SELECT);
+      break;
+    }
+    case "p": case "P":
+    if (!ctrl && !isInActiveMode) {
+      this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.PENCIL);
+      break;
+    }
+    case "g": case "G":
+    if (!ctrl && !isInActiveMode) {
+      this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.PIPETTE);
+      break;
+    }
+    case "f": case "F":
+    if (!ctrl && !isInActiveMode) {
+      this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.BUCKET);
+      break;
+    }
+    case "m": case "M":
+    if (!ctrl && !isInActiveMode) {
+      this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.MAGIC);
+      break;
+    }
+    case "a": case "A":
+    if (!ctrl && !isInActiveMode) {
+      this.setUIActiveEditMode(CFG.ENGINE_TS_EDIT.AUTOTILE);
+      break;
+    }
     case "s": case "S":
-      if (e.ctrlKey && !isInActiveMode) this.onUIMapSave();
+      if (ctrl && !isInActiveMode) this.onUIMapSave();
     break;
     case "z": case "Z":
-      if (e.ctrlKey && !isInActiveMode) this.undoTask();
+      if (ctrl && !isInActiveMode) {
+        e.preventDefault();
+        this.undoTask();
+      }
     break;
     case "y": case "Y":
-      if (e.ctrlKey && !isInActiveMode) this.redoTask();
+      if (ctrl && !isInActiveMode) {
+        e.preventDefault();
+        this.redoTask();
+      }
     break;
     case "c": case "C":
-      if (e.ctrlKey && !isInActiveMode) if (this.isUIInSelectMode()) this.onUICopyMapSelection();
+      if (ctrl && !isInActiveMode) if (this.isUIInSelectMode()) this.onUICopyMapSelection();
     break;
     case "v": case "V":
-      if (e.ctrlKey && !isInActiveMode) if (this.isUIInSelectMode()) this.onUIPasteMapSelection();
+      if (ctrl && !isInActiveMode) if (this.isUIInSelectMode()) this.onUIPasteMapSelection();
     break;
     case "x": case "X":
-      if (e.ctrlKey && !isInActiveMode) if (this.isUIInSelectMode()) this.onUICutMapSelection();
+      if (ctrl && !isInActiveMode) if (this.isUIInSelectMode()) this.onUICutMapSelection();
     break;
   };
 };
 
 export function addUIButtonListeners() {
   $(`#engine-ui-mz`).onclick = () => this.onUILockCameraZ();
-  $("#engine-ui-map-add").onclick = () => this.onUIMapAdd();
-  $("#engine-ui-map-save").onclick = () => this.onUIMapSave();
-  $("#engine-ui-mode-ts").onclick = () => this.setUIMode("ts");
-  $("#engine-ui-mode-obj").onclick = () => this.setUIMode("obj");
-  $("#engine-ui-mode-opt").onclick = () => this.setUIMode("opt");
+  // map stuff
+  $(`#engine-ui-map-add`).onclick = () => this.onUIMapAdd();
+  $(`#engine-ui-map-save`).onclick = () => this.onUIMapSave();
+  // object stuff
+  $(`#engine-ui-obj-add`).onclick = () => this.onUIObjectAdd();
+  // mode switches
+  $(`#engine-ui-mode-ts`).onclick = () => this.setUIMode("ts");
+  $(`#engine-ui-mode-obj`).onclick = () => this.setUIMode("obj");
+  $(`#engine-ui-mode-opt`).onclick = () => this.setUIMode("opt");
 };
 
 export function addUIObjListeners() {
-  let el = $("#engine-ui-obj-type");
+  this.addUIObjGeneralListeners();
+  this.addUIObjTypeSwitchListener();
+};
+
+export function addUIObjGeneralListeners() {
+  this.addUIObjPositionListener();
+  this.addUIObjCollidableListener();
+  this.addUIObjOpacityListener();
+};
+
+export function addUIObjOpacityListener() {
+  let elOpacity = $(`#engine-ui-obj-opacity`);
+  elOpacity.oninput = (e) => {
+    let object = this.currentObject;
+    this.onUIUpdateObjectProperty(object, `opacity`, parseFloat(elOpacity.value), true);
+  };
+};
+
+export function addUIObjCollidableListener() {
+  let elCollidable = $(`#engine-ui-obj-collidable`);
+  elCollidable.onchange = (e) => {
+    let object = this.currentObject;
+    this.onUIUpdateObjectProperty(object, `collidable`, elCollidable.checked, true);
+  };
+};
+
+export function addUIObjPositionListener() {
+  let elPositionX = $(`#engine-ui-obj-pos-x`);
+  let elPositionY = $(`#engine-ui-obj-pos-y`);
+  function oninput(x, y) {
+    let object = this.currentObject;
+    let map = object.map;
+    let coords = map.normalizeCoordinates(x, y);
+    // make sure the position has really changed
+    if (object.x !== coords.x || object.y !== coords.y) {
+      this.onUIObjectMove(object, object.x, object.y, coords.x, coords.y);
+    }
+    this.setActiveObject(object);
+  };
+  elPositionX.oninput = (e) => {
+    oninput.call(this, parseInt(elPositionX.value), parseInt(elPositionY.value));
+  };
+  elPositionY.oninput = (e) => {
+    oninput.call(this, parseInt(elPositionX.value), parseInt(elPositionY.value));
+  };
+};
+
+export function addUIObjTypeSwitchListener() {
+  let el = $(`#engine-ui-obj-type`);
   el.onchange = (e) => {
     let index = el.selectedIndex;
     this.setUIObjMode(index);
@@ -103,33 +229,20 @@ export function addUIObjListeners() {
 };
 
 export function addUIEncounterListeners() {
-  let el = $("#engine-ui-encounter-type");
+  let el = $(`#engine-ui-encounter-type`);
   el.onchange = (e) => {
     let index = el.selectedIndex;
     this.setUIEncounterMode(index);
   };
-  $("#engine-ui-add-encounter").onclick = (e) => {
+  $(`#engine-ui-add-encounter`).onclick = (e) => {
     if (!this.currentMap) return;
     let area = el.selectedIndex;
     let pkmnId = CFG.ENGINE_ENCOUNTER_DEFAULTS.PKMN;
     let chance = CFG.ENGINE_ENCOUNTER_DEFAULTS.CHANCE;
     let minLvl = CFG.ENGINE_ENCOUNTER_DEFAULTS.MIN_LVL;
     let maxLvl = CFG.ENGINE_ENCOUNTER_DEFAULTS.MAX_LVL;
-    let node = this.addUIEncounterNode(
-      pkmnId,
-      area,
-      chance,
-      minLvl,
-      maxLvl
-    );
-    this.currentMap.addEncounter(
-      pkmnId,
-      area,
-      chance,
-      minLvl,
-      maxLvl,
-      node
-    );
+    let node = this.addUIEncounterNode(pkmnId, area, chance, minLvl, maxLvl);
+    this.currentMap.addEncounter(pkmnId, area, chance, minLvl, maxLvl, node);
     node.querySelector(".ts-btn-select").focus();
   };
 };
@@ -184,7 +297,7 @@ export function addMapOptionsListeners() {
 };
 
 export function addTilesetListeners() {
-  let el = $("#engine-tileset");
+  let el = $(`#engine-tileset`);
   let down = false;
   el.onmousedown = (e) => {
     let mx = e.offsetX;
@@ -229,11 +342,10 @@ export function addTilesetListeners() {
 };
 
 export function addTilesetLayerListeners() {
-  $("#engine-layer-btn-1").onclick = (e) => this.setUIActiveTilesetLayer(1);
-  $("#engine-layer-btn-2").onclick = (e) => this.setUIActiveTilesetLayer(2);
-  $("#engine-layer-btn-3").onclick = (e) => this.setUIActiveTilesetLayer(3);
-  $("#engine-layer-btn-4").onclick = (e) => this.setUIActiveTilesetLayer(4);
-  $("#engine-layer-btn-5").onclick = (e) => this.setUIActiveTilesetLayer(5);
+  $(`#engine-layer-btn-1`).onclick = (e) => this.setUIActiveTilesetLayer(1);
+  $(`#engine-layer-btn-2`).onclick = (e) => this.setUIActiveTilesetLayer(2);
+  $(`#engine-layer-btn-3`).onclick = (e) => this.setUIActiveTilesetLayer(3);
+  $(`#engine-layer-btn-4`).onclick = (e) => this.setUIActiveTilesetLayer(4);
 };
 
 export function addTilesetEditModeListeners() {
@@ -257,6 +369,12 @@ export function addSubTilesetListener() {
 
 export function addContextMenuListeners() {
   $(`#engine-ui-context-switch-map`).onmouseup = (e) => this.switchMapByUIContextMenu(e);
-  $(`#engine-ui-context-create-object`).onmouseup = (e) => console.log(e);
-  $(`#engine-ui-context-delete-object`).onmouseup = (e) => console.log(e);
+  $(`#engine-ui-context-create-object`).onmouseup = (e) => {
+    this.onUIObjectAdd();
+  };
+  $(`#engine-ui-context-delete-object`).onmouseup = (e) => {
+    let rel = this.getRelativeMapTile(this.mx, this.my);
+    let object = this.getMapObjectByPosition(rel.x, rel.y);
+    if (object) this.onUIObjectDelete(object);
+  };
 };

@@ -102,17 +102,30 @@ WebGLRenderer.prototype.createProgram = function() {
   return program;
 };
 
-WebGLRenderer.prototype.drawTexture = function(texture, x, y, width, height) {
+WebGLRenderer.prototype.drawImage = function(texture, sx, sy, sw, sh, dx, dy, dw, dh) {
   let gl = this.gl;
   let program = this.GLProgram;
   let pos = this.GLVertices.position;
   // update uniforms
-  gl.uniform2f(this.GLLocs.uObjScale, width, height);
+  gl.uniform2f(this.GLLocs.uObjScale, dw, dh);
   gl.uniform1f(this.GLLocs.uOpacity, this.alpha);
-  for (let ii = 0; ii < 6; ++ii) {
-    pos[2 * ii + 0] = x + (width / 2);
-    pos[2 * ii + 1] = y + (height / 2);
-  };
+
+  // destination
+  let x = dx + (dw / 2);
+  let y = dy + (dh / 2);
+  pos[2 * 0 + 0] = x;
+  pos[2 * 0 + 1] = y;
+  pos[2 * 1 + 0] = x;
+  pos[2 * 1 + 1] = y;
+  pos[2 * 2 + 0] = x;
+  pos[2 * 2 + 1] = y;
+  pos[2 * 3 + 0] = x;
+  pos[2 * 3 + 1] = y;
+  pos[2 * 4 + 0] = x;
+  pos[2 * 4 + 1] = y;
+  pos[2 * 5 + 0] = x;
+  pos[2 * 5 + 1] = y;
+
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, texture);
   this.setGLAttribute(program, this.GLBuffers.position, "aObjCen", 2, pos);

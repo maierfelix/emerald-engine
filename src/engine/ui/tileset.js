@@ -4,7 +4,8 @@ import {
   $,
   GET,
   assert,
-  getRelativeTile
+  getRelativeTile,
+  setImageSmoothing
 } from "../../utils";
 
 export function resetUIActiveTilesetLayers() {
@@ -19,6 +20,7 @@ export function setUIActiveTilesetLayer(index) {
   this.currentLayer = index;
   this.resetUIActiveTilesetLayers();
   $(`#engine-layer-btn-${index}`).classList.add("active-layer-btn");
+  this.redrawTileset();
 };
 
 export function resetUIActiveEditModes() {

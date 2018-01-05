@@ -2,6 +2,11 @@ import * as CFG from "./cfg";
 
 import md5 from "./md5";
 
+const path = require("path");
+window.__dirname = path.dirname(process.execPath);
+
+export const fs = require("fs");
+
 export const IS_NODE = typeof window === "undefined";
 export const IS_BROWSER = !IS_NODE;
 
@@ -25,7 +30,7 @@ export function $(name) {
 };
 
 export function assert(truth) {
-  if (!truth) throw new Error("Assert exception!");
+  if (!truth) console.error("Assert exception!");
 };
 
 let uidx = 0;
@@ -483,8 +488,19 @@ export function getNodeChildIndex(node) {
   return index;
 };
 
+export function getFocusedDOMNode() {
+  let el = document.activeElement;
+  return (
+    el === document.body ? null : el
+  );
+};
+
+export function parseHTMLStringAsDocument(html) {
+  return new DOMParser().parseFromString(html, "text/html");
+};
+
 export function parseHTMLString(html) {
-  return new DOMParser().parseFromString(html, "text/html").body.childNodes[0];
+  return parseHTMLStringAsDocument(html).body.childNodes[0];
 };
 
 export function loadJavaScriptFile(path) {

@@ -12,6 +12,13 @@ export function coordsInBounds(x, y) {
   );
 };
 
+export function normalizeCoordinates(x, y) {
+  return {
+    x: Math.max(0, Math.min(this.width - 1, x)),
+    y: Math.max(0, Math.min(this.height - 1, y))
+  };
+};
+
 export function isInView() {
   let instance = this.instance;
   let xx = instance.cx + ((this.x * CFG.BLOCK_SIZE) * instance.cz) | 0;

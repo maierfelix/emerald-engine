@@ -77,8 +77,23 @@ export function mouseClick(e) {
     // mouse already pressed, FIXUP!
     if (this.isLeftMousePressed()) this.mouseUp(e);
     this.drag.ldown = true;
+    this.selection.object = null;
+    // object dragging
+    if (this.isUIInObjectMode()) {
+      let object = this.getMapObjectByPosition(rel.x, rel.y);
+      let move = this.selection.objectMove;
+      this.selection.object = object;
+      this.setActiveObject(object);
+      if (object) {
+        let map = object.map;
+        move.ox = object.x;
+        move.oy = object.y;
+        move.sx = rel.x - map.x;
+        move.sy = rel.y - map.y;
+      }
+    }
     // map add
-    if (this.isUIInMapCreationMode()) {
+    else if (this.isUIInMapCreationMode()) {
       let add = this.selection.newMap;
       add.sx = rel.x;
       add.sy = rel.y;
@@ -111,7 +126,16 @@ export function mouseClick(e) {
         selection.sx = rel.x;
         selection.sy = rel.y;
       }
-      else if (map && !map.isRecordingMutations()) map.createMutatorSession();
+    }
+    // start mutator session when in tile mode
+    if (
+      this.isUIInTilesetMode() &&
+      !this.isUIInMapEditingMode() &&
+      !this.isUIInCreationMode()
+    ) {
+      if (map && !map.isRecordingMutations()) {
+        if (map.coordsInBounds(rel.x - map.x, rel.y - map.y)) map.createMutatorSession();
+      }
     }
   }
   // middle
@@ -123,7 +147,6 @@ export function mouseClick(e) {
     this.drag.px = x | 0;
     this.drag.py = y | 0;
     this.drag.rdown = true;
-    this.selection.entity = null;
   }
   if (!this.isUIInMapCreationMode()) this.mouseMove(e);
   this.map.focus();
@@ -151,8 +174,36 @@ export function mouseUp(e) {
       }
       this.onUIPlaceNewMap(this.creation.map);
     }
-    this.endCommitSession();
+    // object placement
+    else if (this.isUIInObjectCreationMode()) {
+      this.onUIPlaceNewObject(this.creation.object);
+    }
+    // refresh cursor after hovering an object
+    if (this.isUIInObjectMode()) {
+      if (this.selection.object) this.setUIObjectCursor(this.selection.object);
+      // object move task
+      if (!this.isUIInObjectCreationMode() && this.currentObject) {
+        let object = this.currentObject;
+        let move = this.selection.objectMove;
+        let isInCreation = this.currentObject === this.creation.object;
+        let gotMoved = (
+          (object.x !== move.ox) ||
+          (object.y !== move.oy)
+        );
+        if (gotMoved && !isInCreation) {
+          this.onUIObjectMove(object, move.ox, move.oy, object.x, object.y);
+          // make sure the old position tracker is synced
+          move.ox = object.x;
+          move.oy = object.y;
+        }
+      }
+    }
+    // tile drawing finished, stop mutator session
+    if (this.isUIInTilesetMode() && !this.isUIInAnyActiveMode()) {
+      this.endCommitSession();
+    }
     this.autoTiling = null;
+    this.selection.object = null;
   }
   // middle
   else if (e.which === 2) {
@@ -163,7 +214,6 @@ export function mouseUp(e) {
     this.drag.px = x | 0;
     this.drag.py = y | 0;
     this.drag.rdown = false;
-    this.selection.entity = null;
   }
 };
 
@@ -176,13 +226,6 @@ export function mouseMove(e) {
   if (e.target !== this.map) return;
   this.mx = x;
   this.my = y;
-  // left mouse move
-  if (this.isLeftMousePressed() && !this.isMouseMoveRedundant()) {
-    if (!this.isUIInMapCreationMode()) {
-      if (map && !map.isRecordingMutations()) map.createMutatorSession();
-      this.processUIMouseInput(e);
-    }
-  }
   // right mouse move
   if (this.isRightMousePressed()) {
     this.cx -= (this.drag.px - x) | 0;
@@ -194,7 +237,9 @@ export function mouseMove(e) {
     // redraw instantly for smoother dragging
     this.draw();
   }
+  // only perform mouse action if its not redundant
   if (!this.isMouseMoveRedundant()) this.setUIMousePosition(x, y);
+  // update last mouse position to detect redundant moves
   this.updateMouseLast(rel.x, rel.y);
 };
 

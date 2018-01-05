@@ -159,9 +159,10 @@ export function getMapObjectByPosition(x, y) {
     let objects = map.objects;
     for (let jj = 0; jj < objects.length; ++jj) {
       let object = objects[jj];
-      let ox = map.x + object.x;
-      let oy = map.y + object.y;
-      if (ox === x && oy === y) return object;
+      if (
+        (object.x) === (x - map.x) &&
+        (object.y) === (y - map.y)
+      ) return object;
     };
   };
   return null;
@@ -198,12 +199,12 @@ export function bufferMapSelection(map, sel, layer) {
   let scale = CFG.BLOCK_SIZE;
   let buffer = createCanvasBuffer(ww * scale, hh * scale).ctx;
   let tiles = [];
-  let layers = layer === 4 ? 4 : 1;
+  let layers = (layer === CFG.ENGINE_TS_LAYERS.PREVIEW) ? CFG.ENGINE_TS_LAYERS.PREVIEW : 1;
   let currentBundleId = this.currentTileset.bundle.name;
   let currentTilesetId = this.currentTileset.name;
   for (let ll = 1; ll <= layers; ++ll) {
-    let ly = layers === 4 ? ll : layer;
-    if (ly === 4) continue; // ignore layer 4
+    let ly = (layers === CFG.ENGINE_TS_LAYERS.PREVIEW) ? ll : layer;
+    if (ly === CFG.ENGINE_TS_LAYERS.PREVIEW) continue; // ignore layer 4
     for (let ii = 0; ii < ww * hh; ++ii) {
       let x = (ii % ww) | 0;
       let y = (ii / ww) | 0;

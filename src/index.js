@@ -32,9 +32,6 @@ import MapEditor from "./engine/";
 import ROMTilesetEditor from "./rom-ts-editor/"
 import TerrainGenerator from "./terrain-generator/";
 
-const path = require("path");
-window.__dirname = path.dirname(process.execPath);
-
 // check browser compatibility
 console.assert(
   (typeof Worker !== "undefined") &&
@@ -48,9 +45,13 @@ class Engine {
     this.mode = null;
     this.ppTimer = null;
     this.session = null;
-    showBootScreen().then(() => {
+    if (CFG.ENGINE_DEV_MODE) {
       this.init();
-    });
+    } else {
+      showBootScreen().then(() => {
+        this.init();
+      });
+    }
   }
 };
 
